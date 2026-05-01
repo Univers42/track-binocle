@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Track Binocle — Mascotte vivante</title>
+    <meta
+      name="description"
+      content="Prototype d'une mascotte binocles qui suit les mouvements et réagit émotionnellement."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;900&family=Playfair+Display:wght@800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="floating-header" aria-label="Navigation principale">
+      <a class="brand" href="#top" aria-label="Track Binocle accueil">
+        <span class="brand-mark">TB</span>
+        <span>Track Binocle</span>
+      </a>
+
+      <div id="mascot-anchor" class="mascot-anchor" aria-live="polite"></div>
+
+      <nav class="nav-links" aria-label="Navigation">
+        <a href="#story">Concept</a>
+        <a href="#atelier">Atelier</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <p class="eyebrow">Boutique immersive · Prototype mascotte</p>
+        <h1>Une paire de jumelles vivantes qui accueille, observe et sourit.</h1>
+        <p class="hero-copy">
+          Bouge la souris, approche-toi du header, clique, puis quitte la fenêtre : Binocle change
+          d'humeur comme un petit hôte de boutique qui garde le contact visuel.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#atelier">Tester l'expérience</a>
+          <a class="button ghost" href="#story">Voir le caractère</a>
+        </div>
+      </section>
+
+      <section id="story" class="panel story-panel">
+        <div>
+          <p class="section-kicker">Personnalité</p>
+          <h2>Curieux, poli, expressif.</h2>
+        </div>
+        <p>
+          La mascotte est dessinée comme des binocles de poche avec des yeux griffonnés. Elle suit
+          l'utilisateur, cligne des yeux, sourit quand on s'approche, fait un petit salut quand on
+          part et s'étonne si on clique.
+        </p>
+      </section>
+
+      <section id="atelier" class="cards" aria-label="Moments d'interaction">
+        <article class="card">
+          <span>01</span>
+          <h3>Regard vivant</h3>
+          <p>Les pupilles scribbled suivent le mouvement avec un retard organique.</p>
+        </article>
+        <article class="card">
+          <span>02</span>
+          <h3>Accueil boutique</h3>
+          <p>En zone proche, le sourire s'élargit et les sourcils deviennent joyeux.</p>
+        </article>
+        <article class="card">
+          <span>03</span>
+          <h3>Au revoir</h3>
+          <p>Quand la souris quitte la page, Binocle lève sa sangle comme une petite main.</p>
+        </article>
+      </section>
+
+      <section id="contact" class="panel contact-panel">
+        <p class="section-kicker">Header flottant</p>
+        <h2>La mascotte reste au centre, sans bloquer l'expérience.</h2>
+        <p>
+          Cette démo est volontairement en HTML/CSS/JavaScript pur pour être facile à intégrer dans
+          une page vitrine, une boutique ou une landing page.
+        </p>
+      </section>
+    </main>
+
+    <script src="mascot.js" defer></script>
+  </body>
+</html>
