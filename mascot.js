@@ -35,9 +35,10 @@ mascot.innerHTML = `
       <ellipse class="svg-inner-rim" cx="141" cy="57" rx="28" ry="24" />
       <ellipse class="svg-rim" cx="38" cy="53" rx="24" ry="20" />
       <ellipse class="svg-rim" cx="136" cy="53" rx="24" ry="20" />
-      <path class="svg-center-band" d="M86 51 C90 47, 94 47, 98 51 C97 57, 97 63, 98 68 C94 71, 90 71, 86 68 C87 63, 87 57, 86 51Z" />
+      <path class="svg-center-band" d="M84 53 C88 48, 96 48, 100 53" />
+      <path class="svg-center-band" d="M86 67 C90 71, 95 71, 99 67" />
       <path class="svg-bridge-shadow" d="M99 62 C103 54, 110 54, 114 62" />
-      <path class="svg-bridge" d="M80 60 C84 51, 92 48, 98 51 C103 53, 107 57, 112 62" />
+      <path class="svg-bridge" d="M80 61 C84 51, 91 48, 97 52 C101 55, 104 59, 108 62 C110 63, 112 63, 114 62" />
 
       <path class="svg-detail" d="M16 55 C20 34, 36 24, 56 28" />
       <path class="svg-detail" d="M19 62 C21 76, 35 86, 52 85" />
@@ -209,6 +210,109 @@ function createPing() {
   mascot.append(ping);
   ping.addEventListener('animationend', () => ping.remove(), { once: true });
 }
+
+function getGuideMascotMarkup(kind) {
+  const scenes = {
+    curious: {
+      className: 'reader',
+      accent: '#fff3b8',
+      prop: `
+        <path class="person-book" d="M54 102 L94 92 L98 134 L57 145Z" />
+        <path class="person-book" d="M98 92 L138 103 L132 146 L98 134Z" />
+        <path class="person-detail" d="M68 110 L88 105 M68 121 L91 115 M110 108 L128 113 M109 120 L126 124" />
+      `,
+      body: 'M78 86 C86 77, 111 77, 119 87 C124 112, 122 136, 112 158 C101 166, 79 163, 68 154 C70 130, 72 108, 78 86Z',
+      arms: `
+        <path class="person-limb" d="M78 101 C65 104, 58 115, 56 132" />
+        <path class="person-limb" d="M119 101 C130 109, 132 122, 128 137" />
+      `,
+      legs: `
+        <path class="person-leg" d="M84 156 C78 171, 76 186, 67 203" />
+        <path class="person-leg" d="M106 157 C112 173, 120 185, 133 199" />
+      `,
+      eyes: '<path class="person-eye-line" d="M84 59 L91 59" /><path class="person-eye-line" d="M105 59 L112 59" />',
+      mouth: 'M88 70 C94 75, 103 75, 109 70',
+    },
+    light: {
+      className: 'student',
+      accent: '#eaf4ee',
+      prop: `
+        <path class="person-laptop" d="M47 128 L141 128 L154 154 L34 154Z" />
+        <path class="person-detail" d="M72 140 L117 140" />
+        <path class="person-note" d="M128 42 L159 34 L163 68 L132 77Z" />
+        <path class="person-detail" d="M137 49 L154 45 M138 57 L155 53 M140 65 L153 62" />
+        <path class="person-sparkle" d="M116 35 L116 48 M109 42 L123 42" />
+      `,
+      body: 'M77 87 C86 75, 111 75, 120 88 C126 110, 123 137, 111 158 C100 165, 78 162, 66 153 C69 128, 72 107, 77 87Z',
+      arms: `
+        <path class="person-limb" d="M75 103 C61 112, 60 127, 72 138" />
+        <path class="person-limb" d="M121 103 C135 111, 135 126, 122 137" />
+      `,
+      legs: `
+        <path class="person-leg" d="M84 156 C81 172, 81 187, 76 203" />
+        <path class="person-leg" d="M107 156 C115 172, 121 186, 132 202" />
+      `,
+      eyes: '<circle class="person-eye" cx="87" cy="59" r="3.2" /><circle class="person-eye" cx="109" cy="59" r="3.2" />',
+      mouth: 'M84 68 C90 65, 97 65, 102 68',
+    },
+    seller: {
+      className: 'chatter',
+      accent: '#edf3ff',
+      prop: `
+        <path class="person-bubble" d="M120 28 C149 16, 173 29, 169 50 C166 68, 139 71, 122 60 L107 68 L113 54 C104 44, 106 33, 120 28Z" />
+        <path class="person-detail" d="M129 42 L153 42 M132 52 L148 52" />
+      `,
+      body: 'M77 87 C87 76, 112 78, 121 91 C124 116, 120 139, 109 158 C96 165, 76 160, 66 148 C68 124, 71 104, 77 87Z',
+      arms: `
+        <path class="person-limb" d="M76 101 C61 104, 51 97, 45 86" />
+        <path class="person-limb" d="M121 101 C136 96, 144 84, 148 72" />
+      `,
+      legs: `
+        <path class="person-leg" d="M83 156 C75 170, 66 183, 54 197" />
+        <path class="person-leg" d="M106 156 C114 172, 126 183, 141 194" />
+      `,
+      eyes: '<path class="person-eye-line" d="M83 59 L91 59" /><path class="person-eye-line" d="M106 59 L114 59" />',
+      mouth: 'M84 70 C91 78, 103 78, 110 70',
+    },
+  };
+  const scene = scenes[kind] ?? scenes.curious;
+
+  return `
+    <div class="guide-binocle guide-person ${scene.className}">
+      <svg viewBox="0 0 190 220" aria-hidden="true">
+        <g filter="url(#handDrawn)">
+          ${scene.prop}
+          ${scene.legs}
+          <path class="person-shoe" d="M55 203 C64 197, 75 198, 82 205" />
+          <path class="person-shoe" d="M124 202 C134 196, 145 197, 152 204" />
+          <path class="person-body" d="${scene.body}" fill="${scene.accent}" />
+          ${scene.arms}
+          <path class="person-neck" d="M88 82 C92 86, 101 86, 105 82 L106 95 C101 99, 91 99, 86 95Z" />
+          <ellipse class="person-head" cx="97" cy="59" rx="31" ry="34" />
+          <path class="person-hair" d="M67 51 C72 30, 91 20, 111 28 C125 34, 132 49, 126 62 C114 50, 94 42, 67 51Z" />
+          ${scene.eyes}
+          <path class="person-mouth" d="${scene.mouth}" />
+          <path class="person-detail" d="M82 88 C90 94, 103 94, 112 88" />
+        </g>
+      </svg>
+    </div>
+  `;
+}
+
+document.querySelectorAll('[data-guide-mascot]').forEach((guideMascot) => {
+  guideMascot.innerHTML = getGuideMascotMarkup(guideMascot.dataset.guideMascot);
+});
+
+const guideObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      entry.target.classList.toggle('is-lit', entry.isIntersecting);
+    });
+  },
+  { threshold: 0.45 }
+);
+
+document.querySelectorAll('[data-guide-step]').forEach((step) => guideObserver.observe(step));
 
 globalThis.addEventListener('pointermove', (event) => updateTarget(event.clientX, event.clientY), {
   passive: true,

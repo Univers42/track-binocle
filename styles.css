@@ -238,12 +238,12 @@ a {
 }
 
 .svg-center-band {
-  fill: #ffffff;
+  fill: none;
   stroke: var(--ink);
-  stroke-width: 2.6;
+  stroke-width: 3.4;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.88;
+  opacity: 0.94;
 }
 
 .svg-frame {
@@ -498,14 +498,14 @@ a {
 
 .binocle[data-mood="excited"] {
   --face-fill: #fff2a8;
-  --mouth-y: -5px;
+  --mouth-y: -7px;
   --mouth-scale: 1.14;
   --mouth-pad-opacity: 1;
-  --mouth-open-scale-x: 1.08;
-  --mouth-open-scale-y: 1.08;
-  --mouth-smile-opacity: 0.18;
+  --mouth-open-scale-x: 1.28;
+  --mouth-open-scale-y: 1.52;
+  --mouth-smile-opacity: 0;
   --mouth-ajar-opacity: 0;
-  --mouth-open-opacity: 0.88;
+  --mouth-open-opacity: 1;
   --brow-y: -5px;
   --brow-left: -8deg;
   --brow-right: 8deg;
@@ -735,6 +735,312 @@ h3 {
   margin: 18px 0;
 }
 
+.reading-guide {
+  display: grid;
+  gap: 22px;
+  margin: 18px 0;
+}
+
+.guide-intro {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 34px;
+  align-items: end;
+  padding: clamp(28px, 6vw, 64px);
+  border: 1.5px solid var(--line);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: var(--shadow);
+}
+
+.guide-intro p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.8;
+}
+
+.guide-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.72fr) 1fr;
+  gap: clamp(24px, 6vw, 76px);
+  align-items: center;
+  min-height: 360px;
+  padding: clamp(28px, 6vw, 58px);
+  overflow: hidden;
+  border: 1.5px solid var(--line);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: var(--shadow);
+  isolation: isolate;
+}
+
+.guide-step::before {
+  position: absolute;
+  inset: auto 10% 12% auto;
+  z-index: -1;
+  width: 230px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 242, 168, 0.82), rgba(255, 242, 168, 0.2) 44%, transparent 68%);
+  content: "";
+  opacity: 0;
+  transform: scale(0.7);
+  transition: 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.guide-step.is-lit::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.guide-step.is-reversed {
+  grid-template-columns: 1fr minmax(210px, 0.72fr);
+}
+
+.guide-step.is-reversed .guide-mascot {
+  order: 2;
+}
+
+.guide-copy span {
+  display: inline-flex;
+  margin-bottom: 18px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  color: var(--paper);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--ink);
+}
+
+.guide-copy p {
+  max-width: 560px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.guide-mascot {
+  position: relative;
+  display: grid;
+  min-height: 210px;
+  place-items: center;
+  perspective: 620px;
+}
+
+.guide-mascot::after {
+  position: absolute;
+  inset: 62% 8% auto;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(17, 17, 17, 0.1);
+  filter: blur(7px);
+  content: "";
+}
+
+.guide-binocle {
+  position: relative;
+  z-index: 1;
+  width: min(250px, 100%);
+  transform: rotate(var(--scene-rotate, 0deg)) rotateY(var(--scene-y, 0deg)) rotateX(var(--scene-x, 0deg));
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 18px 20px rgba(17, 17, 17, 0.13));
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.guide-step.is-lit .guide-binocle {
+  transform: rotate(calc(var(--scene-rotate, 0deg) + 2deg)) rotateY(calc(var(--scene-y, 0deg) + 8deg)) rotateX(calc(var(--scene-x, 0deg) - 4deg)) translateY(-8px);
+}
+
+.guide-binocle svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.guide-person {
+  width: min(220px, 100%);
+}
+
+.person-head,
+.person-neck,
+.person-body,
+.person-note,
+.person-book,
+.person-laptop,
+.person-bubble {
+  stroke: var(--ink);
+  stroke-width: 3.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.person-head,
+.person-neck {
+  fill: #ffffff;
+}
+
+.person-body,
+.person-note,
+.person-book,
+.person-laptop,
+.person-bubble {
+  fill: #ffffff;
+}
+
+.person-hair {
+  fill: var(--ink);
+  stroke: var(--ink);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.person-limb,
+.person-leg,
+.person-shoe,
+.person-mouth,
+.person-detail,
+.person-sparkle,
+.person-eye-line,
+.person-dollar-eye {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.person-limb,
+.person-leg {
+  stroke-width: 3.4;
+}
+
+.person-shoe {
+  stroke-width: 4;
+}
+
+.person-eye {
+  fill: var(--ink);
+}
+
+.person-eye-line {
+  stroke-width: 3.2;
+}
+
+.person-dollar-eye {
+  stroke-width: 2.6;
+}
+
+.person-book {
+  fill: #fff8c8;
+}
+
+.person-note {
+  fill: #ffffff;
+}
+
+.person-laptop {
+  fill: #f1f1f1;
+}
+
+.person-bubble {
+  fill: #eef7ff;
+}
+
+.guide-step.is-lit .guide-person.reader {
+  animation: read-wiggle 2.8s ease-in-out infinite;
+}
+
+.guide-step.is-lit .guide-person.student {
+  animation: study-bob 3s ease-in-out infinite;
+}
+
+.guide-step.is-lit .guide-person.chatter {
+  animation: chat-wave 2.4s ease-in-out infinite;
+}
+
+.guide-step.is-lit .person-sparkle {
+  animation: sparkle-pop 720ms ease-in-out infinite alternate;
+}
+
+.guide-binocle .guide-beam {
+  opacity: var(--beam-opacity, 0);
+  transition: opacity 420ms ease;
+}
+
+.guide-prop,
+.guide-helmet,
+.guide-dollar,
+.guide-tool,
+.guide-sparkle {
+  vector-effect: non-scaling-stroke;
+}
+
+.guide-helmet {
+  fill: #fff2a8;
+  stroke: var(--ink);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.guide-prop,
+.guide-tool,
+.guide-sparkle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.guide-dollar {
+  fill: var(--ink);
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 19px;
+  font-weight: 900;
+  dominant-baseline: middle;
+  text-anchor: middle;
+}
+
+.guide-step.is-lit .guide-tool {
+  animation: tiny-work 780ms ease-in-out infinite alternate;
+}
+
+.guide-step.is-lit .guide-sparkle {
+  animation: sparkle-pop 720ms ease-in-out infinite alternate;
+}
+
+.guide-step.is-lit .guide-binocle .guide-beam {
+  opacity: 1;
+}
+
+.guide-mascot[data-guide-mascot="curious"] {
+  --scene-rotate: -8deg;
+  --scene-y: -22deg;
+  --scene-x: 4deg;
+}
+
+.guide-mascot[data-guide-mascot="light"] {
+  --scene-rotate: 4deg;
+  --scene-y: 28deg;
+  --scene-x: -8deg;
+  --beam-opacity: 0.72;
+}
+
+.guide-mascot[data-guide-mascot="seller"] {
+  --scene-rotate: -2deg;
+  --scene-y: -12deg;
+  --scene-x: -3deg;
+}
+
 .card {
   min-height: 260px;
   padding: 28px;
@@ -785,6 +1091,52 @@ h3 {
   }
 }
 
+@keyframes tiny-work {
+  to {
+    transform: translateY(-4px) rotate(-5deg);
+  }
+}
+
+@keyframes read-wiggle {
+  0%,
+  100% {
+    transform: rotate(var(--scene-rotate, 0deg)) rotateY(var(--scene-y, 0deg)) rotateX(var(--scene-x, 0deg));
+  }
+
+  50% {
+    transform: rotate(calc(var(--scene-rotate, 0deg) - 2deg)) rotateY(var(--scene-y, 0deg)) rotateX(calc(var(--scene-x, 0deg) + 3deg)) translateY(-4px);
+  }
+}
+
+@keyframes study-bob {
+  0%,
+  100% {
+    transform: rotate(var(--scene-rotate, 0deg)) rotateY(var(--scene-y, 0deg)) rotateX(var(--scene-x, 0deg));
+  }
+
+  50% {
+    transform: rotate(calc(var(--scene-rotate, 0deg) + 2deg)) rotateY(calc(var(--scene-y, 0deg) - 5deg)) rotateX(var(--scene-x, 0deg)) translateY(-7px);
+  }
+}
+
+@keyframes chat-wave {
+  0%,
+  100% {
+    transform: rotate(var(--scene-rotate, 0deg)) rotateY(var(--scene-y, 0deg)) rotateX(var(--scene-x, 0deg));
+  }
+
+  50% {
+    transform: rotate(calc(var(--scene-rotate, 0deg) + 4deg)) rotateY(calc(var(--scene-y, 0deg) + 6deg)) rotateX(var(--scene-x, 0deg)) translateY(-5px);
+  }
+}
+
+@keyframes sparkle-pop {
+  to {
+    opacity: 0.32;
+    transform: scale(0.86);
+  }
+}
+
 @keyframes brow-pop {
   0%,
   100% {
@@ -829,8 +1181,18 @@ h3 {
   }
 
   .panel,
+  .guide-intro,
+  .guide-step,
   .cards {
     grid-template-columns: 1fr;
+  }
+
+  .guide-step.is-reversed {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-step.is-reversed .guide-mascot {
+    order: 0;
   }
 
   .card {
