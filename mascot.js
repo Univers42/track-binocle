@@ -6,7 +6,7 @@ mascot.type = 'button';
 mascot.dataset.mood = 'curious';
 mascot.setAttribute('aria-label', 'Binocle, mascotte SVG vivante et expressive');
 mascot.innerHTML = `
-  <svg class="binocle__svg" viewBox="0 0 184 104" role="img" aria-labelledby="binocle-title binocle-desc">
+  <svg class="binocle__svg" viewBox="0 0 184 118" role="img" aria-labelledby="binocle-title binocle-desc">
     <title id="binocle-title">Binocle</title>
     <desc id="binocle-desc">Mascotte en forme de jumelles scribble, avec grandes pupilles, bouche expressive et petites mains.</desc>
     <defs>
@@ -17,53 +17,54 @@ mascot.innerHTML = `
     </defs>
 
     <g class="svg-body-group" filter="url(#handDrawn)">
-      <path class="svg-arm left" d="M55 31 C45 18, 30 18, 24 32" />
-      <path class="svg-arm right" d="M129 31 C141 18, 155 19, 160 33" />
+      <path class="svg-arm left" d="M49 31 C39 18, 25 18, 19 32" />
+      <path class="svg-arm right" d="M135 31 C147 18, 161 19, 166 33" />
 
       <g class="svg-volume">
-        <path class="svg-shell left" d="M25 34 C35 20, 59 16, 77 27 C88 34, 95 48, 94 62 C93 78, 81 90, 63 94 C42 98, 22 90, 15 75 C9 61, 13 45, 25 34Z" />
-        <path class="svg-shell right" d="M107 27 C126 16, 149 20, 160 34 C172 49, 175 65, 169 78 C162 92, 142 98, 121 94 C103 90, 91 78, 90 62 C89 48, 96 34, 107 27Z" />
-        <ellipse class="svg-back" cx="60" cy="61" rx="39" ry="34" />
-        <ellipse class="svg-back" cx="136" cy="61" rx="39" ry="34" />
+        <path class="svg-shell left" d="M15 34 C26 20, 51 16, 69 27 C80 34, 87 48, 86 62 C85 78, 73 90, 55 94 C34 98, 14 90, 7 75 C1 61, 4 45, 15 34Z" />
+        <path class="svg-shell right" d="M115 27 C134 16, 158 20, 169 34 C180 49, 183 65, 177 78 C170 92, 150 98, 129 94 C111 90, 99 78, 98 62 C97 48, 104 34, 115 27Z" />
+        <ellipse class="svg-back" cx="51" cy="61" rx="39" ry="34" />
+        <ellipse class="svg-back" cx="145" cy="61" rx="39" ry="34" />
       </g>
 
-      <path class="svg-barrel left" d="M29 39 C38 28, 56 25, 70 32 C58 29, 41 32, 32 43 C24 54, 24 67, 32 77 C20 69, 18 51, 29 39Z" />
-      <path class="svg-barrel right" d="M114 32 C128 25, 146 28, 155 39 C166 51, 164 69, 152 77 C160 67, 160 54, 152 43 C143 32, 126 29, 114 32Z" />
-      <ellipse class="svg-frame" cx="54" cy="57" rx="39" ry="34" />
-      <ellipse class="svg-frame" cx="130" cy="57" rx="39" ry="34" />
-      <ellipse class="svg-inner-rim" cx="54" cy="57" rx="28" ry="24" />
-      <ellipse class="svg-inner-rim" cx="130" cy="57" rx="28" ry="24" />
-      <ellipse class="svg-rim" cx="49" cy="53" rx="24" ry="20" />
-      <ellipse class="svg-rim" cx="125" cy="53" rx="24" ry="20" />
-      <path class="svg-center-band" d="M86 49 C90 45, 95 45, 99 49 C98 55, 98 61, 99 66 C95 69, 90 69, 86 66 C87 61, 87 55, 86 49Z" />
-      <path class="svg-bridge-shadow" d="M97 61 C100 53, 105 53, 108 61" />
-      <path class="svg-bridge" d="M88 58 C90 50, 96 47, 101 50 C104 52, 105 56, 105 60" />
+      <path class="svg-barrel left" d="M20 39 C29 28, 47 25, 62 32 C50 29, 33 32, 24 43 C16 54, 16 67, 24 77 C12 69, 9 51, 20 39Z" />
+      <path class="svg-barrel right" d="M122 32 C136 25, 154 28, 164 39 C175 51, 172 69, 160 77 C168 67, 168 54, 160 43 C151 32, 134 29, 122 32Z" />
+      <ellipse class="svg-frame" cx="43" cy="57" rx="39" ry="34" />
+      <ellipse class="svg-frame" cx="141" cy="57" rx="39" ry="34" />
+      <ellipse class="svg-inner-rim" cx="43" cy="57" rx="28" ry="24" />
+      <ellipse class="svg-inner-rim" cx="141" cy="57" rx="28" ry="24" />
+      <ellipse class="svg-rim" cx="38" cy="53" rx="24" ry="20" />
+      <ellipse class="svg-rim" cx="136" cy="53" rx="24" ry="20" />
+      <path class="svg-center-band" d="M86 51 C90 47, 94 47, 98 51 C97 57, 97 63, 98 68 C94 71, 90 71, 86 68 C87 63, 87 57, 86 51Z" />
+      <path class="svg-bridge-shadow" d="M99 62 C103 54, 110 54, 114 62" />
+      <path class="svg-bridge" d="M80 60 C84 51, 92 48, 98 51 C103 53, 107 57, 112 62" />
 
-      <path class="svg-detail" d="M23 55 C27 34, 43 24, 63 28" />
-      <path class="svg-detail" d="M26 62 C28 76, 42 86, 59 85" />
-      <path class="svg-detail" d="M111 28 C132 23, 151 34, 157 55" />
-      <path class="svg-detail" d="M155 63 C152 78, 138 86, 122 84" />
-      <path class="svg-stitch" d="M35 80 C47 86, 64 85, 74 77" />
-      <path class="svg-stitch" d="M116 77 C127 86, 145 85, 155 78" />
+      <path class="svg-detail" d="M16 55 C20 34, 36 24, 56 28" />
+      <path class="svg-detail" d="M19 62 C21 76, 35 86, 52 85" />
+      <path class="svg-detail" d="M118 28 C139 23, 158 34, 164 55" />
+      <path class="svg-detail" d="M162 63 C159 78, 145 86, 129 84" />
+      <path class="svg-stitch" d="M28 80 C40 86, 57 85, 67 77" />
+      <path class="svg-stitch" d="M123 77 C134 86, 152 85, 162 78" />
 
-      <path class="svg-brow left" d="M35 22 C45 17, 62 17, 72 23" />
-      <path class="svg-brow right" d="M112 23 C123 17, 141 17, 151 22" />
+      <path class="svg-brow left" d="M22 20 C34 14, 54 14, 66 21" />
+      <path class="svg-brow right" d="M118 21 C130 14, 151 14, 163 20" />
 
       <g class="svg-eye left">
-        <circle class="svg-pupil" cx="54" cy="57" r="11.4" />
-        <circle class="svg-pupil-shine" cx="49.8" cy="52.8" r="2.7" />
+        <circle class="svg-pupil" cx="43" cy="57" r="11.4" />
+        <circle class="svg-pupil-shine" cx="38.8" cy="52.8" r="2.7" />
       </g>
       <g class="svg-eye right">
-        <circle class="svg-pupil" cx="130" cy="57" r="11.4" />
-        <circle class="svg-pupil-shine" cx="125.8" cy="52.8" r="2.7" />
+        <circle class="svg-pupil" cx="141" cy="57" r="11.4" />
+        <circle class="svg-pupil-shine" cx="136.8" cy="52.8" r="2.7" />
       </g>
 
-      <path class="svg-mouth smile" d="M77 80 C83 89, 101 89, 107 80" />
-      <path class="svg-mouth ajar" d="M79 80 C84 86, 100 86, 105 80 C101 84, 84 84, 79 80Z" />
-      <path class="svg-mouth open" d="M78 79 C78 67, 87 61, 93 61 C101 61, 109 68, 108 80 C107 93, 98 99, 91 99 C84 99, 78 91, 78 79Z" />
-      <path class="svg-mouth-core" d="M83 81 C83 72, 88 68, 93 68 C99 68, 104 73, 103 82 C102 91, 96 94, 91 94 C86 94, 83 89, 83 81Z" />
-      <ellipse class="svg-mouth-shine" cx="88" cy="75" rx="3" ry="2.2" />
-      <path class="svg-mouth flat" d="M82 81 C87 83, 97 83, 102 81" />
+      <ellipse class="svg-mouth-pad" cx="92" cy="96" rx="23" ry="15" />
+      <path class="svg-mouth smile" d="M76 93 C83 105, 101 105, 108 93" />
+      <path class="svg-mouth ajar" d="M78 94 C84 102, 100 102, 106 94 C101 99, 84 99, 78 94Z" />
+      <path class="svg-mouth open" d="M77 93 C77 80, 86 73, 93 73 C102 73, 111 81, 110 94 C109 108, 99 115, 91 115 C83 115, 77 107, 77 93Z" />
+      <path class="svg-mouth-core" d="M83 95 C83 85, 88 80, 93 80 C100 80, 105 86, 104 96 C103 106, 96 110, 91 110 C85 110, 83 104, 83 95Z" />
+      <ellipse class="svg-mouth-shine" cx="88" cy="88" rx="3" ry="2.2" />
+      <path class="svg-mouth flat" d="M81 96 C87 98, 98 98, 103 96" />
       <path class="svg-spark" d="M164 20 L164 29 M159.5 24.5 L168.5 24.5" />
     </g>
   </svg>
@@ -106,6 +107,11 @@ function liftBrows(duration = 680) {
   globalThis.setTimeout(() => mascot.classList.remove('is-brow-pop'), duration);
 }
 
+function showSellerCue(duration = 1150) {
+  setMood('seller', duration, { lock: true });
+  liftBrows(520);
+}
+
 function updateTarget(pointerX, pointerY) {
   const rect = mascot.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
@@ -131,8 +137,10 @@ function updateTarget(pointerX, pointerY) {
     return;
   }
 
-  if (distance < 118) {
+  if (distance < 92) {
     setMood('close');
+  } else if (distance < 170) {
+    setMood('gentle');
   } else if (distance < 280) {
     setMood('happy');
   } else if (mascot.dataset.mood !== 'bye') {
@@ -242,7 +250,7 @@ globalThis.addEventListener('blur', () => {
 globalThis.addEventListener('focus', () => resetPose(0));
 
 mascot.addEventListener('click', () => {
-  setMood('surprised', 1450, { lock: true });
+  setMood('excited', 1250, { lock: true });
   liftBrows(780);
   createPing();
   mascot.animate(
@@ -255,8 +263,13 @@ mascot.addEventListener('click', () => {
   );
 });
 
-mascot.addEventListener('pointerenter', () => setMood('happy'));
+mascot.addEventListener('pointerenter', () => setMood('gentle'));
 mascot.addEventListener('pointerleave', () => setMood('curious', 250));
+
+document.querySelectorAll('.button, .nav-links a').forEach((interactiveElement) => {
+  interactiveElement.addEventListener('pointerenter', () => showSellerCue());
+  interactiveElement.addEventListener('focus', () => showSellerCue());
+});
 
 setMood('curious');
 blink();

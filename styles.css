@@ -139,6 +139,7 @@ a {
   --mouth-scale: 1;
   --mouth-open-scale-x: 0.72;
   --mouth-open-scale-y: 0.38;
+  --mouth-pad-opacity: 0.88;
   --mouth-smile-opacity: 1;
   --mouth-open-opacity: 0;
   --mouth-flat-opacity: 0;
@@ -185,6 +186,7 @@ a {
 .svg-arm,
 .svg-brow,
 .svg-mouth,
+.svg-mouth-pad,
 .svg-mouth-core,
 .svg-mouth-shine,
 .svg-detail,
@@ -355,6 +357,19 @@ a {
   opacity: var(--mouth-smile-opacity);
 }
 
+.svg-mouth-pad {
+  fill: #ffffff;
+  stroke: var(--ink);
+  stroke-width: 2.8;
+  opacity: var(--mouth-pad-opacity);
+  transform: translateY(var(--mouth-y)) scaleX(var(--mouth-scale));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 190ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .svg-mouth.ajar {
   fill: #ffffff;
   opacity: var(--mouth-ajar-opacity);
@@ -430,8 +445,9 @@ a {
 
 .binocle[data-mood="happy"] {
   --face-fill: #fff7bd;
-  --mouth-y: -1px;
+  --mouth-y: -2px;
   --mouth-scale: 1.12;
+  --mouth-pad-opacity: 0.96;
   --mouth-ajar-opacity: 0.16;
   --mouth-open-scale-x: 0.9;
   --mouth-open-scale-y: 0.55;
@@ -447,8 +463,9 @@ a {
 
 .binocle[data-mood="close"] {
   --face-fill: #eef7ff;
-  --mouth-y: -2px;
+  --mouth-y: -3px;
   --mouth-scale: 1.24;
+  --mouth-pad-opacity: 1;
   --mouth-open-scale-x: 1.04;
   --mouth-open-scale-y: 0.82;
   --mouth-smile-opacity: 0.26;
@@ -466,8 +483,9 @@ a {
 
 .binocle[data-mood="surprised"] {
   --face-fill: #ffe9e2;
-  --mouth-y: -2px;
+  --mouth-y: -7px;
   --mouth-scale: 1;
+  --mouth-pad-opacity: 1;
   --mouth-open-scale-x: 1.32;
   --mouth-open-scale-y: 1.64;
   --mouth-smile-opacity: 0;
@@ -478,6 +496,48 @@ a {
   --brow-right: 12deg;
 }
 
+.binocle[data-mood="excited"] {
+  --face-fill: #fff2a8;
+  --mouth-y: -5px;
+  --mouth-scale: 1.14;
+  --mouth-pad-opacity: 1;
+  --mouth-open-scale-x: 1.08;
+  --mouth-open-scale-y: 1.08;
+  --mouth-smile-opacity: 0.18;
+  --mouth-ajar-opacity: 0;
+  --mouth-open-opacity: 0.88;
+  --brow-y: -5px;
+  --brow-left: -8deg;
+  --brow-right: 8deg;
+  --wave-left: 6deg;
+  --wave-right: -9deg;
+}
+
+.binocle[data-mood="seller"] {
+  --face-fill: #eef7ff;
+  --mouth-y: -3px;
+  --mouth-scale: 1.18;
+  --mouth-pad-opacity: 1;
+  --mouth-smile-opacity: 0.9;
+  --mouth-ajar-opacity: 0.34;
+  --brow-y: -3px;
+  --brow-left: -2deg;
+  --brow-right: 5deg;
+  --wave-right: -20deg;
+}
+
+.binocle[data-mood="gentle"] {
+  --face-fill: #f4f4f4;
+  --mouth-y: -1px;
+  --mouth-scale: 1.06;
+  --mouth-pad-opacity: 0.95;
+  --mouth-smile-opacity: 1;
+  --mouth-ajar-opacity: 0.1;
+  --brow-y: 0px;
+  --brow-left: 2deg;
+  --brow-right: -2deg;
+}
+
 .binocle[data-mood="surprised"] .svg-shell,
 .binocle[data-mood="surprised"] .svg-barrel {
   fill: #fff1ed;
@@ -485,8 +545,9 @@ a {
 
 .binocle[data-mood="thinking"] {
   --face-fill: #f4f4f4;
-  --mouth-y: 0px;
+  --mouth-y: -2px;
   --mouth-scale: 0.82;
+  --mouth-pad-opacity: 0.82;
   --mouth-smile-opacity: 0;
   --mouth-ajar-opacity: 0;
   --mouth-flat-opacity: 1;
@@ -497,7 +558,7 @@ a {
 
 .binocle[data-mood="listening"] {
   --face-fill: #e9f7ee;
-  --mouth-y: -1px;
+  --mouth-y: -3px;
   --mouth-open-scale-x: 0.92;
   --mouth-open-scale-y: 0.7;
   --mouth-smile-opacity: 0;
@@ -512,7 +573,7 @@ a {
   --face-fill: #f1f1f1;
   --wave-right: -30deg;
   --wave-left: 5deg;
-  --mouth-y: -1px;
+  --mouth-y: -3px;
   --mouth-scale: 1.04;
   --mouth-smile-opacity: 0;
   --mouth-ajar-opacity: 0;
