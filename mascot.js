@@ -1,36 +1,35 @@
 const anchor = document.querySelector('#mascot-anchor');
+const reduceMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const mascot = document.createElement('button');
 mascot.className = 'binocle';
 mascot.type = 'button';
 mascot.dataset.mood = 'curious';
-mascot.setAttribute('aria-label', 'Binocle, mascotte SVG vivante et expressive');
+mascot.setAttribute('aria-label', 'Open the Prismatica mascot portal');
 mascot.innerHTML = `
   <svg class="binocle__svg" viewBox="0 0 184 118" role="img" aria-labelledby="binocle-title binocle-desc">
-    <title id="binocle-title">Binocle</title>
-    <desc id="binocle-desc">Mascotte en forme de jumelles scribble, avec grandes pupilles, bouche expressive et petites mains.</desc>
+    <title id="binocle-title">Prismatica mascot</title>
+    <desc id="binocle-desc">Living binocular mascot with tracking pupils, expressive brows and an animated mouth.</desc>
     <defs>
-      <filter id="handDrawn" x="-10%" y="-10%" width="120%" height="120%">
-        <feTurbulence id="mascotTurbulence" baseFrequency="0.028" numOctaves="2" seed="14" type="fractalNoise" />
-        <feDisplacementMap in="SourceGraphic" scale="1.4" />
+      <filter id="handDrawn" x="-12%" y="-12%" width="124%" height="124%">
+        <feTurbulence id="mascotTurbulence" baseFrequency="0.028 0.07" numOctaves="3" seed="14" type="fractalNoise" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.6" xChannelSelector="R" yChannelSelector="G" />
+        <feBlend in="SourceGraphic" in2="noise" mode="multiply" />
       </filter>
     </defs>
-
-    <g class="svg-body-group" filter="url(#handDrawn)">
+    <g class="svg-body-group" filter="url(#handDrawn) url(#pencil-texture)">
       <path class="svg-arm left" d="M49 31 C39 18, 25 18, 19 32" />
       <path class="svg-arm right" d="M135 31 C147 18, 161 19, 166 33" />
-
       <g class="svg-volume">
         <path class="svg-shell left" d="M15 34 C26 20, 51 16, 69 27 C80 34, 87 48, 86 62 C85 78, 73 90, 55 94 C34 98, 14 90, 7 75 C1 61, 4 45, 15 34Z" />
         <path class="svg-shell right" d="M115 27 C134 16, 158 20, 169 34 C180 49, 183 65, 177 78 C170 92, 150 98, 129 94 C111 90, 99 78, 98 62 C97 48, 104 34, 115 27Z" />
         <ellipse class="svg-back" cx="51" cy="61" rx="39" ry="34" />
         <ellipse class="svg-back" cx="145" cy="61" rx="39" ry="34" />
       </g>
-
       <path class="svg-barrel left" d="M20 39 C29 28, 47 25, 62 32 C50 29, 33 32, 24 43 C16 54, 16 67, 24 77 C12 69, 9 51, 20 39Z" />
       <path class="svg-barrel right" d="M122 32 C136 25, 154 28, 164 39 C175 51, 172 69, 160 77 C168 67, 168 54, 160 43 C151 32, 134 29, 122 32Z" />
-      <ellipse class="svg-frame" cx="43" cy="57" rx="39" ry="34" />
-      <ellipse class="svg-frame" cx="141" cy="57" rx="39" ry="34" />
+      <ellipse class="svg-frame left-frame" cx="43" cy="57" rx="39" ry="34" />
+      <ellipse class="svg-frame right-frame" cx="141" cy="57" rx="39" ry="34" />
       <ellipse class="svg-inner-rim" cx="43" cy="57" rx="28" ry="24" />
       <ellipse class="svg-inner-rim" cx="141" cy="57" rx="28" ry="24" />
       <ellipse class="svg-rim" cx="38" cy="53" rx="24" ry="20" />
@@ -39,26 +38,16 @@ mascot.innerHTML = `
       <path class="svg-center-band" d="M86 67 C90 71, 95 71, 99 67" />
       <path class="svg-bridge-shadow" d="M99 62 C103 54, 110 54, 114 62" />
       <path class="svg-bridge" d="M80 61 C84 51, 91 48, 97 52 C101 55, 104 59, 108 62 C110 63, 112 63, 114 62" />
-
       <path class="svg-detail" d="M16 55 C20 34, 36 24, 56 28" />
       <path class="svg-detail" d="M19 62 C21 76, 35 86, 52 85" />
       <path class="svg-detail" d="M118 28 C139 23, 158 34, 164 55" />
       <path class="svg-detail" d="M162 63 C159 78, 145 86, 129 84" />
       <path class="svg-stitch" d="M28 80 C40 86, 57 85, 67 77" />
       <path class="svg-stitch" d="M123 77 C134 86, 152 85, 162 78" />
-
       <path class="svg-brow left" d="M22 20 C34 14, 54 14, 66 21" />
       <path class="svg-brow right" d="M118 21 C130 14, 151 14, 163 20" />
-
-      <g class="svg-eye left">
-        <circle class="svg-pupil" cx="43" cy="57" r="11.4" />
-        <circle class="svg-pupil-shine" cx="38.8" cy="52.8" r="2.7" />
-      </g>
-      <g class="svg-eye right">
-        <circle class="svg-pupil" cx="141" cy="57" r="11.4" />
-        <circle class="svg-pupil-shine" cx="136.8" cy="52.8" r="2.7" />
-      </g>
-
+      <g class="svg-eye left"><circle class="svg-pupil" cx="43" cy="57" r="11.4" /><circle class="svg-pupil-shine" cx="38.8" cy="52.8" r="2.7" /></g>
+      <g class="svg-eye right"><circle class="svg-pupil" cx="141" cy="57" r="11.4" /><circle class="svg-pupil-shine" cx="136.8" cy="52.8" r="2.7" /></g>
       <ellipse class="svg-mouth-pad" cx="92" cy="96" rx="23" ry="15" />
       <path class="svg-mouth smile" d="M76 93 C83 105, 101 105, 108 93" />
       <path class="svg-mouth ajar" d="M78 94 C84 102, 100 102, 106 94 C101 99, 84 99, 78 94Z" />
@@ -70,7 +59,7 @@ mascot.innerHTML = `
     </g>
   </svg>
 `;
-anchor.append(mascot);
+anchor?.append(mascot);
 
 const state = {
   targetX: 0,
@@ -82,12 +71,12 @@ const state = {
   idleMoodShown: false,
   lastScrollMood: 0,
   moodTimer: null,
+  portalOpen: false,
 };
 
-
-const prefersReducedMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const mascotTurbulence = mascot.querySelector('#mascotTurbulence');
+const turbulence = mascot.querySelector('#mascotTurbulence');
 let shimmerTimer;
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -112,12 +101,23 @@ function liftBrows(duration = 680) {
   globalThis.setTimeout(() => mascot.classList.remove('is-brow-pop'), duration);
 }
 
+function createPing() {
+  const ping = document.createElement('span');
+  ping.className = 'binocle__ping';
+  ping.style.left = `${48 + Math.random() * 32}%`;
+  ping.style.top = `${30 + Math.random() * 30}%`;
+  mascot.append(ping);
+  ping.addEventListener('animationend', () => ping.remove(), { once: true });
+}
+
 function showSellerCue(duration = 1150) {
   setMood('seller', duration, { lock: true });
   liftBrows(520);
 }
 
 function updateTarget(pointerX, pointerY) {
+  if (state.portalOpen) return;
+
   const rect = mascot.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
@@ -138,29 +138,21 @@ function updateTarget(pointerX, pointerY) {
   mascot.style.setProperty('--depth-x', `${5 - clamp(dx / 85, -4, 4)}px`);
   mascot.style.setProperty('--depth-y', `${4 - clamp(dy / 95, -3, 4)}px`);
 
-  if (Date.now() < state.lockedUntil) {
-    return;
-  }
+  if (Date.now() < state.lockedUntil) return;
 
-  if (distance < 92) {
-    setMood('close');
-  } else if (distance < 170) {
-    setMood('gentle');
-  } else if (distance < 280) {
-    setMood('happy');
-  } else if (mascot.dataset.mood !== 'bye') {
-    setMood('curious');
-  }
+  if (distance < 92) setMood('close');
+  else if (distance < 170) setMood('gentle');
+  else if (distance < 280) setMood('happy');
+  else if (mascot.dataset.mood !== 'bye') setMood('curious');
 }
 
 function animateEyes() {
   state.eyeX += (state.targetX - state.eyeX) * 0.075;
   state.eyeY += (state.targetY - state.eyeY) * 0.075;
-
   mascot.style.setProperty('--look-x', `${state.eyeX.toFixed(2)}px`);
   mascot.style.setProperty('--look-y', `${state.eyeY.toFixed(2)}px`);
 
-  if (Date.now() - state.lastMove > 3600 && mascot.dataset.mood !== 'bye') {
+  if (Date.now() - state.lastMove > 3600 && mascot.dataset.mood !== 'bye' && !state.portalOpen) {
     state.targetX = Math.sin(Date.now() / 1200) * 2.2;
     state.targetY = Math.cos(Date.now() / 1450) * 1.4;
     mascot.style.setProperty('--tilt', '0deg');
@@ -173,7 +165,7 @@ function animateEyes() {
     mascot.style.setProperty('--depth-y', '4px');
   }
 
-  if (Date.now() - state.lastMove > 6200 && !state.idleMoodShown && Date.now() > state.lockedUntil) {
+  if (Date.now() - state.lastMove > 6200 && !state.idleMoodShown && Date.now() > state.lockedUntil && !state.portalOpen) {
     state.idleMoodShown = true;
     setMood('thinking', 1900, { lock: true });
     liftBrows();
@@ -192,224 +184,299 @@ function resetPose(delay = 900) {
   globalThis.setTimeout(() => {
     state.targetX = 0;
     state.targetY = 0;
-    mascot.style.setProperty('--tilt', '0deg');
-    mascot.style.setProperty('--lean-x', '0deg');
-    mascot.style.setProperty('--lean-y', '0deg');
+    ['--tilt', '--lean-x', '--lean-y', '--body-roll'].forEach((name) => mascot.style.setProperty(name, '0deg'));
     mascot.style.setProperty('--body-x', '0px');
     mascot.style.setProperty('--body-y', '0px');
-    mascot.style.setProperty('--body-roll', '0deg');
     mascot.style.setProperty('--depth-x', '5px');
     mascot.style.setProperty('--depth-y', '4px');
-    if (mascot.dataset.mood === 'bye') {
-      setMood('curious');
-    }
+    if (mascot.dataset.mood === 'bye') setMood('curious');
   }, delay);
 }
 
-function createPing() {
-  const ping = document.createElement('span');
-  ping.className = 'binocle__ping';
-  ping.style.left = `${52 + Math.random() * 26}%`;
-  ping.style.top = `${34 + Math.random() * 24}%`;
-  mascot.append(ping);
-  ping.addEventListener('animationend', () => ping.remove(), { once: true });
-}
-
-function drawGrain(context, width, height, intensity = 18) {
-  const image = context.createImageData(width, height);
-  const data = image.data;
-
-  for (let index = 0; index < data.length; index += 4) {
-    const shade = 228 + Math.random() * 24;
-    const alpha = Math.random() * intensity;
-
-    data[index] = shade;
-    data[index + 1] = shade - 6;
-    data[index + 2] = shade - 18;
-    data[index + 3] = alpha;
-  }
-
-  context.putImageData(image, 0, 0);
-}
-
-function setupPaperGrain() {
-  const canvas = document.querySelector('#paper-grain');
-
-  if (!canvas) {
-    return;
-  }
-
-  const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
-  let resizeTimer;
-
-  if (!context) {
-    return;
-  }
-
-  const render = () => {
-    const ratio = Math.min(globalThis.devicePixelRatio || 1, 2);
-    const width = Math.ceil(globalThis.innerWidth * ratio);
-    const height = Math.ceil(globalThis.innerHeight * ratio);
-
-    canvas.width = width;
-    canvas.height = height;
-    drawGrain(context, width, height, prefersReducedMotion ? 10 : 18);
-  };
-
-  render();
-  globalThis.addEventListener(
-    'resize',
-    () => {
-      globalThis.clearTimeout(resizeTimer);
-      resizeTimer = globalThis.setTimeout(render, 160);
-    },
-    { passive: true }
-  );
-}
-
-function startSketchShimmer() {
-  if (prefersReducedMotion || shimmerTimer || !mascotTurbulence) {
-    return;
-  }
-
-  let seed = Number(mascotTurbulence.getAttribute('seed')) || 14;
+function startShimmer() {
+  if (reduceMotion || shimmerTimer || !turbulence) return;
+  let seed = Number(turbulence.getAttribute('seed')) || 14;
   shimmerTimer = globalThis.setInterval(() => {
-    seed = seed >= 32 ? 14 : seed + 1;
-    mascotTurbulence.setAttribute('seed', String(seed));
+    seed = seed >= 34 ? 14 : seed + 1;
+    turbulence.setAttribute('seed', String(seed));
   }, 120);
 }
 
-function stopSketchShimmer() {
+function stopShimmer() {
   globalThis.clearInterval(shimmerTimer);
   shimmerTimer = undefined;
-
-  if (mascotTurbulence) {
-    mascotTurbulence.setAttribute('seed', '14');
-  }
+  turbulence?.setAttribute('seed', '14');
 }
 
-function getGuideMascotMarkup(kind) {
-  const scenes = {
-    curious: {
-      className: 'reader',
-      accent: '#fff3b8',
-      prop: `
-        <path class="person-book" d="M54 102 L94 92 L98 134 L57 145Z" />
-        <path class="person-book" d="M98 92 L138 103 L132 146 L98 134Z" />
-        <path class="person-detail" d="M68 110 L88 105 M68 121 L91 115 M110 108 L128 113 M109 120 L126 124" />
-      `,
-      body: 'M78 86 C86 77, 111 77, 119 87 C124 112, 122 136, 112 158 C101 166, 79 163, 68 154 C70 130, 72 108, 78 86Z',
-      arms: `
-        <path class="person-limb" d="M78 101 C65 104, 58 115, 56 132" />
-        <path class="person-limb" d="M119 101 C130 109, 132 122, 128 137" />
-      `,
-      legs: `
-        <path class="person-leg" d="M84 156 C78 171, 76 186, 67 203" />
-        <path class="person-leg" d="M106 157 C112 173, 120 185, 133 199" />
-      `,
-      eyes: '<path class="person-eye-line" d="M84 59 L91 59" /><path class="person-eye-line" d="M105 59 L112 59" />',
-      mouth: 'M88 70 C94 75, 103 75, 109 70',
-    },
-    light: {
-      className: 'student',
-      accent: '#eaf4ee',
-      prop: `
-        <path class="person-laptop" d="M47 128 L141 128 L154 154 L34 154Z" />
-        <path class="person-detail" d="M72 140 L117 140" />
-        <path class="person-note" d="M128 42 L159 34 L163 68 L132 77Z" />
-        <path class="person-detail" d="M137 49 L154 45 M138 57 L155 53 M140 65 L153 62" />
-        <path class="person-sparkle" d="M116 35 L116 48 M109 42 L123 42" />
-      `,
-      body: 'M77 87 C86 75, 111 75, 120 88 C126 110, 123 137, 111 158 C100 165, 78 162, 66 153 C69 128, 72 107, 77 87Z',
-      arms: `
-        <path class="person-limb" d="M75 103 C61 112, 60 127, 72 138" />
-        <path class="person-limb" d="M121 103 C135 111, 135 126, 122 137" />
-      `,
-      legs: `
-        <path class="person-leg" d="M84 156 C81 172, 81 187, 76 203" />
-        <path class="person-leg" d="M107 156 C115 172, 121 186, 132 202" />
-      `,
-      eyes: '<circle class="person-eye" cx="87" cy="59" r="3.2" /><circle class="person-eye" cx="109" cy="59" r="3.2" />',
-      mouth: 'M84 68 C90 65, 97 65, 102 68',
-    },
-    seller: {
-      className: 'chatter',
-      accent: '#edf3ff',
-      prop: `
-        <path class="person-bubble" d="M120 28 C149 16, 173 29, 169 50 C166 68, 139 71, 122 60 L107 68 L113 54 C104 44, 106 33, 120 28Z" />
-        <path class="person-detail" d="M129 42 L153 42 M132 52 L148 52" />
-      `,
-      body: 'M77 87 C87 76, 112 78, 121 91 C124 116, 120 139, 109 158 C96 165, 76 160, 66 148 C68 124, 71 104, 77 87Z',
-      arms: `
-        <path class="person-limb" d="M76 101 C61 104, 51 97, 45 86" />
-        <path class="person-limb" d="M121 101 C136 96, 144 84, 148 72" />
-      `,
-      legs: `
-        <path class="person-leg" d="M83 156 C75 170, 66 183, 54 197" />
-        <path class="person-leg" d="M106 156 C114 172, 126 183, 141 194" />
-      `,
-      eyes: '<path class="person-eye-line" d="M83 59 L91 59" /><path class="person-eye-line" d="M106 59 L114 59" />',
-      mouth: 'M84 70 C91 78, 103 78, 110 70',
-    },
-  };
-  const scene = scenes[kind] ?? scenes.curious;
+function renderPaperGrain(canvas) {
+  const ctx = canvas?.getContext('2d', { willReadFrequently: false });
+  if (!ctx) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const img = ctx.createImageData(canvas.width, canvas.height);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const n = (Math.random() - 0.48) * 22;
+    img.data[i] = 128 + n;
+    img.data[i + 1] = 128 + n;
+    img.data[i + 2] = 128 + n;
+    img.data[i + 3] = Math.random() * 12 + 3;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function animateSketchPaths() {
+  if (reduceMotion) return;
+  document.querySelectorAll('.sketch-bg path, .sketch-bg circle').forEach((shape, index) => {
+    try {
+      const len = shape.getTotalLength();
+      shape.style.strokeDasharray = len;
+      shape.style.strokeDashoffset = len;
+      shape.style.animation = `draw-in ${1.8 + Math.random() * 3}s cubic-bezier(0.25, 0, 0.3, 1) ${index * 0.12 + Math.random() * 0.8}s forwards`;
+    } catch {
+      // Some SVG elements may not expose length consistently in older browsers.
+    }
+  });
+}
+
+function characterMarkup(type) {
+  const common = `filter="url(#roughen)"`;
+  if (type === 'student') {
+    return `
+      <svg class="character-svg student-svg" viewBox="0 0 190 220" aria-hidden="true">
+        <g ${common}>
+          <g class="bulb"><circle cx="126" cy="18" r="12" /><path d="M120 18 C124 11, 130 13, 132 18 M121 31 L132 31 M123 36 L130 36" /></g>
+          <path class="limb" d="M83 145 C79 164, 78 181, 75 196" /><path class="limb" d="M108 145 C116 163, 121 181, 124 196" />
+          <ellipse cx="73" cy="199" rx="11" ry="4" /><ellipse cx="126" cy="199" rx="11" ry="4" />
+          <g transform="rotate(4 95 112)"><path class="body" d="M70 80 C82 75, 109 75, 120 82 C124 103, 123 129, 118 145 C103 151, 84 150, 70 144 C66 123, 66 99, 70 80Z" /></g>
+          <path class="limb" d="M73 87 C55 76, 49 58, 53 43 C55 37, 59 34, 63 31" /><path d="M61 31 L64 21" />
+          <path class="limb" d="M117 88 C130 99, 133 116, 127 130" />
+          <path class="note" d="M121 120 C134 117, 146 120, 151 126 C150 139, 147 150, 142 156 C128 158, 118 154, 113 148 C113 136, 116 126, 121 120Z" />
+          <path d="M123 131 L144 132 M122 139 L143 141 M121 147 L137 149" />
+          <path d="M88 72 C92 78, 101 78, 105 72 L105 82 C100 86, 92 86, 87 82Z" />
+          <ellipse cx="95" cy="44" rx="17.5" ry="19" />
+          <path class="hair" d="M78 38 L86 24 L91 34 L99 23 L103 35 L113 29 L110 47 C100 38, 91 35, 78 38Z" />
+          <circle class="eye-fill" cx="89" cy="45" r="2.8" /><circle class="eye-fill" cx="102" cy="45" r="2.8" />
+          <path d="M88 56 C93 59, 99 59, 104 55" />
+        </g>
+      </svg>`;
+  }
+
+  if (type === 'chatter') {
+    return `
+      <svg class="character-svg chatter-svg" viewBox="0 0 190 220" aria-hidden="true">
+        <g ${common}>
+          <path class="bubble" d="M119 20 C150 10, 174 23, 169 49 C166 67, 139 70, 124 59 L108 68 L114 53 C105 43, 106 27, 119 20Z" />
+          <path d="M130 39 L155 39 M131 49 L149 49" />
+          <path class="limb" d="M82 145 C77 162, 73 180, 69 196" /><path class="limb" d="M108 145 C116 163, 122 180, 128 196" />
+          <ellipse cx="67" cy="199" rx="11" ry="4" /><ellipse cx="131" cy="199" rx="11" ry="4" />
+          <path class="body" d="M70 80 C83 75, 108 75, 120 82 C124 104, 123 128, 118 145 C103 151, 84 150, 70 144 C66 123, 66 99, 70 80Z" />
+          <path class="limb" d="M73 88 C55 96, 49 111, 47 126" /><ellipse cx="46" cy="130" rx="5" ry="4" />
+          <path class="limb" d="M117 86 C133 75, 139 58, 135 42" /><ellipse cx="134" cy="37" rx="5" ry="4" />
+          <path d="M88 72 C92 78, 101 78, 105 72 L105 82 C100 86, 92 86, 87 82Z" />
+          <ellipse cx="95" cy="44" rx="17.5" ry="19" />
+          <path class="hair" d="M78 36 C83 25, 101 20, 113 34 C103 32, 90 34, 78 36Z" />
+          <path d="M85 45 C88 42, 91 42, 94 45 M99 45 C102 42, 105 42, 108 45" />
+          <path d="M86 56 C92 64, 102 64, 109 56" />
+          <circle class="cheek-fill" cx="82" cy="52" r="2" opacity="0.3" /><circle class="cheek-fill" cx="110" cy="52" r="2" opacity="0.3" />
+        </g>
+      </svg>`;
+  }
 
   return `
-    <div class="guide-binocle guide-person ${scene.className}">
-      <svg viewBox="0 0 190 220" aria-hidden="true">
-        <g filter="url(#handDrawn)">
-          ${scene.prop}
-          ${scene.legs}
-          <path class="person-shoe" d="M55 203 C64 197, 75 198, 82 205" />
-          <path class="person-shoe" d="M124 202 C134 196, 145 197, 152 204" />
-          <path class="person-body" d="${scene.body}" fill="${scene.accent}" />
-          ${scene.arms}
-          <path class="person-neck" d="M88 82 C92 86, 101 86, 105 82 L106 95 C101 99, 91 99, 86 95Z" />
-          <ellipse class="person-head" cx="97" cy="59" rx="31" ry="34" />
-          <path class="person-hair" d="M67 51 C72 30, 91 20, 111 28 C125 34, 132 49, 126 62 C114 50, 94 42, 67 51Z" />
-          ${scene.eyes}
-          <path class="person-mouth" d="${scene.mouth}" />
-          <path class="person-detail" d="M82 88 C90 94, 103 94, 112 88" />
+    <svg class="character-svg reader-svg" viewBox="0 0 190 220" aria-hidden="true">
+      <g ${common}>
+        <path class="limb" d="M82 145 C70 160, 62 177, 55 194" /><path class="limb" d="M108 145 C121 159, 131 176, 139 194" />
+        <ellipse cx="53" cy="198" rx="11" ry="4" /><ellipse cx="141" cy="198" rx="11" ry="4" />
+        <g transform="rotate(-8 95 112)"><path class="body" d="M70 80 C82 75, 109 75, 120 82 C124 103, 123 129, 118 145 C103 151, 84 150, 70 144 C66 123, 66 99, 70 80Z" /></g>
+        <path class="limb" d="M73 88 C61 98, 57 113, 61 127" /><path class="limb" d="M117 88 C129 98, 133 113, 129 127" />
+        <path class="book" d="M52 111 C70 104, 85 106, 96 116 L95 158 C82 149, 67 147, 51 153Z" />
+        <path class="book" d="M96 116 C110 106, 127 104, 143 111 L144 153 C127 147, 111 149, 95 158Z" />
+        <path d="M96 116 L95 158 M65 122 L86 126 M65 133 L88 137 M109 126 L132 122 M107 137 L132 134" />
+        <ellipse cx="60" cy="127" rx="5" ry="4" /><ellipse cx="130" cy="127" rx="5" ry="4" />
+        <path d="M88 72 C92 78, 101 78, 105 72 L105 82 C100 86, 92 86, 87 82Z" />
+        <g transform="rotate(12 95 44)">
+          <ellipse cx="95" cy="44" rx="17.5" ry="19" />
+          <path class="hair" d="M78 39 C82 28, 100 22, 113 35 C102 34, 91 36, 78 39Z" />
+          <ellipse cx="88" cy="45" rx="5" ry="4" /><ellipse cx="103" cy="45" rx="5" ry="4" /><path d="M93 45 L98 45" />
+          <path d="M84 47 C87 44, 90 44, 93 47 M99 47 C102 44, 105 44, 108 47" />
+          <path d="M88 57 C93 61, 100 61, 105 57" />
         </g>
-      </svg>
-    </div>
-  `;
+      </g>
+    </svg>`;
 }
 
-document.querySelectorAll('[data-guide-mascot]').forEach((guideMascot) => {
-  guideMascot.innerHTML = getGuideMascotMarkup(guideMascot.dataset.guideMascot);
-});
+function portalCardSvg(type) {
+  if (type === 'universe') {
+    return `<svg viewBox="0 0 120 90" aria-hidden="true"><circle cx="23" cy="45" r="6" /><circle cx="54" cy="27" r="5" /><circle cx="75" cy="57" r="5" /><circle cx="96" cy="30" r="5" /><path d="M29 43 L50 30 M29 47 L70 56 M59 28 L91 31 M80 55 L97 34" /><text x="16" y="72">note → universe</text></svg>`;
+  }
+  if (type === 'team') {
+    return `<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M18 20 L30 58 L38 44 L55 61" /><path d="M55 18 L66 55 L75 42 L92 59" /><path d="M83 12 L94 49 L103 36 L115 51" /><path d="M22 70 L100 70 M32 32 L72 32 M32 43 L88 43" /><text x="16" y="14">Ana</text><text x="57" y="14">Bo</text><text x="82" y="10">Cy</text></svg>`;
+  }
+  return `<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M16 12 C47 8, 86 9, 104 14 C108 36, 106 62, 102 76 C72 82, 42 80, 17 76 C12 54, 12 31, 16 12Z" /><path d="M28 25 L56 25 L56 45 L28 45Z M65 25 L93 25 L93 45 L65 45Z M28 52 L56 52 L56 69 L28 69Z M65 52 L93 52 L93 69 L65 69Z" /><path d="M34 39 C39 31, 45 41, 50 30 M72 37 L87 37 M72 61 L86 61" /></svg>`;
+}
 
-const guideObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      entry.target.classList.toggle('is-lit', entry.isIntersecting);
-    });
-  },
-  { threshold: 0.45 }
-);
+function createPortalMarkup() {
+  return `
+    <div id="portal" class="portal" aria-modal="true" role="dialog" aria-label="Prismatica portal">
+      <div class="portal__lens-left">
+        <div class="portal-login-area">
+          <p class="portal-note">Do you know what's the common point between you and future celebrities?<br />You've both started right here 😄<svg viewBox="0 0 150 80" aria-hidden="true"><path d="M16 12 C48 18, 75 34, 101 62" marker-end="url(#arrow)" /></svg></p>
+          <form class="portal-login" novalidate>
+            <div class="field"><label for="portal-email">Email</label><input id="portal-email" type="email" placeholder="you@example.com" autocomplete="email" required /></div>
+            <div class="field"><label for="portal-password">Password</label><input id="portal-password" type="password" placeholder="············" autocomplete="current-password" required minlength="6" /></div>
+            <button type="submit" class="portal-cta">Enter Prismatica →</button>
+            <a class="portal-link" href="#top">Don't have an account? Create one</a>
+            <output class="portal-error" aria-live="polite"></output>
+          </form>
+        </div>
+        <svg class="night-desk" viewBox="0 0 100 80" aria-hidden="true"><path d="M29 34 C31 25, 45 25, 48 34 M42 34 C45 25, 59 25, 62 34 M55 34 C59 25, 71 25, 73 34" /><ellipse cx="51" cy="52" rx="24" ry="10" /><path d="M72 51 C87 47, 88 64, 72 62" /><path d="M19 67 C41 62, 66 65, 87 70 M25 73 C43 70, 64 72, 78 76" /></svg>
+      </div>
+      <div class="portal__lens-right">
+        <div class="portal-demo-area">
+          <div class="portal-brand"><svg viewBox="0 0 88 42" aria-hidden="true"><path d="M9 23 C12 9, 30 7, 42 18 C49 7, 70 8, 78 23 C84 36, 66 43, 51 34 C47 31, 45 27, 44 23 C42 31, 34 38, 23 38 C13 38, 5 32, 9 23Z" /><path d="M23 23 C28 17, 36 18, 39 24 M52 24 C56 17, 66 17, 70 24" /></svg><span>Prismatica</span></div>
+          <div class="portal-cards">
+            <article class="portal-card">${portalCardSvg('rules')}<h3>Your workspace, your rules</h3><p>A grid, a note, an app and a live dashboard can share the same page.</p></article>
+            <article class="portal-card">${portalCardSvg('universe')}<h3>From a note to a universe</h3><p>Start with one node, then grow into databases, apps and business views.</p></article>
+            <article class="portal-card">${portalCardSvg('team')}<h3>Invite your team, keep your sanity</h3><p>Multiple people can edit the same operational story without losing context.</p></article>
+          </div>
+          <p class="portal-quote">“The workspace that grows with you.”</p>
+          <a class="portal-discover" href="#powers">Discover all features ↓</a>
+        </div>
+      </div>
+      <div class="portal__mascot-shell"></div>
+      <button class="portal__close" type="button" aria-label="Close portal"><svg viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="21" /><path d="M19 19 L35 35 M35 19 L19 35" /></svg></button>
+    </div>`;
+}
 
-document.querySelectorAll('[data-guide-step]').forEach((step) => guideObserver.observe(step));
+function revealPortalLenses(portal, clone) {
+  const leftPanel = portal.querySelector('.portal__lens-left');
+  const rightPanel = portal.querySelector('.portal__lens-right');
+  const leftLens = clone.querySelector('.svg-eye.left .svg-pupil');
+  const rightLens = clone.querySelector('.svg-eye.right .svg-pupil');
 
-globalThis.addEventListener('pointermove', (event) => updateTarget(event.clientX, event.clientY), {
-  passive: true,
-});
+  const makeClip = (panel, lens, fallbackX) => {
+    const rect = lens?.getBoundingClientRect();
+    const cx = rect ? rect.left + rect.width / 2 : window.innerWidth * fallbackX;
+    const cy = rect ? rect.top + rect.height / 2 : window.innerHeight * 0.5;
+    const targetRadius = Math.max(window.innerWidth, window.innerHeight) * (window.innerWidth <= 768 ? 0.78 : 0.55);
+    panel.style.clipPath = `circle(0px at ${cx}px ${cy}px)`;
+    panel.animate(
+      [{ clipPath: `circle(0px at ${cx}px ${cy}px)` }, { clipPath: `circle(${targetRadius}px at ${cx}px ${cy}px)` }],
+      { duration: reduceMotion ? 300 : 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' }
+    );
+  };
 
-globalThis.addEventListener(
-  'scroll',
-  () => {
-    const now = Date.now();
+  makeClip(leftPanel, leftLens, 0.28);
+  makeClip(rightPanel, rightLens, 0.72);
+}
 
-    if (now - state.lastScrollMood > 900 && now > state.lockedUntil) {
-      state.lastScrollMood = now;
-      setMood('listening', 650, { lock: true });
-      liftBrows(520);
+function closePortal() {
+  const portal = document.querySelector('#portal');
+  if (!portal) return;
+  portal.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: 'ease-out', fill: 'forwards' }).addEventListener('finish', () => {
+    portal.remove();
+    document.body.classList.remove('portal-open');
+    state.portalOpen = false;
+    setMood('curious');
+    resetPose(0);
+  });
+}
+
+function openPortal() {
+  if (state.portalOpen) return;
+  state.portalOpen = true;
+  document.body.classList.add('portal-open');
+  setMood('excited', 600, { lock: true });
+  liftBrows();
+  [0, 120, 280].forEach((delay) => globalThis.setTimeout(createPing, delay));
+  mascot.animate(
+    [
+      { transform: 'translateX(0) rotate(0deg) scale(1)' },
+      { transform: 'translateX(-3px) rotate(-2deg) scale(1.04)' },
+      { transform: 'translateX(3px) rotate(2deg) scale(1.06)' },
+      { transform: 'translateX(-2px) rotate(-1deg) scale(1.08)' },
+      { transform: 'translateX(2px) rotate(1deg) scale(1.1)' },
+    ],
+    { duration: reduceMotion ? 300 : 600, easing: 'ease-in-out' }
+  );
+
+  const portalWrapper = document.createElement('div');
+  portalWrapper.innerHTML = createPortalMarkup();
+  const portal = portalWrapper.firstElementChild;
+  document.body.append(portal);
+
+  const clone = mascot.cloneNode(true);
+  clone.classList.add('portal-growing');
+  clone.dataset.mood = 'excited';
+  portal.querySelector('.portal__mascot-shell').append(clone);
+
+  const revealDelay = reduceMotion ? 320 : 1600;
+  globalThis.setTimeout(() => revealPortalLenses(portal, clone), revealDelay);
+
+  portal.querySelector('.portal__close').addEventListener('click', closePortal);
+  portal.querySelector('.portal-discover').addEventListener('click', closePortal);
+  portal.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closePortal();
+  });
+  portal.querySelector('.portal-login').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const output = form.querySelector('.portal-error');
+    const email = form.querySelector('input[type="email"]');
+    const password = form.querySelector('input[type="password"]');
+
+    if (!email.validity.valid) {
+      output.textContent = 'Write a valid email to enter the sketch.';
+      email.focus();
+      return;
     }
-  },
-  { passive: true }
-);
+    if (!password.validity.valid) {
+      output.textContent = 'Use at least 6 characters for the password.';
+      password.focus();
+      return;
+    }
+    output.textContent = 'Welcome sketch saved — demo login accepted.';
+    setMood('happy', 1100, { lock: true });
+  });
+  portal.querySelector('#portal-email')?.focus({ preventScroll: true });
+}
 
+document.querySelectorAll('[data-character]').forEach((slot) => {
+  slot.innerHTML = characterMarkup(slot.dataset.character);
+});
+
+document.querySelectorAll('[data-open-portal]').forEach((trigger) => {
+  trigger.addEventListener('click', openPortal);
+  trigger.addEventListener('pointerenter', () => setMood('excited', 450));
+  trigger.addEventListener('focus', () => setMood('excited', 450));
+});
+
+mascot.addEventListener('click', openPortal);
+mascot.addEventListener('pointerenter', () => {
+  setMood('gentle');
+  startShimmer();
+});
+mascot.addEventListener('pointerleave', () => {
+  setMood('curious', 250);
+  stopShimmer();
+});
+
+document.querySelectorAll('.button, .nav-links a, .header-cta').forEach((interactiveElement) => {
+  interactiveElement.addEventListener('pointerenter', () => showSellerCue());
+  interactiveElement.addEventListener('focus', () => showSellerCue());
+});
+
+globalThis.addEventListener('pointermove', (event) => updateTarget(event.clientX, event.clientY), { passive: true });
+globalThis.addEventListener('scroll', () => {
+  const now = Date.now();
+  if (now - state.lastScrollMood > 900 && now > state.lockedUntil && !state.portalOpen) {
+    state.lastScrollMood = now;
+    setMood('listening', 650, { lock: true });
+    liftBrows(520);
+  }
+}, { passive: true });
 globalThis.addEventListener('pointerleave', () => {
+  if (state.portalOpen) return;
   state.targetX = 0;
   state.targetY = -1.4;
   mascot.style.setProperty('--tilt', '0deg');
@@ -417,44 +484,20 @@ globalThis.addEventListener('pointerleave', () => {
   liftBrows(500);
   resetPose(1250);
 });
-
-globalThis.addEventListener('pointerenter', () => {
-  resetPose(0);
-});
-
+globalThis.addEventListener('pointerenter', () => resetPose(0));
 globalThis.addEventListener('blur', () => {
+  if (state.portalOpen) return;
   mascot.style.setProperty('--tilt', '0deg');
   setMood('bye', 1000, { lock: true });
   resetPose(1100);
 });
-
 globalThis.addEventListener('focus', () => resetPose(0));
 
-mascot.addEventListener('click', () => {
-  setMood('excited', 1250, { lock: true });
-  liftBrows(780);
-  createPing();
-  mascot.animate(
-    [
-      { transform: 'translateY(0) rotate(0deg) scale(1)' },
-      { transform: 'translateY(-6px) rotate(-4deg) scale(1.035)' },
-      { transform: 'translateY(0) rotate(2deg) scale(1)' },
-    ],
-    { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' }
-  );
-});
-
-mascot.addEventListener('pointerenter', () => setMood('gentle'));
-mascot.addEventListener('pointerenter', startSketchShimmer);
-mascot.addEventListener('pointerleave', () => setMood('curious', 250));
-mascot.addEventListener('pointerleave', stopSketchShimmer);
-
-document.querySelectorAll('.button, .nav-links a').forEach((interactiveElement) => {
-  interactiveElement.addEventListener('pointerenter', () => showSellerCue());
-  interactiveElement.addEventListener('focus', () => showSellerCue());
+document.addEventListener('DOMContentLoaded', () => {
+  renderPaperGrain(document.querySelector('#paper-grain'));
+  animateSketchPaths();
 });
 
 setMood('curious');
-setupPaperGrain();
 blink();
 animateEyes();
