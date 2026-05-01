@@ -4,29 +4,58 @@ const mascot = document.createElement('button');
 mascot.className = 'binocle';
 mascot.type = 'button';
 mascot.dataset.mood = 'curious';
-mascot.setAttribute('aria-label', 'Binocle, la mascotte vivante qui suit votre mouvement');
+mascot.setAttribute('aria-label', 'Binocle, mascotte SVG vivante et expressive');
 mascot.innerHTML = `
-  <span class="binocle__strap" aria-hidden="true"></span>
-  <span class="binocle__body" aria-hidden="true">
-    <span class="lens left">
-      <span class="brow"></span>
-      <span class="eye"><span class="pupil"></span></span>
-      <span class="cheek"></span>
-    </span>
-    <span class="binocle__bridge"></span>
-    <span class="lens right">
-      <span class="brow"></span>
-      <span class="eye"><span class="pupil"></span></span>
-      <span class="cheek"></span>
-    </span>
-    <span class="binocle__mouth"></span>
-  </span>
-  <span class="binocle__sparkle" aria-hidden="true"></span>
-  <span class="binocle__speech">Coucou, je te vois.</span>
+  <svg class="binocle__svg" viewBox="0 0 184 104" role="img" aria-labelledby="binocle-title binocle-desc">
+    <title id="binocle-title">Binocle</title>
+    <desc id="binocle-desc">Mascotte en forme de jumelles avec yeux griffonnés, sourcils et petites mains.</desc>
+    <defs>
+      <linearGradient id="brassGradient" x1="28" x2="154" y1="24" y2="86" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#fff2cb" />
+        <stop offset="0.48" stop-color="#dba04a" />
+        <stop offset="1" stop-color="#a9632c" />
+      </linearGradient>
+      <filter id="handDrawn" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence baseFrequency="0.021" numOctaves="2" seed="9" type="fractalNoise" />
+        <feDisplacementMap in="SourceGraphic" scale="0.8" />
+      </filter>
+    </defs>
+
+    <g filter="url(#handDrawn)">
+      <path class="svg-arm left" d="M62 30 C49 11, 33 12, 25 29" />
+      <path class="svg-arm right" d="M122 30 C137 10, 154 12, 160 29" />
+
+      <path class="svg-body" d="M12 58 C12 34, 27 22, 50 22 C74 22, 85 37, 88 55 C91 37, 103 22, 128 22 C151 22, 168 35, 169 58 C170 80, 154 92, 130 91 C108 90, 96 78, 92 65 C88 78, 76 90, 54 91 C29 92, 12 80, 12 58Z" />
+      <path class="svg-body" d="M80 56 C82 46, 88 42, 92 42 C97 42, 102 47, 104 56" fill="none" />
+      <path class="svg-lens-shine" d="M31 35 C43 28, 60 29, 68 40 C54 36, 44 37, 31 45Z" />
+      <path class="svg-lens-shine" d="M112 35 C125 28, 143 30, 151 42 C136 37, 126 37, 112 46Z" />
+
+      <path class="svg-scribble" d="M28 74 C39 83, 62 83, 73 71" />
+      <path class="svg-scribble" d="M113 74 C125 83, 147 82, 157 70" />
+      <path class="svg-scribble" d="M26 52 C31 36, 45 30, 62 35" />
+      <path class="svg-scribble" d="M111 53 C118 36, 135 30, 150 36" />
+
+      <path class="svg-brow left" d="M37 42 C45 36, 55 36, 63 42" />
+      <path class="svg-brow right" d="M120 42 C129 36, 140 36, 148 42" />
+
+      <g class="svg-eye left">
+        <path d="M43 55 C48 48, 58 49, 62 56 C57 63, 48 63, 43 55Z" />
+        <path d="M45 54 C50 60, 57 59, 61 55" />
+        <circle class="svg-pupil" cx="53" cy="55" r="3.4" />
+      </g>
+      <g class="svg-eye right">
+        <path d="M122 55 C128 48, 139 49, 143 56 C138 63, 128 63, 122 55Z" />
+        <path d="M124 54 C130 60, 138 59, 142 55" />
+        <circle class="svg-pupil" cx="133" cy="55" r="3.4" />
+      </g>
+
+      <path class="svg-mouth" d="M76 72 C83 79, 101 79, 108 72" />
+      <path class="svg-spark" d="M159 18 L159 28 M154 23 L164 23" />
+    </g>
+  </svg>
 `;
 anchor.append(mascot);
 
-const speech = mascot.querySelector('.binocle__speech');
 const state = {
   targetX: 0,
   targetY: 0,
@@ -34,15 +63,6 @@ const state = {
   eyeY: 0,
   lastMove: Date.now(),
   moodTimer: null,
-  speechTimer: null,
-};
-
-const messages = {
-  curious: 'Je regarde où tu vas.',
-  happy: 'Bienvenue dans la boutique.',
-  shy: 'Oh, tu es tout près.',
-  surprised: 'Pop! bien vu.',
-  bye: 'Au revoir, reviens vite.'
 };
 
 function clamp(value, min, max) {
@@ -50,22 +70,12 @@ function clamp(value, min, max) {
 }
 
 function setMood(mood, duration = 0) {
-  window.clearTimeout(state.moodTimer);
+  globalThis.clearTimeout(state.moodTimer);
   mascot.dataset.mood = mood;
-  speech.textContent = messages[mood] ?? messages.curious;
 
   if (duration) {
-    state.moodTimer = window.setTimeout(() => setMood('curious'), duration);
+    state.moodTimer = globalThis.setTimeout(() => setMood('curious'), duration);
   }
-}
-
-function say(message, duration = 1300) {
-  window.clearTimeout(state.speechTimer);
-  speech.textContent = message;
-  mascot.classList.add('is-speaking');
-  state.speechTimer = window.setTimeout(() => {
-    mascot.classList.remove('is-speaking');
-  }, duration);
 }
 
 function updateTarget(pointerX, pointerY) {
@@ -76,15 +86,13 @@ function updateTarget(pointerX, pointerY) {
   const dy = pointerY - centerY;
   const distance = Math.hypot(dx, dy);
 
-  state.targetX = clamp(dx / 16, -13, 13);
-  state.targetY = clamp(dy / 18, -9, 9);
+  state.targetX = clamp(dx / 42, -4.4, 4.4);
+  state.targetY = clamp(dy / 48, -3.2, 3.2);
   state.lastMove = Date.now();
+  mascot.style.setProperty('--tilt', `${clamp(dx / 120, -3.4, 3.4)}deg`);
 
-  mascot.style.setProperty('--tilt', `${clamp(dx / 42, -9, 9)}deg`);
-
-  if (distance < 115) {
-    setMood('shy');
-    say('Tu regardes mes verres?', 900);
+  if (distance < 118) {
+    setMood('close');
   } else if (distance < 280) {
     setMood('happy');
   } else if (mascot.dataset.mood !== 'bye') {
@@ -93,65 +101,87 @@ function updateTarget(pointerX, pointerY) {
 }
 
 function animateEyes() {
-  state.eyeX += (state.targetX - state.eyeX) * 0.18;
-  state.eyeY += (state.targetY - state.eyeY) * 0.18;
+  state.eyeX += (state.targetX - state.eyeX) * 0.14;
+  state.eyeY += (state.targetY - state.eyeY) * 0.14;
 
-  mascot.style.setProperty('--eye-x', `${state.eyeX.toFixed(2)}px`);
-  mascot.style.setProperty('--eye-y', `${state.eyeY.toFixed(2)}px`);
+  mascot.style.setProperty('--look-x', `${state.eyeX.toFixed(2)}px`);
+  mascot.style.setProperty('--look-y', `${state.eyeY.toFixed(2)}px`);
 
-  if (Date.now() - state.lastMove > 3800 && mascot.dataset.mood !== 'bye') {
-    state.targetX = Math.sin(Date.now() / 700) * 4;
-    state.targetY = Math.cos(Date.now() / 900) * 2;
+  if (Date.now() - state.lastMove > 3600 && mascot.dataset.mood !== 'bye') {
+    state.targetX = Math.sin(Date.now() / 1000) * 1.7;
+    state.targetY = Math.cos(Date.now() / 1200) * 1.1;
+    mascot.style.setProperty('--tilt', '0deg');
   }
 
   requestAnimationFrame(animateEyes);
 }
 
 function blink() {
-  mascot.style.setProperty('--blink', '0.12');
-  window.setTimeout(() => mascot.style.setProperty('--blink', '1'), 120);
-  window.setTimeout(blink, 2400 + Math.random() * 2600);
+  mascot.style.setProperty('--blink', '0.08');
+  globalThis.setTimeout(() => mascot.style.setProperty('--blink', '1'), 105);
+  globalThis.setTimeout(blink, 2600 + Math.random() * 3200);
 }
 
-window.addEventListener('pointermove', (event) => updateTarget(event.clientX, event.clientY), {
+function resetPose(delay = 900) {
+  globalThis.setTimeout(() => {
+    state.targetX = 0;
+    state.targetY = 0;
+    mascot.style.setProperty('--tilt', '0deg');
+    if (mascot.dataset.mood === 'bye') {
+      setMood('curious');
+    }
+  }, delay);
+}
+
+function createPing() {
+  const ping = document.createElement('span');
+  ping.className = 'binocle__ping';
+  ping.style.left = `${52 + Math.random() * 26}%`;
+  ping.style.top = `${34 + Math.random() * 24}%`;
+  mascot.append(ping);
+  ping.addEventListener('animationend', () => ping.remove(), { once: true });
+}
+
+globalThis.addEventListener('pointermove', (event) => updateTarget(event.clientX, event.clientY), {
   passive: true,
 });
 
-window.addEventListener('pointerleave', () => {
+globalThis.addEventListener('pointerleave', () => {
   state.targetX = 0;
-  state.targetY = -4;
-  setMood('bye', 2200);
-  say(messages.bye, 1800);
+  state.targetY = -1.4;
+  mascot.style.setProperty('--tilt', '0deg');
+  setMood('bye', 1200);
+  resetPose(1250);
 });
 
-window.addEventListener('blur', () => {
-  setMood('bye', 1800);
-  say('Je garde ta place.', 1500);
+globalThis.addEventListener('pointerenter', () => {
+  resetPose(0);
 });
+
+globalThis.addEventListener('blur', () => {
+  mascot.style.setProperty('--tilt', '0deg');
+  setMood('bye', 1000);
+  resetPose(1100);
+});
+
+globalThis.addEventListener('focus', () => resetPose(0));
 
 mascot.addEventListener('click', () => {
-  setMood('surprised', 1100);
-  say('Hé hé, ça chatouille!', 1100);
+  setMood('surprised', 900);
+  createPing();
   mascot.animate(
     [
       { transform: 'translateY(0) rotate(0deg) scale(1)' },
-      { transform: 'translateY(-8px) rotate(-7deg) scale(1.06)' },
-      { transform: 'translateY(0) rotate(5deg) scale(1)' },
+      { transform: 'translateY(-6px) rotate(-4deg) scale(1.035)' },
+      { transform: 'translateY(0) rotate(2deg) scale(1)' },
     ],
-    { duration: 420, easing: 'cubic-bezier(.34,1.56,.64,1)' }
+    { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' }
   );
 });
 
-mascot.addEventListener('pointerenter', () => {
-  setMood('happy');
-  say('Salut, explorateur.', 1000);
-});
-
-mascot.addEventListener('pointerleave', () => {
-  setMood('curious', 500);
-});
+mascot.addEventListener('pointerenter', () => setMood('happy'));
+mascot.addEventListener('pointerleave', () => setMood('curious', 250));
 
 setMood('curious');
-say('Coucou, je te vois.', 1500);
 blink();
 animateEyes();
