@@ -115,26 +115,33 @@ a {
 .mascot-anchor {
   position: relative;
   display: grid;
-  width: 196px;
-  height: 108px;
+  width: 184px;
+  height: 104px;
   place-items: center;
   justify-self: center;
 }
 
 .binocle {
+  --face-fill: #ffffff;
   --look-x: 0px;
   --look-y: 0px;
   --tilt: 0deg;
   --blink: 1;
   --mouth-y: 0px;
   --mouth-scale: 1;
+  --mouth-open-scale-x: 0.8;
+  --mouth-open-scale-y: 0.5;
+  --mouth-smile-opacity: 1;
+  --mouth-open-opacity: 0;
+  --mouth-flat-opacity: 0;
+  --brow-y: 0px;
   --brow-left: 0deg;
   --brow-right: 0deg;
   --wave-left: 0deg;
   --wave-right: 0deg;
   display: grid;
-  width: 190px;
-  height: 108px;
+  width: 178px;
+  height: 102px;
   padding: 0;
   border: 0;
   color: inherit;
@@ -169,11 +176,12 @@ a {
 }
 
 .svg-frame {
-  fill: #ffffff;
+  fill: var(--face-fill);
   stroke: var(--ink);
   stroke-width: 5.2;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: fill 220ms ease;
 }
 
 .svg-bridge,
@@ -223,13 +231,13 @@ a {
 }
 
 .svg-brow.left {
-  transform: rotate(var(--brow-left));
+  transform: translateY(var(--brow-y)) rotate(var(--brow-left));
   transform-box: fill-box;
   transform-origin: center;
 }
 
 .svg-brow.right {
-  transform: rotate(var(--brow-right));
+  transform: translateY(var(--brow-y)) rotate(var(--brow-right));
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -243,7 +251,24 @@ a {
   transform: translateY(var(--mouth-y)) scaleX(var(--mouth-scale));
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    opacity 160ms ease,
+    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.svg-mouth.smile {
+  opacity: var(--mouth-smile-opacity);
+}
+
+.svg-mouth.open {
+  fill: var(--ink);
+  opacity: var(--mouth-open-opacity);
+  stroke-width: 3.6;
+  transform: translateY(var(--mouth-y)) scale(var(--mouth-open-scale-x), var(--mouth-open-scale-y));
+}
+
+.svg-mouth.flat {
+  opacity: var(--mouth-flat-opacity);
 }
 
 .svg-arm {
@@ -280,31 +305,74 @@ a {
 }
 
 .binocle[data-mood="happy"] {
+  --face-fill: #fff7bd;
   --mouth-y: -1px;
   --mouth-scale: 1.12;
+  --mouth-open-scale-x: 0.9;
+  --mouth-open-scale-y: 0.55;
+  --brow-y: -2px;
   --brow-left: -4deg;
   --brow-right: 4deg;
 }
 
 .binocle[data-mood="close"] {
+  --face-fill: #eef7ff;
   --mouth-y: -2px;
   --mouth-scale: 1.24;
+  --mouth-open-scale-x: 1.12;
+  --mouth-open-scale-y: 0.74;
+  --mouth-smile-opacity: 0.38;
+  --mouth-open-opacity: 0.62;
+  --brow-y: -3px;
   --brow-left: 5deg;
   --brow-right: -5deg;
 }
 
 .binocle[data-mood="surprised"] {
-  --mouth-y: -7px;
-  --mouth-scale: 0.55;
+  --face-fill: #ffe9e2;
+  --mouth-y: -3px;
+  --mouth-scale: 1;
+  --mouth-open-scale-x: 1.45;
+  --mouth-open-scale-y: 1.55;
+  --mouth-smile-opacity: 0;
+  --mouth-open-opacity: 1;
+  --brow-y: -8px;
   --brow-left: -12deg;
   --brow-right: 12deg;
 }
 
+.binocle[data-mood="thinking"] {
+  --face-fill: #f4f4f4;
+  --mouth-y: 0px;
+  --mouth-scale: 0.82;
+  --mouth-smile-opacity: 0;
+  --mouth-flat-opacity: 1;
+  --brow-y: 1px;
+  --brow-left: 8deg;
+  --brow-right: -2deg;
+}
+
+.binocle[data-mood="listening"] {
+  --face-fill: #e9f7ee;
+  --mouth-y: -1px;
+  --mouth-open-scale-x: 0.88;
+  --mouth-open-scale-y: 0.62;
+  --mouth-smile-opacity: 0;
+  --mouth-open-opacity: 0.9;
+  --brow-y: -5px;
+  --brow-left: -7deg;
+  --brow-right: 7deg;
+}
+
 .binocle[data-mood="bye"] {
+  --face-fill: #f1f1f1;
   --wave-right: -30deg;
   --wave-left: 5deg;
   --mouth-y: -1px;
   --mouth-scale: 1.04;
+  --mouth-smile-opacity: 0;
+  --mouth-flat-opacity: 1;
+  --brow-y: -1px;
 }
 
 .binocle[data-mood="surprised"] .svg-spark {
@@ -314,6 +382,10 @@ a {
 
 .binocle[data-mood="bye"] .svg-arm.right {
   animation: wave-hand 520ms ease-in-out 2;
+}
+
+.binocle.is-brow-pop .svg-brow {
+  animation: brow-pop 680ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .binocle__ping {
@@ -507,6 +579,17 @@ h3 {
   }
 }
 
+@keyframes brow-pop {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  42% {
+    translate: 0 -7px;
+  }
+}
+
 @keyframes ping {
   to {
     opacity: 0;
@@ -531,7 +614,7 @@ h3 {
   }
 
   .mascot-anchor {
-    width: 136px;
+    width: 128px;
     transform: scale(0.78);
   }
 
