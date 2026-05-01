@@ -16,13 +16,28 @@ mascot.innerHTML = `
       </filter>
     </defs>
 
-    <g filter="url(#handDrawn)">
+    <g class="svg-body-group" filter="url(#handDrawn)">
       <path class="svg-arm left" d="M55 31 C45 18, 30 18, 24 32" />
       <path class="svg-arm right" d="M129 31 C141 18, 155 19, 160 33" />
 
+      <g class="svg-volume">
+        <path class="svg-shell left" d="M25 34 C35 20, 59 16, 77 27 C88 34, 95 48, 94 62 C93 78, 81 90, 63 94 C42 98, 22 90, 15 75 C9 61, 13 45, 25 34Z" />
+        <path class="svg-shell right" d="M107 27 C126 16, 149 20, 160 34 C172 49, 175 65, 169 78 C162 92, 142 98, 121 94 C103 90, 91 78, 90 62 C89 48, 96 34, 107 27Z" />
+        <ellipse class="svg-back" cx="60" cy="61" rx="39" ry="34" />
+        <ellipse class="svg-back" cx="136" cy="61" rx="39" ry="34" />
+      </g>
+
+      <path class="svg-barrel left" d="M29 39 C38 28, 56 25, 70 32 C58 29, 41 32, 32 43 C24 54, 24 67, 32 77 C20 69, 18 51, 29 39Z" />
+      <path class="svg-barrel right" d="M114 32 C128 25, 146 28, 155 39 C166 51, 164 69, 152 77 C160 67, 160 54, 152 43 C143 32, 126 29, 114 32Z" />
       <ellipse class="svg-frame" cx="54" cy="57" rx="39" ry="34" />
       <ellipse class="svg-frame" cx="130" cy="57" rx="39" ry="34" />
-      <path class="svg-bridge" d="M91 56 C94 48, 99 48, 102 56" />
+      <ellipse class="svg-inner-rim" cx="54" cy="57" rx="28" ry="24" />
+      <ellipse class="svg-inner-rim" cx="130" cy="57" rx="28" ry="24" />
+      <ellipse class="svg-rim" cx="49" cy="53" rx="24" ry="20" />
+      <ellipse class="svg-rim" cx="125" cy="53" rx="24" ry="20" />
+      <path class="svg-center-band" d="M86 49 C90 45, 95 45, 99 49 C98 55, 98 61, 99 66 C95 69, 90 69, 86 66 C87 61, 87 55, 86 49Z" />
+      <path class="svg-bridge-shadow" d="M97 61 C100 53, 105 53, 108 61" />
+      <path class="svg-bridge" d="M88 58 C90 50, 96 47, 101 50 C104 52, 105 56, 105 60" />
 
       <path class="svg-detail" d="M23 55 C27 34, 43 24, 63 28" />
       <path class="svg-detail" d="M26 62 C28 76, 42 86, 59 85" />
@@ -43,9 +58,12 @@ mascot.innerHTML = `
         <circle class="svg-pupil-shine" cx="125.8" cy="52.8" r="2.7" />
       </g>
 
-      <path class="svg-mouth smile" d="M77 75 C83 85, 101 85, 107 75" />
-      <ellipse class="svg-mouth open" cx="92" cy="76" rx="8" ry="9" />
-      <path class="svg-mouth flat" d="M82 76 C87 78, 97 78, 102 76" />
+      <path class="svg-mouth smile" d="M77 80 C83 89, 101 89, 107 80" />
+      <path class="svg-mouth ajar" d="M79 80 C84 86, 100 86, 105 80 C101 84, 84 84, 79 80Z" />
+      <path class="svg-mouth open" d="M78 79 C78 67, 87 61, 93 61 C101 61, 109 68, 108 80 C107 93, 98 99, 91 99 C84 99, 78 91, 78 79Z" />
+      <path class="svg-mouth-core" d="M83 81 C83 72, 88 68, 93 68 C99 68, 104 73, 103 82 C102 91, 96 94, 91 94 C86 94, 83 89, 83 81Z" />
+      <ellipse class="svg-mouth-shine" cx="88" cy="75" rx="3" ry="2.2" />
+      <path class="svg-mouth flat" d="M82 81 C87 83, 97 83, 102 81" />
       <path class="svg-spark" d="M164 20 L164 29 M159.5 24.5 L168.5 24.5" />
     </g>
   </svg>
@@ -96,11 +114,18 @@ function updateTarget(pointerX, pointerY) {
   const dy = pointerY - centerY;
   const distance = Math.hypot(dx, dy);
 
-  state.targetX = clamp(dx / 38, -6.2, 6.2);
-  state.targetY = clamp(dy / 44, -4.2, 4.2);
+  state.targetX = clamp(dx / 36, -7, 7);
+  state.targetY = clamp(dy / 42, -4.8, 4.8);
   state.lastMove = Date.now();
   state.idleMoodShown = false;
-  mascot.style.setProperty('--tilt', `${clamp(dx / 120, -3.4, 3.4)}deg`);
+  mascot.style.setProperty('--tilt', `${clamp(dx / 140, -3, 3)}deg`);
+  mascot.style.setProperty('--lean-x', `${clamp(dx / 84, -6, 6)}deg`);
+  mascot.style.setProperty('--lean-y', `${clamp(-dy / 86, -6, 6)}deg`);
+  mascot.style.setProperty('--body-x', `${clamp(dx / 120, -3.5, 3.5)}px`);
+  mascot.style.setProperty('--body-y', `${clamp(dy / 135, -2.5, 3.5)}px`);
+  mascot.style.setProperty('--body-roll', `${clamp(dx / 190, -2.2, 2.2)}deg`);
+  mascot.style.setProperty('--depth-x', `${5 - clamp(dx / 85, -4, 4)}px`);
+  mascot.style.setProperty('--depth-y', `${4 - clamp(dy / 95, -3, 4)}px`);
 
   if (Date.now() < state.lockedUntil) {
     return;
@@ -116,16 +141,23 @@ function updateTarget(pointerX, pointerY) {
 }
 
 function animateEyes() {
-  state.eyeX += (state.targetX - state.eyeX) * 0.14;
-  state.eyeY += (state.targetY - state.eyeY) * 0.14;
+  state.eyeX += (state.targetX - state.eyeX) * 0.075;
+  state.eyeY += (state.targetY - state.eyeY) * 0.075;
 
   mascot.style.setProperty('--look-x', `${state.eyeX.toFixed(2)}px`);
   mascot.style.setProperty('--look-y', `${state.eyeY.toFixed(2)}px`);
 
   if (Date.now() - state.lastMove > 3600 && mascot.dataset.mood !== 'bye') {
-    state.targetX = Math.sin(Date.now() / 1000) * 1.7;
-    state.targetY = Math.cos(Date.now() / 1200) * 1.1;
+    state.targetX = Math.sin(Date.now() / 1200) * 2.2;
+    state.targetY = Math.cos(Date.now() / 1450) * 1.4;
     mascot.style.setProperty('--tilt', '0deg');
+    mascot.style.setProperty('--lean-x', '0deg');
+    mascot.style.setProperty('--lean-y', '0deg');
+    mascot.style.setProperty('--body-x', '0px');
+    mascot.style.setProperty('--body-y', '0px');
+    mascot.style.setProperty('--body-roll', '0deg');
+    mascot.style.setProperty('--depth-x', '5px');
+    mascot.style.setProperty('--depth-y', '4px');
   }
 
   if (Date.now() - state.lastMove > 6200 && !state.idleMoodShown && Date.now() > state.lockedUntil) {
@@ -148,6 +180,13 @@ function resetPose(delay = 900) {
     state.targetX = 0;
     state.targetY = 0;
     mascot.style.setProperty('--tilt', '0deg');
+    mascot.style.setProperty('--lean-x', '0deg');
+    mascot.style.setProperty('--lean-y', '0deg');
+    mascot.style.setProperty('--body-x', '0px');
+    mascot.style.setProperty('--body-y', '0px');
+    mascot.style.setProperty('--body-roll', '0deg');
+    mascot.style.setProperty('--depth-x', '5px');
+    mascot.style.setProperty('--depth-y', '4px');
     if (mascot.dataset.mood === 'bye') {
       setMood('curious');
     }

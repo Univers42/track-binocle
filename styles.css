@@ -115,42 +115,51 @@ a {
 .mascot-anchor {
   position: relative;
   display: grid;
-  width: 184px;
-  height: 104px;
+  width: 148px;
+  height: 88px;
   place-items: center;
   justify-self: center;
+  perspective: 520px;
 }
 
 .binocle {
   --face-fill: #ffffff;
+  --body-x: 0px;
+  --body-y: 0px;
+  --body-roll: 0deg;
+  --depth-x: 5px;
+  --depth-y: 4px;
   --look-x: 0px;
   --look-y: 0px;
   --tilt: 0deg;
+  --lean-x: 0deg;
+  --lean-y: 0deg;
   --blink: 1;
   --mouth-y: 0px;
   --mouth-scale: 1;
-  --mouth-open-scale-x: 0.8;
-  --mouth-open-scale-y: 0.5;
+  --mouth-open-scale-x: 0.72;
+  --mouth-open-scale-y: 0.38;
   --mouth-smile-opacity: 1;
   --mouth-open-opacity: 0;
   --mouth-flat-opacity: 0;
+  --mouth-ajar-opacity: 0.22;
   --brow-y: 0px;
   --brow-left: 0deg;
   --brow-right: 0deg;
   --wave-left: 0deg;
   --wave-right: 0deg;
   display: grid;
-  width: 178px;
-  height: 102px;
+  width: 144px;
+  height: 86px;
   padding: 0;
   border: 0;
   color: inherit;
   cursor: pointer;
   background: transparent;
   filter: drop-shadow(0 16px 18px rgba(17, 17, 17, 0.13));
-  transform: translateY(var(--bob, 0)) rotate(var(--tilt));
+  transform: translateY(var(--bob, 0)) rotateX(var(--lean-y)) rotateY(var(--lean-x)) rotate(var(--tilt));
   transform-origin: 50% 70%;
-  transition: filter 160ms ease;
+  transition: filter 180ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
   animation: mascot-bob 4.8s ease-in-out infinite;
 }
 
@@ -165,14 +174,74 @@ a {
 }
 
 .svg-frame,
+.svg-back,
+.svg-shell,
+.svg-barrel,
+.svg-inner-rim,
+.svg-center-band,
+.svg-rim,
 .svg-bridge,
+.svg-bridge-shadow,
 .svg-arm,
 .svg-brow,
 .svg-mouth,
+.svg-mouth-core,
+.svg-mouth-shine,
 .svg-detail,
 .svg-spark,
 .svg-stitch {
   vector-effect: non-scaling-stroke;
+}
+
+.svg-body-group {
+  transform: translate(var(--body-x), var(--body-y)) rotate(var(--body-roll));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.svg-volume {
+  transform: translate(var(--depth-x), var(--depth-y));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.svg-back {
+  fill: #d8d8d8;
+  stroke: var(--ink);
+  stroke-width: 4.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+  transition: fill 220ms ease;
+}
+
+.svg-shell {
+  fill: #ececec;
+  stroke: var(--ink);
+  stroke-width: 4.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: fill 220ms ease;
+}
+
+.svg-barrel {
+  fill: #f7f7f7;
+  stroke: var(--ink);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: fill 220ms ease;
+}
+
+.svg-center-band {
+  fill: #ffffff;
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.88;
 }
 
 .svg-frame {
@@ -184,6 +253,24 @@ a {
   transition: fill 220ms ease;
 }
 
+.svg-rim {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.2;
+}
+
+.svg-inner-rim {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.86;
+}
+
 .svg-bridge,
 .svg-detail,
 .svg-stitch {
@@ -193,8 +280,16 @@ a {
   stroke-linejoin: round;
 }
 
-.svg-bridge {
+.svg-bridge,
+.svg-bridge-shadow {
   stroke-width: 5;
+}
+
+.svg-bridge-shadow {
+  fill: none;
+  stroke: rgba(17, 17, 17, 0.18);
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .svg-detail {
@@ -211,7 +306,7 @@ a {
   transform: translate(var(--look-x), var(--look-y)) scaleY(var(--blink));
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform 90ms linear;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .svg-pupil {
@@ -252,19 +347,48 @@ a {
   transform-box: fill-box;
   transform-origin: center;
   transition:
-    opacity 160ms ease,
-    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    opacity 190ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .svg-mouth.smile {
   opacity: var(--mouth-smile-opacity);
 }
 
+.svg-mouth.ajar {
+  fill: #ffffff;
+  opacity: var(--mouth-ajar-opacity);
+  stroke-width: 3.8;
+  transform: translateY(var(--mouth-y)) scaleX(var(--mouth-scale));
+}
+
 .svg-mouth.open {
+  fill: #ffffff;
+  opacity: var(--mouth-open-opacity);
+  stroke-width: 4.2;
+  transform: translateY(var(--mouth-y)) scale(var(--mouth-open-scale-x), var(--mouth-open-scale-y));
+}
+
+.svg-mouth-core {
   fill: var(--ink);
   opacity: var(--mouth-open-opacity);
-  stroke-width: 3.6;
   transform: translateY(var(--mouth-y)) scale(var(--mouth-open-scale-x), var(--mouth-open-scale-y));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 190ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.svg-mouth-shine {
+  fill: #ffffff;
+  opacity: var(--mouth-open-opacity);
+  transform: translateY(var(--mouth-y)) scale(var(--mouth-open-scale-x), var(--mouth-open-scale-y));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 190ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .svg-mouth.flat {
@@ -308,6 +432,7 @@ a {
   --face-fill: #fff7bd;
   --mouth-y: -1px;
   --mouth-scale: 1.12;
+  --mouth-ajar-opacity: 0.16;
   --mouth-open-scale-x: 0.9;
   --mouth-open-scale-y: 0.55;
   --brow-y: -2px;
@@ -315,30 +440,47 @@ a {
   --brow-right: 4deg;
 }
 
+.binocle[data-mood="happy"] .svg-shell,
+.binocle[data-mood="happy"] .svg-barrel {
+  fill: #fffbe0;
+}
+
 .binocle[data-mood="close"] {
   --face-fill: #eef7ff;
   --mouth-y: -2px;
   --mouth-scale: 1.24;
-  --mouth-open-scale-x: 1.12;
-  --mouth-open-scale-y: 0.74;
-  --mouth-smile-opacity: 0.38;
-  --mouth-open-opacity: 0.62;
+  --mouth-open-scale-x: 1.04;
+  --mouth-open-scale-y: 0.82;
+  --mouth-smile-opacity: 0.26;
+  --mouth-ajar-opacity: 0.86;
+  --mouth-open-opacity: 0;
   --brow-y: -3px;
   --brow-left: 5deg;
   --brow-right: -5deg;
 }
 
+.binocle[data-mood="close"] .svg-shell,
+.binocle[data-mood="close"] .svg-barrel {
+  fill: #f3faff;
+}
+
 .binocle[data-mood="surprised"] {
   --face-fill: #ffe9e2;
-  --mouth-y: -3px;
+  --mouth-y: -2px;
   --mouth-scale: 1;
-  --mouth-open-scale-x: 1.45;
-  --mouth-open-scale-y: 1.55;
+  --mouth-open-scale-x: 1.32;
+  --mouth-open-scale-y: 1.64;
   --mouth-smile-opacity: 0;
+  --mouth-ajar-opacity: 0;
   --mouth-open-opacity: 1;
   --brow-y: -8px;
   --brow-left: -12deg;
   --brow-right: 12deg;
+}
+
+.binocle[data-mood="surprised"] .svg-shell,
+.binocle[data-mood="surprised"] .svg-barrel {
+  fill: #fff1ed;
 }
 
 .binocle[data-mood="thinking"] {
@@ -346,6 +488,7 @@ a {
   --mouth-y: 0px;
   --mouth-scale: 0.82;
   --mouth-smile-opacity: 0;
+  --mouth-ajar-opacity: 0;
   --mouth-flat-opacity: 1;
   --brow-y: 1px;
   --brow-left: 8deg;
@@ -355,10 +498,11 @@ a {
 .binocle[data-mood="listening"] {
   --face-fill: #e9f7ee;
   --mouth-y: -1px;
-  --mouth-open-scale-x: 0.88;
-  --mouth-open-scale-y: 0.62;
+  --mouth-open-scale-x: 0.92;
+  --mouth-open-scale-y: 0.7;
   --mouth-smile-opacity: 0;
-  --mouth-open-opacity: 0.9;
+  --mouth-ajar-opacity: 0.92;
+  --mouth-open-opacity: 0;
   --brow-y: -5px;
   --brow-left: -7deg;
   --brow-right: 7deg;
@@ -371,6 +515,7 @@ a {
   --mouth-y: -1px;
   --mouth-scale: 1.04;
   --mouth-smile-opacity: 0;
+  --mouth-ajar-opacity: 0;
   --mouth-flat-opacity: 1;
   --brow-y: -1px;
 }
@@ -614,8 +759,8 @@ h3 {
   }
 
   .mascot-anchor {
-    width: 128px;
-    transform: scale(0.78);
+    width: 118px;
+    transform: scale(0.76);
   }
 
   main {
