@@ -8,49 +8,42 @@ mascot.setAttribute('aria-label', 'Binocle, mascotte SVG vivante et expressive')
 mascot.innerHTML = `
   <svg class="binocle__svg" viewBox="0 0 184 104" role="img" aria-labelledby="binocle-title binocle-desc">
     <title id="binocle-title">Binocle</title>
-    <desc id="binocle-desc">Mascotte en forme de jumelles avec yeux griffonnés, sourcils et petites mains.</desc>
+    <desc id="binocle-desc">Mascotte en forme de jumelles noir et blanc, avec pupilles vivantes, bouche et petites mains.</desc>
     <defs>
-      <linearGradient id="brassGradient" x1="28" x2="154" y1="24" y2="86" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stop-color="#fff2cb" />
-        <stop offset="0.48" stop-color="#dba04a" />
-        <stop offset="1" stop-color="#a9632c" />
-      </linearGradient>
       <filter id="handDrawn" x="-10%" y="-10%" width="120%" height="120%">
-        <feTurbulence baseFrequency="0.021" numOctaves="2" seed="9" type="fractalNoise" />
-        <feDisplacementMap in="SourceGraphic" scale="0.8" />
+        <feTurbulence baseFrequency="0.018" numOctaves="2" seed="14" type="fractalNoise" />
+        <feDisplacementMap in="SourceGraphic" scale="0.55" />
       </filter>
     </defs>
 
     <g filter="url(#handDrawn)">
-      <path class="svg-arm left" d="M62 30 C49 11, 33 12, 25 29" />
-      <path class="svg-arm right" d="M122 30 C137 10, 154 12, 160 29" />
+      <path class="svg-arm left" d="M55 31 C45 18, 30 18, 24 32" />
+      <path class="svg-arm right" d="M129 31 C141 18, 155 19, 160 33" />
 
-      <path class="svg-body" d="M12 58 C12 34, 27 22, 50 22 C74 22, 85 37, 88 55 C91 37, 103 22, 128 22 C151 22, 168 35, 169 58 C170 80, 154 92, 130 91 C108 90, 96 78, 92 65 C88 78, 76 90, 54 91 C29 92, 12 80, 12 58Z" />
-      <path class="svg-body" d="M80 56 C82 46, 88 42, 92 42 C97 42, 102 47, 104 56" fill="none" />
-      <path class="svg-lens-shine" d="M31 35 C43 28, 60 29, 68 40 C54 36, 44 37, 31 45Z" />
-      <path class="svg-lens-shine" d="M112 35 C125 28, 143 30, 151 42 C136 37, 126 37, 112 46Z" />
+      <ellipse class="svg-frame" cx="54" cy="57" rx="39" ry="34" />
+      <ellipse class="svg-frame" cx="130" cy="57" rx="39" ry="34" />
+      <path class="svg-bridge" d="M91 56 C94 48, 99 48, 102 56" />
 
-      <path class="svg-scribble" d="M28 74 C39 83, 62 83, 73 71" />
-      <path class="svg-scribble" d="M113 74 C125 83, 147 82, 157 70" />
-      <path class="svg-scribble" d="M26 52 C31 36, 45 30, 62 35" />
-      <path class="svg-scribble" d="M111 53 C118 36, 135 30, 150 36" />
+      <path class="svg-detail" d="M23 55 C27 34, 43 24, 63 28" />
+      <path class="svg-detail" d="M111 28 C132 23, 151 34, 157 55" />
+      <path class="svg-stitch" d="M35 80 C47 86, 64 85, 74 77" />
+      <path class="svg-stitch" d="M116 77 C127 86, 145 85, 155 78" />
 
-      <path class="svg-brow left" d="M37 42 C45 36, 55 36, 63 42" />
-      <path class="svg-brow right" d="M120 42 C129 36, 140 36, 148 42" />
+      <path class="svg-brow left" d="M43 40 C50 37, 58 37, 65 40" />
+      <path class="svg-brow right" d="M119 40 C126 37, 135 37, 142 40" />
 
       <g class="svg-eye left">
-        <path d="M43 55 C48 48, 58 49, 62 56 C57 63, 48 63, 43 55Z" />
-        <path d="M45 54 C50 60, 57 59, 61 55" />
-        <circle class="svg-pupil" cx="53" cy="55" r="3.4" />
+        <circle class="svg-pupil" cx="54" cy="57" r="8.8" />
+        <circle class="svg-pupil-shine" cx="50.7" cy="53.3" r="2.3" />
       </g>
       <g class="svg-eye right">
-        <path d="M122 55 C128 48, 139 49, 143 56 C138 63, 128 63, 122 55Z" />
-        <path d="M124 54 C130 60, 138 59, 142 55" />
-        <circle class="svg-pupil" cx="133" cy="55" r="3.4" />
+        <circle class="svg-pupil" cx="130" cy="57" r="8.8" />
+        <circle class="svg-pupil-shine" cx="126.7" cy="53.3" r="2.3" />
       </g>
 
-      <path class="svg-mouth" d="M76 72 C83 79, 101 79, 108 72" />
-      <path class="svg-spark" d="M159 18 L159 28 M154 23 L164 23" />
+      <path class="svg-mouth" d="M78 75 C84 83, 100 83, 106 75" />
+      <path class="svg-mouth" d="M83 79 C88 82, 96 82, 101 79" opacity="0.34" />
+      <path class="svg-spark" d="M164 20 L164 29 M159.5 24.5 L168.5 24.5" />
     </g>
   </svg>
 `;
@@ -86,8 +79,8 @@ function updateTarget(pointerX, pointerY) {
   const dy = pointerY - centerY;
   const distance = Math.hypot(dx, dy);
 
-  state.targetX = clamp(dx / 42, -4.4, 4.4);
-  state.targetY = clamp(dy / 48, -3.2, 3.2);
+  state.targetX = clamp(dx / 58, -3, 3);
+  state.targetY = clamp(dy / 64, -2.2, 2.2);
   state.lastMove = Date.now();
   mascot.style.setProperty('--tilt', `${clamp(dx / 120, -3.4, 3.4)}deg`);
 
