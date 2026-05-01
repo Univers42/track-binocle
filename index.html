@@ -3,66 +3,142 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Track Binocle — Mascotte vivante</title>
+    <title>Track Binocle — Carnet vivant</title>
     <meta
       name="description"
-      content="Prototype d'une mascotte binocles qui suit les mouvements et réagit émotionnellement."
+      content="Prototype d'une mascotte-jumelles interactive dans un carnet de croquis vivant."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&family=Special+Elite&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <svg width="0" height="0" class="svg-defs" aria-hidden="true" focusable="false">
+      <defs>
+        <filter id="roughen">
+          <feTurbulence type="fractalNoise" baseFrequency="0.02 0.06" numOctaves="3" seed="7" stitchTiles="stitch" />
+          <feDisplacementMap in="SourceGraphic" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="roughen-heavy">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035 0.08" numOctaves="3" seed="11" stitchTiles="stitch" />
+          <feDisplacementMap in="SourceGraphic" scale="2.4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="pencil-texture">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" />
+          <feColorMatrix type="saturate" values="0" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0.22" />
+          </feComponentTransfer>
+          <feBlend in="SourceGraphic" mode="multiply" />
+        </filter>
+      </defs>
+    </svg>
+
+    <div class="sketch-world" aria-hidden="true">
+      <svg id="sketch-bg" viewBox="0 0 1440 1200" preserveAspectRatio="xMidYMid slice">
+        <g class="sketch-layer blueprint">
+          <path pathLength="1" d="M98 118 C154 70 266 72 328 132 C382 184 366 282 300 318 C226 360 105 324 78 242 C61 190 69 146 98 118Z" />
+          <path pathLength="1" d="M144 168 C180 132 256 136 294 174 C326 206 318 260 274 284 C222 312 148 286 132 232 C124 204 130 181 144 168Z" />
+          <path pathLength="1" d="M112 318 L62 392 M286 316 L342 390 M75 392 C142 424 262 426 348 390" />
+          <path pathLength="1" d="M350 148 L470 112 M342 248 L492 274 M470 112 L454 103 M470 112 L456 124 M492 274 L474 268 M492 274 L476 284" />
+          <path pathLength="1" d="M386 136 C405 129 422 129 438 137 M390 260 C413 253 437 255 456 266" />
+          <path pathLength="1" d="M388 172 L456 160 M392 194 L430 188 M390 224 L468 214" />
+        </g>
+
+        <g class="sketch-layer perspective">
+          <path pathLength="1" d="M720 232 L720 1060" />
+          <path pathLength="1" d="M70 1030 L720 232 L1370 1030" />
+          <path pathLength="1" d="M150 910 L1290 910 M260 780 L1180 780 M360 660 L1080 660 M450 552 L990 552 M530 456 L910 456" />
+          <path pathLength="1" d="M210 1060 L720 232 M420 1060 L720 232 M610 1060 L720 232 M830 1060 L720 232 M1040 1060 L720 232 M1250 1060 L720 232" />
+        </g>
+
+        <g class="sketch-layer geometry">
+          <path pathLength="1" d="M1060 762 C1118 706 1230 718 1274 792 C1314 858 1264 952 1182 954 C1088 956 1010 844 1060 762Z" />
+          <path pathLength="1" d="M1120 744 L1288 820 L1178 972 L1034 854Z" />
+          <path pathLength="1" d="M1120 744 L1178 972 M1288 820 L1034 854 M1060 762 L1274 792" />
+          <path pathLength="1" d="M978 926 L1036 896 L1090 932 L1082 998 L1014 1016 L968 980Z" />
+          <path pathLength="1" d="M1014 1016 L1036 896 M1082 998 L978 926 M1090 932 L968 980" />
+          <path pathLength="1" d="M1188 682 C1230 672 1272 682 1300 704 M1198 1018 C1244 1026 1290 1018 1322 992" />
+        </g>
+
+        <g class="sketch-layer doodles">
+          <path pathLength="1" d="M520 170 L520 198 M506 184 L534 184 M512 176 L528 192 M528 176 L512 192" />
+          <path pathLength="1" d="M912 168 C936 148 970 150 986 176 C1004 206 976 240 944 232 C916 224 900 188 912 168Z" />
+          <path pathLength="1" d="M922 186 C938 174 962 176 970 192 C980 212 960 226 940 220" />
+          <path pathLength="1" d="M104 716 C150 670 220 668 268 708" />
+          <path pathLength="1" d="M268 708 L248 704 M268 708 L256 724" />
+          <path pathLength="1" d="M610 934 C660 910 720 924 750 966 C712 990 650 984 610 934Z" />
+          <path pathLength="1" d="M618 944 L742 958 M636 928 L710 982" />
+          <path pathLength="1" d="M242 560 C276 544 314 548 346 572 M246 582 C286 562 326 572 354 598" />
+          <path pathLength="1" d="M910 498 L950 488 L942 526 L982 516" />
+        </g>
+        <text x="385" y="105" class="scribble-text">angle ? 42°</text>
+        <text x="1090" y="710" class="scribble-text">volume / idée</text>
+        <text x="602" y="912" class="scribble-text">note illisible</text>
+      </svg>
+      <canvas id="paper-grain"></canvas>
+    </div>
+
     <header class="floating-header" aria-label="Navigation principale">
       <a class="brand" href="#top" aria-label="Track Binocle accueil">
-        <span class="brand-mark">TB</span>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M9 25 C7 13, 18 5, 31 9 C43 13, 46 29, 37 38 C27 47, 11 40, 9 25Z" /><text x="24" y="29">TB</text></svg>
+        </span>
         <span>Track Binocle</span>
       </a>
 
-      <div id="mascot-anchor" class="mascot-anchor" aria-hidden="false"></div>
+      <div class="header-mascot-wrap">
+        <svg class="header-arrow" viewBox="0 0 120 56" aria-hidden="true"><path d="M112 10 C76 8, 42 18, 16 42" /><path d="M16 42 L28 42 M16 42 L22 31" /></svg>
+        <div id="mascot-anchor" class="mascot-anchor" aria-hidden="false"></div>
+        <span class="sketch-annotation" aria-hidden="true">← suit ta souris !</span>
+      </div>
 
       <nav class="nav-links" aria-label="Navigation">
         <a href="#story">Concept</a>
         <a href="#atelier">Atelier</a>
+        <a href="#guide">Guide</a>
         <a href="#contact">Contact</a>
       </nav>
     </header>
 
     <main id="top">
-      <section class="hero">
-        <p class="eyebrow">Boutique immersive · Mascotte noir & blanc</p>
-        <h1>Une paire de jumelles vivantes qui accueille, observe et sourit.</h1>
+      <section class="hero sketch-reveal">
+        <p class="eyebrow">Carnet vivant · Mascotte interactive</p>
+        <h1>
+          Une paire de jumelles
+          <span class="underline-sketch">vivantes</span>
+          qui accueille, observe et sourit.
+        </h1>
         <p class="hero-copy">
-          Bouge la souris, approche-toi du header, clique, puis quitte la fenêtre : Binocle répond
-          par le regard, les sourcils, le sourire et un petit geste, sans jamais parler.
+          Tout le site ressemble à une page de carnet qui se dessine : Binocle suit le regard,
+          les notes apparaissent au scroll et les idées importantes sont surlignées comme au crayon.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#atelier">Tester l'expérience</a>
-          <a class="button ghost" href="#story">Voir le caractère</a>
+          <a class="button ghost" href="#guide">Voir le carnet</a>
         </div>
       </section>
 
-      <section id="story" class="panel story-panel">
+      <section id="story" class="panel story-panel sketch-reveal">
         <div>
           <p class="section-kicker">Personnalité</p>
           <h2>Curieux, poli, expressif.</h2>
         </div>
         <p>
-          La mascotte est dessinée comme des binocles de poche en SVG, avec un trait noir et blanc
-          irrégulier mais propre. Les verres font le contour des yeux : seules les pupilles bougent,
-          ce qui donne un regard vivant sans surdessiner le visage.
+          Binocle vit au milieu du header comme une petite note de designer devenue mascotte. Elle
+          ne parle pas : elle indique, observe, sourit, s'étonne et guide la lecture par ses gestes.
         </p>
       </section>
 
-      <section id="atelier" class="cards" aria-label="Moments d'interaction">
+      <section id="atelier" class="cards sketch-reveal" aria-label="Moments d'interaction">
         <article class="card">
           <span>01</span>
           <h3>Regard vivant</h3>
-          <p>Les pupilles rondes noir et blanc suivent le mouvement avec un retard subtil.</p>
+          <p>Les pupilles rondes suivent le curseur avec un retard doux, comme un croquis animé.</p>
         </article>
         <article class="card">
           <span>02</span>
@@ -72,54 +148,61 @@
         <article class="card">
           <span>03</span>
           <h3>Au revoir</h3>
-          <p>Quand la souris quitte la page, Binocle fait un signe puis revient naturellement.</p>
+          <p>Quand la souris quitte la page, Binocle fait un petit signe puis revient naturellement.</p>
         </article>
       </section>
 
-      <section id="guide" class="reading-guide" aria-label="Lecture accompagnée par la mascotte">
+      <section id="guide" class="reading-guide sketch-reveal" aria-label="Lecture accompagnée par des personnages">
         <div class="guide-intro">
-          <p class="section-kicker">Lecture guidée</p>
-          <h2>Une petite équipe accompagne la lecture avec humour.</h2>
+          <div>
+            <p class="section-kicker">Lecture guidée</p>
+            <h2>Une petite équipe accompagne la lecture avec humour.</h2>
+          </div>
           <p>
-            Des personnages bipèdes, expressifs et silencieux rendent le site plus facile à lire :
-            ils lisent, étudient et discutent avec le visiteur par leurs gestes.
+            Des personnages dessinés dans la marge lisent, étudient et discutent avec le visiteur.
+            Ils rendent les bénéfices plus simples à comprendre, sans interrompre l'expérience.
           </p>
         </div>
 
-        <article class="guide-step" data-guide-step>
+        <article class="guide-step paper-grid" data-guide-step>
           <div class="guide-mascot" data-guide-mascot="curious" aria-hidden="true"></div>
           <div class="guide-copy">
             <span>Reading</span>
             <h3>Il lit avec le visiteur.</h3>
-            <p>Un petit personnage plongé dans son livre guide naturellement le regard vers l'information.</p>
+            <p>Un personnage plongé dans son livre guide naturellement le regard vers l'information importante.</p>
+            <em>* note : ne jamais forcer l'attention, juste l'accompagner.</em>
           </div>
         </article>
 
-        <article class="guide-step is-reversed" data-guide-step>
+        <article class="guide-step is-reversed paper-millimeter" data-guide-step>
           <div class="guide-mascot" data-guide-mascot="light" aria-hidden="true"></div>
           <div class="guide-copy">
             <span>Studying</span>
             <h3>Il analyse les points importants.</h3>
-            <p>Avec son laptop et ses petites idées, il rend les bénéfices plus concrets et mémorables.</p>
+            <p>Avec son laptop et ses petites idées, il rend les bénéfices concrets et mémorables.</p>
+            <em>* très important : le scroll devient une démonstration.</em>
           </div>
         </article>
 
-        <article class="guide-step" data-guide-step>
+        <article class="guide-step paper-ruled" data-guide-step>
           <div class="guide-mascot" data-guide-mascot="seller" aria-hidden="true"></div>
           <div class="guide-copy">
             <span>Chatting</span>
             <h3>Il crée une conversation visuelle.</h3>
             <p>Il répond avec une bulle dessinée, sans texte imposé, pour donner une présence humaine.</p>
+            <em>* action suivante : laisser l'utilisateur choisir.</em>
           </div>
         </article>
       </section>
 
-      <section id="contact" class="panel contact-panel">
-        <p class="section-kicker">Header flottant</p>
-        <h2>La mascotte reste au centre, sans bloquer l'expérience.</h2>
+      <section id="contact" class="panel contact-panel sketch-reveal">
+        <div>
+          <p class="section-kicker">Header flottant</p>
+          <h2>La mascotte reste au centre, sans bloquer l'expérience.</h2>
+        </div>
         <p>
-          Cette démo est volontairement en HTML/CSS/JavaScript pur pour être facile à intégrer dans
-          une page vitrine, une boutique ou une landing page.
+          La démo reste en HTML, CSS et JavaScript pur pour pouvoir intégrer Binocle dans une page
+          vitrine, une boutique ou une landing page sans dépendance lourde.
         </p>
       </section>
     </main>

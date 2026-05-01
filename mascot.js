@@ -11,8 +11,8 @@ mascot.innerHTML = `
     <desc id="binocle-desc">Mascotte en forme de jumelles scribble, avec grandes pupilles, bouche expressive et petites mains.</desc>
     <defs>
       <filter id="handDrawn" x="-10%" y="-10%" width="120%" height="120%">
-        <feTurbulence baseFrequency="0.023" numOctaves="2" seed="14" type="fractalNoise" />
-        <feDisplacementMap in="SourceGraphic" scale="0.75" />
+        <feTurbulence id="mascotTurbulence" baseFrequency="0.028" numOctaves="2" seed="14" type="fractalNoise" />
+        <feDisplacementMap in="SourceGraphic" scale="1.4" />
       </filter>
     </defs>
 
@@ -84,6 +84,10 @@ const state = {
   moodTimer: null,
 };
 
+
+const prefersReducedMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mascotTurbulence = mascot.querySelector('#mascotTurbulence');
+let shimmerTimer;
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -209,6 +213,79 @@ function createPing() {
   ping.style.top = `${34 + Math.random() * 24}%`;
   mascot.append(ping);
   ping.addEventListener('animationend', () => ping.remove(), { once: true });
+}
+
+function drawGrain(context, width, height, intensity = 18) {
+  const image = context.createImageData(width, height);
+  const data = image.data;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const shade = 228 + Math.random() * 24;
+    const alpha = Math.random() * intensity;
+
+    data[index] = shade;
+    data[index + 1] = shade - 6;
+    data[index + 2] = shade - 18;
+    data[index + 3] = alpha;
+  }
+
+  context.putImageData(image, 0, 0);
+}
+
+function setupPaperGrain() {
+  const canvas = document.querySelector('#paper-grain');
+
+  if (!canvas) {
+    return;
+  }
+
+  const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
+  let resizeTimer;
+
+  if (!context) {
+    return;
+  }
+
+  const render = () => {
+    const ratio = Math.min(globalThis.devicePixelRatio || 1, 2);
+    const width = Math.ceil(globalThis.innerWidth * ratio);
+    const height = Math.ceil(globalThis.innerHeight * ratio);
+
+    canvas.width = width;
+    canvas.height = height;
+    drawGrain(context, width, height, prefersReducedMotion ? 10 : 18);
+  };
+
+  render();
+  globalThis.addEventListener(
+    'resize',
+    () => {
+      globalThis.clearTimeout(resizeTimer);
+      resizeTimer = globalThis.setTimeout(render, 160);
+    },
+    { passive: true }
+  );
+}
+
+function startSketchShimmer() {
+  if (prefersReducedMotion || shimmerTimer || !mascotTurbulence) {
+    return;
+  }
+
+  let seed = Number(mascotTurbulence.getAttribute('seed')) || 14;
+  shimmerTimer = globalThis.setInterval(() => {
+    seed = seed >= 32 ? 14 : seed + 1;
+    mascotTurbulence.setAttribute('seed', String(seed));
+  }, 120);
+}
+
+function stopSketchShimmer() {
+  globalThis.clearInterval(shimmerTimer);
+  shimmerTimer = undefined;
+
+  if (mascotTurbulence) {
+    mascotTurbulence.setAttribute('seed', '14');
+  }
 }
 
 function getGuideMascotMarkup(kind) {
@@ -368,7 +445,9 @@ mascot.addEventListener('click', () => {
 });
 
 mascot.addEventListener('pointerenter', () => setMood('gentle'));
+mascot.addEventListener('pointerenter', startSketchShimmer);
 mascot.addEventListener('pointerleave', () => setMood('curious', 250));
+mascot.addEventListener('pointerleave', stopSketchShimmer);
 
 document.querySelectorAll('.button, .nav-links a').forEach((interactiveElement) => {
   interactiveElement.addEventListener('pointerenter', () => showSellerCue());
@@ -376,5 +455,6 @@ document.querySelectorAll('.button, .nav-links a').forEach((interactiveElement) 
 });
 
 setMood('curious');
+setupPaperGrain();
 blink();
 animateEyes();
