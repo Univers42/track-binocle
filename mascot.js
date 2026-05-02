@@ -26,6 +26,11 @@ const THEME_LABELS = {
   dark: 'Dark',
   night: 'Night',
 };
+const THEME_ICONS = {
+  light: '☼',
+  dark: '◐',
+  night: '★',
+};
 
 const mascot = document.createElement('button');
 mascot.className = 'binocle';
@@ -459,8 +464,12 @@ function applyTheme(theme) {
   if (control) {
     const currentIndex = THEME_SEQUENCE.indexOf(nextTheme);
     const followingTheme = THEME_SEQUENCE[(currentIndex + 1) % THEME_SEQUENCE.length];
-    control.textContent = `Theme: ${THEME_LABELS[nextTheme]}`;
+    const themeIcon = control.querySelector('.header-icon--theme');
+    const themeLabel = control.querySelector('[data-theme-label]');
+    if (themeIcon) themeIcon.textContent = THEME_ICONS[nextTheme];
+    if (themeLabel) themeLabel.textContent = `Theme: ${THEME_LABELS[nextTheme]}`;
     control.setAttribute('aria-label', `Theme: ${nextTheme}. Switch to ${followingTheme} mode`);
+    control.setAttribute('title', `Switch to ${followingTheme} mode`);
   }
 }
 
@@ -848,7 +857,13 @@ document.querySelector('#pause-animations')?.addEventListener('click', (event) =
   const control = event.currentTarget;
   const paused = control.getAttribute('aria-pressed') === 'true';
   control.setAttribute('aria-pressed', String(!paused));
-  control.textContent = paused ? 'Pause animations' : 'Resume animations';
+  const nextLabel = paused ? 'Pause animations' : 'Resume animations';
+  const motionIcon = control.querySelector('.header-icon--motion');
+  const motionLabel = control.querySelector('[data-motion-label]');
+  if (motionIcon) motionIcon.textContent = paused ? 'Ⅱ' : '▶';
+  if (motionLabel) motionLabel.textContent = nextLabel;
+  control.setAttribute('aria-label', nextLabel);
+  control.setAttribute('title', nextLabel);
   document.documentElement.classList.toggle('motion-paused', !paused);
   announce(paused ? 'Animations resumed' : 'Animations paused');
 }); // WCAG 2.2.2: user can pause and resume decorative motion.

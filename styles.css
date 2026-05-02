@@ -27,6 +27,7 @@
   --hl-green: #82c98a;
   --hl-red: #e87a7a;
   --sketch-bg-fill: rgba(247, 244, 237, 0.56);
+  --sketch-line: rgba(28, 22, 18, 0.74);
   --thought-bg: rgba(247, 244, 237, 0.8);
   --lens-left-bg: #0e1117;
   --lens-right-bg: #f7f4ed;
@@ -102,7 +103,8 @@
   --button-text: #121821;
   --button-shadow: rgba(247, 244, 237, 0.25);
   --accent-text: #121821;
-  --sketch-bg-fill: rgba(29, 38, 51, 0.52);
+  --sketch-bg-fill: rgba(94, 142, 178, 0.2);
+  --sketch-line: rgba(198, 226, 248, 0.9);
   --thought-bg: rgba(35, 45, 61, 0.92);
   --lens-left-bg: #05070d;
   --lens-right-bg: #151f2d;
@@ -180,7 +182,8 @@
   --hl-blue: #9ed0ff;
   --hl-green: #9ee7a4;
   --hl-red: #ff9b9b;
-  --sketch-bg-fill: rgba(11, 18, 32, 0.6);
+  --sketch-bg-fill: rgba(92, 157, 214, 0.2);
+  --sketch-line: rgba(178, 218, 255, 0.95);
   --thought-bg: rgba(15, 23, 42, 0.94);
   --lens-left-bg: #01030a;
   --lens-right-bg: #07111f;
@@ -263,19 +266,19 @@ button, .button, .nav-links a, .portal-link, .portal-discover, .portal-secondary
   pointer-events: none;
 }
 #paper-grain { z-index: 1; opacity: 0.32; mix-blend-mode: multiply; }
-.sketch-bg { z-index: 0; color: var(--ink); opacity: 0.35; }
+.sketch-bg { z-index: 0; color: var(--sketch-line); opacity: 1; }
 .sketch-bg path, .sketch-bg circle, .sketch-bg text {
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.2;
+  stroke-width: 1.35;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .sketch-bg text { fill: currentColor; stroke: none; font-family: 'Special Elite', monospace; font-size: 11px; }
-.blueprint-drawing { opacity: 0.08; }
-.grid-explosion { opacity: 0.06; }
-.perspective-drawing { opacity: 0.035; }
-.micro-symbols { opacity: 0.05; }
+.blueprint-drawing { opacity: 0.16; }
+.grid-explosion { opacity: 0.14; }
+.perspective-drawing { opacity: 0.1; }
+.micro-symbols { opacity: 0.08; }
 .iso-grid path { stroke-width: 1.2; opacity: 0.8; }
 .flow { stroke-dasharray: 4 3; }
 .bg-block path:first-child { fill: var(--sketch-bg-fill); }
@@ -511,7 +514,7 @@ h1 span { position: relative; display: inline-block; }
 .svg-tear { fill: var(--hl-blue); opacity: var(--tear-opacity); transform-box: fill-box; transform-origin: center; }
 .svg-star { fill: var(--hl-yellow); opacity: 0; transform: scale(0.3) rotate(0deg); transform-box: fill-box; transform-origin: center; transition: opacity 200ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 .svg-spiral { fill: none; stroke: var(--mascot-outline, var(--ink)); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform-box: fill-box; transform-origin: center; }
-.svg-thought-bubble { fill: var(--mascot-thought); stroke: var(--mascot-outline, var(--ink)); stroke-width: 1.2; opacity: 0; transform: translate(-2px, 4px) scale(0.8); transform-origin: 12px 24px; transition: opacity 240ms ease, transform 240ms ease; }
+.svg-thought-bubble { display: none; fill: var(--mascot-thought); stroke: var(--mascot-outline, var(--ink)); stroke-width: 1.2; opacity: 0; transform: translate(-2px, 4px) scale(0.8); transform-origin: 12px 24px; transition: opacity 240ms ease, transform 240ms ease; }
 .svg-mouth-pad { fill: var(--mascot-mouth-fill); stroke: none; opacity: 0.92; }
 .svg-mouth, .svg-mouth-core, .svg-mouth-shine { transform-origin: 92px 96px; transition: opacity 180ms ease, transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1); transform: translateY(var(--mouth-y)) scale(var(--mouth-scale)); }
 .svg-mouth { fill: none; stroke: var(--mascot-outline, var(--ink)); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -741,6 +744,7 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
 }
 .portal::before { content: ''; position: fixed; inset: 0; z-index: 0; background: #030303; }
 .portal__lens-left, .portal__lens-right { position: fixed; top: 50%; width: 70vw; height: 112vh; min-height: 0; padding: clamp(2.8rem, 5vw, 5.2rem); display: grid; align-content: center; overflow: hidden; clip-path: ellipse(50% 49.5% at 50% 50%); opacity: 0; transform: translateY(-50%) scale(0.92); animation: world-pop 520ms cubic-bezier(0.22,1,0.36,1) 1300ms forwards; transition: transform 320ms cubic-bezier(0.22,1,0.36,1), clip-path 320ms cubic-bezier(0.22,1,0.36,1); }
+.portal.is-revealed .portal__lens-left, .portal.is-revealed .portal__lens-right { opacity: 1; transform: translateY(-50%) scale(1); }
 .portal--quick .portal__lens-left, .portal--quick .portal__lens-right { animation-delay: 60ms; animation-duration: 260ms; }
 .portal__lens-left { left: -18vw; background: var(--lens-left-bg); color: var(--portal-left-text); }
 .portal__lens-right { right: -18vw; background: repeating-linear-gradient(0deg, transparent 0 31px, var(--lens-rule) 31px 32px), var(--lens-right-bg); color: var(--ink); }
@@ -863,6 +867,7 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
   .powers-grid, .character-grid { grid-template-columns: 1fr; }
   .portal { overflow: hidden; }
   .portal__lens-left, .portal__lens-right { left: 50%; right: auto; width: 128vw; height: 61vh; padding: 2.1rem 1.45rem; transform: translate(-50%, -50%) scale(0.9); animation-name: world-pop-mobile; clip-path: ellipse(50% 49.5% at 50% 50%); }
+  .portal.is-revealed .portal__lens-left, .portal.is-revealed .portal__lens-right { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   .portal.is-near .portal__lens-left, .portal.is-near .portal__lens-right { transform: translate(-50%, -50%) scale(1.1); }
   .portal.is-far .portal__lens-left, .portal.is-far .portal__lens-right { transform: translate(-50%, -50%) scale(0.98); }
   .portal__lens-left { top: 31%; }
@@ -896,12 +901,38 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
 :root[data-theme="night"] .sketch-bg path,
 :root[data-theme="night"] .sketch-bg circle,
 :root[data-theme="night"] .sketch-bg line {
-  stroke: var(--ink);
+  stroke: var(--sketch-line);
 }
 
 :root[data-theme="dark"] .sketch-bg text,
 :root[data-theme="night"] .sketch-bg text {
-  fill: var(--ink);
+  fill: var(--sketch-line);
+}
+
+:root[data-theme="dark"] #paper-grain,
+:root[data-theme="night"] #paper-grain {
+  opacity: 0.18;
+  mix-blend-mode: screen;
+}
+
+:root[data-theme="dark"] .blueprint-drawing,
+:root[data-theme="night"] .blueprint-drawing {
+  opacity: 0.36;
+}
+
+:root[data-theme="dark"] .grid-explosion,
+:root[data-theme="night"] .grid-explosion {
+  opacity: 0.32;
+}
+
+:root[data-theme="dark"] .perspective-drawing,
+:root[data-theme="night"] .perspective-drawing {
+  opacity: 0.26;
+}
+
+:root[data-theme="dark"] .micro-symbols,
+:root[data-theme="night"] .micro-symbols {
+  opacity: 0.2;
 }
 
 :root[data-theme="dark"] .portal-preview-sketch .preview-shell,

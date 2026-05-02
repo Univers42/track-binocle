@@ -13,6 +13,7 @@
 - [x] Content can be separated from its background.
 	- Root CSS tokens support `light`, `dark`, and `night` themes.
 	- Main foreground/background contrast ratios are above WCAG AA thresholds.
+	- Mascot, portal, card, and sketch colours now use theme-aware tokens instead of fixed light-only colours.
 - [x] Contrast ratio targets: normal text >= 4.5:1 and large text/non-text UI >= 3:1.
 - [x] Text can be resized up to 200% without loss of core content or functionality.
 	- Layout uses responsive grids, wrapping actions, `clamp()`, and relative text sizing.
@@ -25,6 +26,8 @@
 	- Native links/buttons are used for navigation/actions.
 	- `Tab` moves through controls, `Enter`/`Space` activate controls.
 	- `ArrowUp`, `ArrowDown`, `PageUp`, `PageDown`, `Home`, and `End` scroll the page when focus is not in an editable field or modal.
+- [x] Header actions use compact icon buttons with short accessible names.
+	- Icons are decorative (`aria-hidden`) and each button keeps a clear `aria-label`, tooltip, and keyboard activation.
 - [x] Users can pause, stop, or reduce movement.
 	- Header `Pause animations` control toggles decorative motion.
 	- `prefers-reduced-motion: reduce` disables non-essential animation.
