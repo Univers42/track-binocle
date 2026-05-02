@@ -16,15 +16,64 @@
   --surface-line: rgba(28, 22, 18, 0.78);
   --surface-line-soft: rgba(28, 22, 18, 0.24);
   --media-bg: rgba(247, 244, 237, 0.9);
+  --control-shadow: rgba(28, 22, 18, 0.38);
+  --control-shadow-soft: rgba(28, 22, 18, 0.13);
   --button-fill: var(--ink);
   --button-text: var(--paper);
+  --button-shadow: rgba(28, 22, 18, 0.35);
   --accent-text: #1c1612;
   --hl-yellow: #f5d84a;
   --hl-blue: #7ab3e8;
   --hl-green: #82c98a;
   --hl-red: #e87a7a;
+  --sketch-bg-fill: rgba(247, 244, 237, 0.56);
+  --thought-bg: rgba(247, 244, 237, 0.8);
   --lens-left-bg: #0e1117;
   --lens-right-bg: #f7f4ed;
+  --lens-rule: rgba(26, 20, 16, 0.035);
+  --portal-left-text: rgba(255, 255, 255, 0.92);
+  --portal-left-muted: rgba(255, 255, 255, 0.82);
+  --portal-left-hint: rgba(255, 255, 255, 0.68);
+  --mascot-lens: #f5f0e8;
+  --mascot-shell: #ececec;
+  --mascot-tube: #d8d0c4;
+  --mascot-rim: rgba(255, 253, 246, 0.86);
+  --mascot-iris: #1c1612;
+  --mascot-mouth-fill: #fffdf8;
+  --mascot-heart: #b00034;
+  --mascot-cheek: #c93654;
+  --mascot-thought: rgba(212, 232, 245, 0.92);
+  --mood-happy-lens: #fff176;
+  --mood-happy-shell: #fffde0;
+  --mood-excited-lens: #ffb347;
+  --mood-excited-shell: #ffe0b0;
+  --mood-laughing-tube: #f0df9b;
+  --mood-love-lens: #ffb3c6;
+  --mood-love-shell: #ffd6e0;
+  --mood-surprised-lens: #ff6b6b;
+  --mood-surprised-shell: #ffc8c8;
+  --mood-thinking-lens: #d4e8f5;
+  --mood-thinking-shell: #e8f4ff;
+  --mood-proud-lens: #d4a8ff;
+  --mood-proud-shell: #e8d4ff;
+  --mood-silly-lens: #a8f0a8;
+  --mood-silly-shell: #d4ffd4;
+  --mood-shy-lens: #ffcba4;
+  --mood-shy-shell: #ffe4cc;
+  --mood-scared-lens: #c8e6ff;
+  --mood-scared-shell: #e0f0ff;
+  --mood-angry-lens: #d81919;
+  --mood-angry-shell: #ff9090;
+  --mood-dizzy-lens: #d7bbfa;
+  --mood-dizzy-shell: #eadcff;
+  --mood-sleeping-lens: #b8c8e8;
+  --mood-sleeping-shell: #d0ddf0;
+  --mood-gentle-lens: #f0f4f0;
+  --mood-listening-lens: #e0f5e8;
+  --mood-seller-lens: #fff9c4;
+  --mood-close-lens: #dceeff;
+  --mood-bye-lens: #e8e8e8;
+  --mood-bye-shell: #f0f0f0;
   --shadow-paper: 2px 3px 0 rgba(28, 22, 18, 0.10), 4px 6px 0 rgba(28, 22, 18, 0.05);
   --shadow-lift: 0 12px 40px rgba(28, 22, 18, 0.16);
 }
@@ -32,8 +81,8 @@
 :root[data-theme="dark"] {
   --paper: #121821;
   --paper-2: #1d2633;
-  --paper-ruled: rgba(255, 255, 255, 0.055);
-  --margin-red: rgba(245, 216, 74, 0.12);
+  --paper-ruled: rgba(255, 255, 255, 0.12);
+  --margin-red: rgba(255, 99, 113, 0.16);
   --ink: #f7f4ed;
   --ink-mid: #d8d2c7;
   --ink-faint: rgba(247, 244, 237, 0.18);
@@ -47,11 +96,58 @@
   --surface-line: rgba(247, 244, 237, 0.78);
   --surface-line-soft: rgba(247, 244, 237, 0.28);
   --media-bg: rgba(29, 38, 51, 0.92);
+  --control-shadow: rgba(0, 0, 0, 0.46);
+  --control-shadow-soft: rgba(0, 0, 0, 0.28);
   --button-fill: #f7f4ed;
   --button-text: #121821;
+  --button-shadow: rgba(247, 244, 237, 0.25);
   --accent-text: #121821;
+  --sketch-bg-fill: rgba(29, 38, 51, 0.52);
+  --thought-bg: rgba(35, 45, 61, 0.92);
   --lens-left-bg: #05070d;
   --lens-right-bg: #151f2d;
+  --lens-rule: rgba(247, 244, 237, 0.15);
+  --mascot-outline: #0b111a;
+  --mascot-lens: #dbe4ec;
+  --mascot-shell: #a6bac7;
+  --mascot-tube: #8ca3b0;
+  --mascot-rim: rgba(255, 255, 255, 0.85);
+  --mascot-iris: #fffdf8;
+  --mascot-mouth-fill: #f7f4ed;
+  --mascot-heart: #ff88aa;
+  --mascot-cheek: #ff9bb0;
+  --mascot-thought: rgba(35, 54, 79, 0.94);
+  --mood-happy-lens: #4d431a;
+  --mood-happy-shell: #5a4f23;
+  --mood-excited-lens: #744a1d;
+  --mood-excited-shell: #604427;
+  --mood-laughing-tube: #51451b;
+  --mood-love-lens: #653348;
+  --mood-love-shell: #5a2f42;
+  --mood-surprised-lens: #6e2525;
+  --mood-surprised-shell: #5f3030;
+  --mood-thinking-lens: #264a63;
+  --mood-thinking-shell: #263f56;
+  --mood-proud-lens: #47315f;
+  --mood-proud-shell: #3c2c52;
+  --mood-silly-lens: #2e5c37;
+  --mood-silly-shell: #2b4d34;
+  --mood-shy-lens: #6a4428;
+  --mood-shy-shell: #5c3d27;
+  --mood-scared-lens: #244963;
+  --mood-scared-shell: #263f58;
+  --mood-angry-lens: #8f2a2a;
+  --mood-angry-shell: #673131;
+  --mood-dizzy-lens: #44315d;
+  --mood-dizzy-shell: #3c2f52;
+  --mood-sleeping-lens: #34466a;
+  --mood-sleeping-shell: #2e405a;
+  --mood-gentle-lens: #304739;
+  --mood-listening-lens: #2d513c;
+  --mood-seller-lens: #5c5120;
+  --mood-close-lens: #25445e;
+  --mood-bye-lens: #364153;
+  --mood-bye-shell: #303b4c;
   --shadow-paper: 2px 3px 0 rgba(0, 0, 0, 0.26), 4px 6px 0 rgba(0, 0, 0, 0.16);
   --shadow-lift: 0 12px 40px rgba(0, 0, 0, 0.32);
 }
@@ -59,8 +155,8 @@
 :root[data-theme="night"] {
   --paper: #030712;
   --paper-2: #0b1220;
-  --paper-ruled: rgba(122, 179, 232, 0.08);
-  --margin-red: rgba(122, 179, 232, 0.1);
+  --paper-ruled: rgba(255, 255, 255, 0.15);
+  --margin-red: rgba(255, 99, 113, 0.12);
   --ink: #fffdf8;
   --ink-mid: #e7eef8;
   --ink-faint: rgba(255, 253, 248, 0.18);
@@ -74,15 +170,62 @@
   --surface-line: rgba(255, 253, 248, 0.84);
   --surface-line-soft: rgba(255, 253, 248, 0.32);
   --media-bg: rgba(11, 18, 32, 0.94);
+  --control-shadow: rgba(0, 0, 0, 0.56);
+  --control-shadow-soft: rgba(0, 0, 0, 0.34);
   --button-fill: #fffdf8;
   --button-text: #030712;
+  --button-shadow: rgba(255, 253, 248, 0.25);
   --accent-text: #030712;
   --hl-yellow: #ffe873;
   --hl-blue: #9ed0ff;
   --hl-green: #9ee7a4;
   --hl-red: #ff9b9b;
+  --sketch-bg-fill: rgba(11, 18, 32, 0.6);
+  --thought-bg: rgba(15, 23, 42, 0.94);
   --lens-left-bg: #01030a;
   --lens-right-bg: #07111f;
+  --lens-rule: rgba(255, 255, 255, 0.15);
+  --mascot-outline: #02050a;
+  --mascot-lens: #cad7e0;
+  --mascot-shell: #8e9ea8;
+  --mascot-tube: #748691;
+  --mascot-rim: rgba(255, 255, 255, 0.9);
+  --mascot-iris: #fffdf8;
+  --mascot-mouth-fill: #fffdf8;
+  --mascot-heart: #ffa2bb;
+  --mascot-cheek: #ffadbd;
+  --mascot-thought: rgba(13, 32, 55, 0.96);
+  --mood-happy-lens: #4d4210;
+  --mood-happy-shell: #514718;
+  --mood-excited-lens: #6b4014;
+  --mood-excited-shell: #563717;
+  --mood-laughing-tube: #4b3d12;
+  --mood-love-lens: #5a263e;
+  --mood-love-shell: #4d2338;
+  --mood-surprised-lens: #642020;
+  --mood-surprised-shell: #552727;
+  --mood-thinking-lens: #173f5c;
+  --mood-thinking-shell: #17324d;
+  --mood-proud-lens: #382858;
+  --mood-proud-shell: #31224d;
+  --mood-silly-lens: #1e512b;
+  --mood-silly-shell: #1f432b;
+  --mood-shy-lens: #5f371d;
+  --mood-shy-shell: #50321d;
+  --mood-scared-lens: #193f5d;
+  --mood-scared-shell: #1d3552;
+  --mood-angry-lens: #842020;
+  --mood-angry-shell: #5c2727;
+  --mood-dizzy-lens: #352553;
+  --mood-dizzy-shell: #2f254b;
+  --mood-sleeping-lens: #273d63;
+  --mood-sleeping-shell: #223752;
+  --mood-gentle-lens: #203f32;
+  --mood-listening-lens: #1d4731;
+  --mood-seller-lens: #514611;
+  --mood-close-lens: #173a58;
+  --mood-bye-lens: #293447;
+  --mood-bye-shell: #243044;
   --shadow-paper: 2px 3px 0 rgba(0, 0, 0, 0.35), 4px 6px 0 rgba(0, 0, 0, 0.22);
   --shadow-lift: 0 12px 44px rgba(0, 0, 0, 0.42);
 }
@@ -133,9 +276,9 @@ button, .button, .nav-links a, .portal-link, .portal-discover, .portal-secondary
 .grid-explosion { opacity: 0.06; }
 .perspective-drawing { opacity: 0.035; }
 .micro-symbols { opacity: 0.05; }
-.iso-grid path { stroke-width: 0.65; opacity: 0.55; }
+.iso-grid path { stroke-width: 1.2; opacity: 0.8; }
 .flow { stroke-dasharray: 4 3; }
-.bg-block path:first-child { fill: rgba(247, 244, 237, 0.56); }
+.bg-block path:first-child { fill: var(--sketch-bg-fill); }
 .dim { stroke-width: 0.85; }
 .micro-symbols path, .micro-symbols circle { opacity: 0; animation: symbol-pop 900ms ease-out forwards; }
 .micro-symbols :nth-child(1) { animation-delay: 2s; }
@@ -194,6 +337,10 @@ button, .button, .nav-links a, .portal-link, .portal-discover, .portal-secondary
 .header-actions { display: inline-flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.55rem; }
 .header-cta {
   position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 48px;
+  min-height: 48px;
   border: 0;
   background: var(--button-fill);
   color: var(--button-text);
@@ -203,14 +350,17 @@ button, .button, .nav-links a, .portal-link, .portal-discover, .portal-secondary
   padding: 0.42rem 0.9rem;
   transform: rotate(1deg);
   filter: url(#roughen-light);
-  box-shadow: 0 5px 0 rgba(28,22,18,0.38), 0 9px 0 rgba(28,22,18,0.13);
+  box-shadow: 0 5px 0 var(--control-shadow), 0 9px 0 var(--control-shadow-soft);
   transition: transform 140ms ease, box-shadow 140ms ease;
 }
-.header-cta:hover { transform: translateY(-2px) rotate(0.4deg); box-shadow: 0 7px 0 rgba(28,22,18,0.38), 0 12px 0 rgba(28,22,18,0.11); }
-.header-cta:active { transform: translateY(4px) rotate(1deg); box-shadow: 0 1px 0 rgba(28,22,18,0.38), 0 2px 0 rgba(28,22,18,0.12); }
+.header-cta:hover { transform: translateY(-2px) rotate(0.4deg); box-shadow: 0 7px 0 var(--control-shadow), 0 12px 0 var(--control-shadow-soft); }
+.header-cta:active { transform: translateY(4px) rotate(1deg); box-shadow: 0 1px 0 var(--control-shadow), 0 2px 0 var(--control-shadow-soft); }
+.header-cta--icon { width: 48px; height: 48px; padding: 0; border-radius: 16px 13px 15px 12px / 13px 16px 12px 15px; }
+.header-icon { display: block; width: 1.55rem; height: 1.55rem; color: currentColor; font-family: 'Special Elite', monospace; font-size: 1.42rem; font-weight: 700; line-height: 1; }
+.header-icon path, .header-icon circle { fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
 .header-cta--connect { background: var(--hl-yellow); color: var(--accent-text); transform: rotate(-1deg); }
-.header-cta--theme { background: var(--surface-strong); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink), 0 5px 0 rgba(28,22,18,0.2); }
-.header-cta--motion { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink), 0 5px 0 rgba(28,22,18,0.2); } /* WCAG 2.2.2: visible animation pause control matches existing visual system. */
+.header-cta--theme { background: var(--surface-strong); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink), 0 5px 0 var(--control-shadow-soft); }
+.header-cta--motion { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink), 0 5px 0 var(--control-shadow-soft); } /* WCAG 2.2.2: visible animation pause control matches existing visual system. */
 
 .section-shell {
   position: relative;
@@ -275,7 +425,7 @@ h1 span { position: relative; display: inline-block; }
   position: absolute;
   inset: 8px -6px -10px 5px;
   z-index: -2;
-  background: rgba(28,22,18,0.28);
+  background: var(--button-shadow);
   clip-path: polygon(3% 18%, 96% 0, 100% 77%, 7% 100%);
   transition: transform 140ms ease, opacity 140ms ease;
 }
@@ -300,21 +450,21 @@ h1 span { position: relative; display: inline-block; }
 .click-arrow path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
 .click-arrow text { fill: var(--ink); font-family: 'Architects Daughter', cursive; font-size: 20px; }
 .thought-bubble { position: absolute; top: 78px; left: 66px; z-index: 4; font-family: 'Caveat Brush', cursive; font-size: 2rem; transform: rotate(-8deg); }
-.thought-bubble::before { content: ''; position: absolute; inset: -8px -18px; z-index: -1; background: rgba(247,244,237,0.8); clip-path: ellipse(50% 42% at 50% 50%); filter: url(#roughen-light); }
+.thought-bubble::before { content: ''; position: absolute; inset: -8px -18px; z-index: -1; background: var(--thought-bg); clip-path: ellipse(50% 42% at 50% 50%); filter: url(#roughen-light); }
 .star { position: absolute; z-index: 4; font-family: 'Caveat Brush', cursive; font-size: 2rem; color: var(--ink); animation: float-star 3s ease-in-out infinite; }
 .s1 { top: 90px; right: 32px; } .s2 { bottom: 112px; left: 34px; animation-delay: 0.7s; } .s3 { bottom: 88px; right: 106px; animation-delay: 1.4s; }
-.portal-preview-sketch { width: min(430px, 88vw); height: auto; overflow: visible; filter: drop-shadow(5px 8px 0 rgba(28,22,18,0.08)); }
+.portal-preview-sketch { width: min(430px, 88vw); height: auto; overflow: visible; filter: drop-shadow(5px 8px 0 var(--control-shadow-soft)); }
 .portal-preview-sketch path { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .portal-preview-sketch text { fill: var(--ink); font-family: 'Special Elite', monospace; font-size: 15px; stroke: none; }
-.portal-preview-sketch .preview-shell { fill: rgba(240,236,226,0.72); stroke-width: 3; }
-.portal-preview-sketch .preview-lens.present { fill: rgba(14,17,23,0.92); }
-.portal-preview-sketch .preview-lens.future { fill: rgba(245,216,74,0.18); }
-.portal-preview-sketch .preview-lens.present + .preview-lens + text, .portal-preview-sketch .present ~ text:first-of-type { fill: rgba(255,255,255,0.82); }
+.portal-preview-sketch .preview-shell { fill: var(--surface-muted); stroke-width: 3; }
+.portal-preview-sketch .preview-lens.present { fill: var(--lens-left-bg); }
+.portal-preview-sketch .preview-lens.future { fill: color-mix(in srgb, var(--hl-yellow) 20%, transparent); }
+.portal-preview-sketch .preview-lens.present + .preview-lens + text, .portal-preview-sketch .present ~ text:first-of-type { fill: var(--portal-left-muted); }
 .portal-preview-sketch .future-line { stroke-dasharray: 8 8; animation: data-flow 1.8s linear infinite; }
 
 .binocle {
   --look-x: 0px; --look-y: 0px; --blink: 1; --tilt: 0deg; --lean-x: 0deg; --lean-y: 0deg; --body-x: 0px; --body-y: 0px; --body-roll: 0deg; --depth-x: 5px; --depth-y: 4px; --wave-left: 0deg; --wave-right: 0deg; --brow-y: 0px; --brow-left: 0deg; --brow-right: 0deg; --mouth-y: 0px; --mouth-scale: 1;
-  --lens-color: #f5f0e8; --shell-color: #ececec; --tube-color: #d8d0c4; --iris-scale: 1; --iris-color: #1c1612; --shine-opacity: 1; --shine-scale: 1;
+  --lens-color: var(--mascot-lens); --shell-color: var(--mascot-shell); --tube-color: var(--mascot-tube); --iris-scale: 1; --iris-color: var(--mascot-iris); --shine-opacity: 1; --shine-scale: 1;
   --brow-arch-left: 0; --brow-arch-right: 0; --brow-thickness: 3.1px; --brow-spread: 0px; --cheek-opacity: 0; --cheek-scale: 0.6; --sweat-opacity: 0; --tear-opacity: 0;
   --body-squeeze-x: 1; --body-squeeze-y: 1; --body-float: 0px; --arm-droop: 0deg; --shake-intensity: 0; --pulse-scale: 1;
   --mouth-smile-opacity: 0; --mouth-ajar-opacity: 0; --mouth-open-opacity: 0; --mouth-flat-opacity: 0; --mouth-grimace-opacity: 0; --mouth-teeth-opacity: 0; --mouth-ooh-opacity: 0; --mouth-tremble-opacity: 0; --mouth-smirk-opacity: 0; --mouth-silly-open-opacity: 0; --mouth-silly-tongue-opacity: 0; --mouth-zip-opacity: 0; --mouth-open-scale-x: 1; --mouth-open-scale-y: 1; --mouth-scale-y: 1;
@@ -330,46 +480,46 @@ h1 span { position: relative; display: inline-block; }
   animation: mascot-bob 7s ease-in-out infinite;
 }
 .right-lens-hotspot { position: absolute; right: 9%; top: 21%; z-index: 5; width: 40%; height: 55%; clip-path: ellipse(47% 44% at 50% 50%); cursor: pointer; transition: transform 120ms ease; } /* WCAG 2.1.1: hotspot remains pointer-only because the parent mascot button is the keyboard control. */
-.right-lens-hotspot::after { content: ''; position: absolute; inset: 15% 12%; opacity: 0; border: 1.5px solid rgba(28,22,18,0.42); clip-path: ellipse(47% 44% at 50% 50%); transition: opacity 160ms ease; }
+.right-lens-hotspot::after { content: ''; position: absolute; inset: 15% 12%; opacity: 0; border: 1.5px solid var(--surface-line); clip-path: ellipse(47% 44% at 50% 50%); transition: opacity 160ms ease; }
 .right-lens-hotspot:hover::after { opacity: 0.55; }
 .right-lens-hotspot:active { transform: translateY(3px) scale(0.94); }
 .binocle__svg { width: 100%; height: 100%; overflow: visible; transform: perspective(620px) rotateY(var(--lean-x)) rotateX(var(--lean-y)); }
 .svg-body-group { transform: translate(var(--body-x), var(--body-y)) rotate(var(--body-roll)) scale(var(--body-squeeze-x), var(--body-squeeze-y)); transform-origin: 92px 62px; transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1); }
-.svg-arm, .svg-detail, .svg-stitch, .svg-center-band, .svg-bridge, .svg-bridge-shadow { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+.svg-arm, .svg-detail, .svg-stitch, .svg-center-band, .svg-bridge, .svg-bridge-shadow { fill: none; stroke: var(--mascot-outline, var(--ink)); stroke-linecap: round; stroke-linejoin: round; }
 .svg-arm { stroke-width: 4; transform-box: fill-box; transform-origin: bottom center; transition: transform 240ms ease; }
 .svg-arm.left { transform: rotate(calc(var(--wave-left) + var(--arm-droop))); }
 .svg-arm.right { transform: rotate(calc(var(--wave-right) - var(--arm-droop))); }
 .svg-detail, .svg-stitch { stroke-width: 1.4; opacity: 0.55; }
-.svg-shell, .svg-back { fill: var(--shell-color); stroke: var(--ink); stroke-width: 2.2; transition: fill 280ms ease; opacity: 1; }
-.svg-back { opacity: 1; fill: color-mix(in srgb, var(--shell-color) 80%, #1c1612); transform: translate(var(--depth-x), var(--depth-y)); }
-.svg-barrel { fill: var(--tube-color, #d8d0c4); stroke: var(--ink); stroke-width: 2.1; opacity: 1 !important; transition: fill 280ms ease; }
-.svg-frame { fill: var(--shell-color); stroke: var(--ink); stroke-width: 3.5; opacity: 1; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
-.svg-inner-rim { fill: var(--lens-color); stroke: var(--ink); stroke-width: 2; opacity: 1; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
-.svg-rim { fill: rgba(255,253,246,0.86); stroke: var(--ink); stroke-width: 1.9; opacity: 0.9; transition: opacity 240ms ease, fill 280ms ease; }
+.svg-shell, .svg-back { fill: var(--shell-color); stroke: var(--mascot-outline, var(--ink)); stroke-width: 2.2; transition: fill 280ms ease; opacity: 1; }
+.svg-back { opacity: 1; fill: color-mix(in srgb, var(--shell-color) 80%, var(--page-bg)); transform: translate(var(--depth-x), var(--depth-y)); }
+.svg-barrel { fill: var(--tube-color, var(--mascot-tube)); stroke: var(--mascot-outline, var(--ink)); stroke-width: 2.1; opacity: 1 !important; transition: fill 280ms ease; }
+.svg-frame { fill: var(--shell-color); stroke: var(--mascot-outline, var(--ink)); stroke-width: 3.5; opacity: 1; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+.svg-inner-rim { fill: var(--lens-color); stroke: var(--mascot-outline, var(--ink)); stroke-width: 2; opacity: 1; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+.svg-rim { fill: var(--mascot-rim); stroke: var(--mascot-outline, var(--ink)); stroke-width: 1.9; opacity: 0.9; transition: opacity 240ms ease, fill 280ms ease; }
 .svg-center-band { stroke-width: 2.8; }
 .svg-bridge { stroke-width: 3.6; }
 .svg-bridge-shadow { stroke-width: 1.2; opacity: 0.34; }
-.svg-brow { fill: none; stroke: var(--ink); stroke-width: var(--brow-thickness); stroke-linecap: round; transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), stroke-width 220ms ease; }
+.svg-brow { fill: none; stroke: var(--mascot-outline, var(--ink)); stroke-width: var(--brow-thickness); stroke-linecap: round; transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), stroke-width 220ms ease; }
 .svg-brow.left { transform-origin: 44px 20px; transform: translate(calc(var(--brow-spread) * -1), var(--brow-y)) rotate(var(--brow-left)) scaleY(calc(1 + var(--brow-arch-left) * 0.18)); }
 .svg-brow.right { transform-origin: 140px 20px; transform: translate(var(--brow-spread), var(--brow-y)) rotate(var(--brow-right)) scaleY(calc(1 + var(--brow-arch-right) * 0.18)); }
 .svg-eye { transform: translate(var(--look-x), var(--look-y)) scaleY(var(--blink)); transform-origin: center; transition: transform 80ms linear; }
 .svg-pupil { fill: var(--iris-color); transform-box: fill-box; transform-origin: center; transform: scale(var(--iris-scale)); transition: fill 260ms ease, transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease; }
 .svg-pupil-shine { fill: var(--paper); opacity: var(--shine-opacity); transform-box: fill-box; transform-origin: center; transform: scale(var(--shine-scale)); transition: opacity 260ms ease, transform 260ms ease; }
-.svg-pupil-heart { opacity: 0; fill: #e8104a; transform-box: fill-box; transform-origin: center; transition: opacity 300ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-.svg-cheek { fill: #ff8080; opacity: var(--cheek-opacity); transform: scale(var(--cheek-scale)); transform-box: fill-box; transform-origin: center; transition: opacity 300ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-.svg-sweat { fill: #7ab3e8; opacity: var(--sweat-opacity); transition: opacity 200ms ease; }
-.svg-tear { fill: #7ab3e8; opacity: var(--tear-opacity); transform-box: fill-box; transform-origin: center; }
-.svg-star { fill: #f5d84a; opacity: 0; transform: scale(0.3) rotate(0deg); transform-box: fill-box; transform-origin: center; transition: opacity 200ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-.svg-spiral { fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform-box: fill-box; transform-origin: center; }
-.svg-thought-bubble { fill: rgba(212,232,245,0.92); stroke: var(--ink); stroke-width: 1.2; opacity: 0; transform: translate(-2px, 4px) scale(0.8); transform-origin: 12px 24px; transition: opacity 240ms ease, transform 240ms ease; }
-.svg-mouth-pad { fill: #fffdf8; stroke: none; opacity: 0.92; }
+.svg-pupil-heart { opacity: 0; fill: var(--mascot-heart); transform-box: fill-box; transform-origin: center; transition: opacity 300ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.svg-cheek { fill: var(--mascot-cheek); opacity: var(--cheek-opacity); transform: scale(var(--cheek-scale)); transform-box: fill-box; transform-origin: center; transition: opacity 300ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.svg-sweat { fill: var(--hl-blue); opacity: var(--sweat-opacity); transition: opacity 200ms ease; }
+.svg-tear { fill: var(--hl-blue); opacity: var(--tear-opacity); transform-box: fill-box; transform-origin: center; }
+.svg-star { fill: var(--hl-yellow); opacity: 0; transform: scale(0.3) rotate(0deg); transform-box: fill-box; transform-origin: center; transition: opacity 200ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.svg-spiral { fill: none; stroke: var(--mascot-outline, var(--ink)); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.svg-thought-bubble { fill: var(--mascot-thought); stroke: var(--mascot-outline, var(--ink)); stroke-width: 1.2; opacity: 0; transform: translate(-2px, 4px) scale(0.8); transform-origin: 12px 24px; transition: opacity 240ms ease, transform 240ms ease; }
+.svg-mouth-pad { fill: var(--mascot-mouth-fill); stroke: none; opacity: 0.92; }
 .svg-mouth, .svg-mouth-core, .svg-mouth-shine { transform-origin: 92px 96px; transition: opacity 180ms ease, transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1); transform: translateY(var(--mouth-y)) scale(var(--mouth-scale)); }
-.svg-mouth { fill: none; stroke: var(--ink); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; }
+.svg-mouth { fill: none; stroke: var(--mascot-outline, var(--ink)); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; }
 .svg-mouth.smile { opacity: var(--mouth-smile-opacity); }
-.svg-mouth.ajar { fill: #fffdf8; stroke-width: 3; opacity: var(--mouth-ajar-opacity); transform: translateY(var(--mouth-y)) scale(var(--mouth-scale), var(--mouth-scale-y)); }
-.svg-mouth.open { fill: #fffdf8; stroke-width: 3.4; opacity: var(--mouth-open-opacity); transform: translateY(var(--mouth-y)) scale(var(--mouth-open-scale-x), var(--mouth-open-scale-y)); }
+.svg-mouth.ajar { fill: var(--mascot-mouth-fill); stroke-width: 3; opacity: var(--mouth-ajar-opacity); transform: translateY(var(--mouth-y)) scale(var(--mouth-scale), var(--mouth-scale-y)); }
+.svg-mouth.open { fill: var(--mascot-mouth-fill); stroke-width: 3.4; opacity: var(--mouth-open-opacity); transform: translateY(var(--mouth-y)) scale(var(--mouth-open-scale-x), var(--mouth-open-scale-y)); }
 .svg-mouth-core { fill: var(--ink); opacity: calc(var(--mouth-open-opacity) * 0.58); transform: translateY(calc(var(--mouth-y) + 2px)) scale(calc(var(--mouth-open-scale-x) * 0.72), calc(var(--mouth-open-scale-y) * 0.58)); }
-.svg-mouth-shine { fill: #ffffff; opacity: calc(var(--mouth-open-opacity) * 0.9); }
+.svg-mouth-shine { fill: var(--mascot-mouth-fill); opacity: calc(var(--mouth-open-opacity) * 0.9); }
 .svg-mouth.flat { opacity: var(--mouth-flat-opacity); stroke-width: 3.2; }
 .svg-mouth.grimace { fill: var(--paper); stroke-width: 3; opacity: var(--mouth-grimace-opacity); }
 .svg-mouth.teeth, .svg-mouth.zip { opacity: var(--mouth-teeth-opacity); stroke-width: 2.7; }
@@ -378,47 +528,47 @@ h1 span { position: relative; display: inline-block; }
 .svg-mouth.tremble { opacity: var(--mouth-tremble-opacity); stroke-width: 3.6; }
 .svg-mouth.smirk { opacity: var(--mouth-smirk-opacity); stroke-width: 4; }
 .svg-mouth.silly-open { fill: var(--ink); opacity: var(--mouth-silly-open-opacity); stroke-width: 3; }
-.svg-mouth.silly-tongue { fill: #ff7fa4; stroke: var(--ink); stroke-width: 2.2; opacity: var(--mouth-silly-tongue-opacity); transform-origin: 92px 100px; }
-.svg-spark { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; opacity: 0; }
+.svg-mouth.silly-tongue { fill: var(--mascot-cheek); stroke: var(--mascot-outline, var(--ink)); stroke-width: 2.2; opacity: var(--mouth-silly-tongue-opacity); transform-origin: 92px 100px; }
+.svg-spark { fill: none; stroke: var(--mascot-outline, var(--ink)); stroke-width: 2.2; stroke-linecap: round; opacity: 0; }
 
-.binocle[data-mood="curious"] { --lens-color: #f5f0e8; --shell-color: #ececec; --tube-color: #d8d0c4; --iris-scale: 1; --mouth-smile-opacity: 0.8; }
-.binocle[data-mood="happy"] { --lens-color: #fff176; --shell-color: #fffde0; --iris-scale: 1.15; --brow-y: -3px; --brow-left: -6deg; --brow-right: 6deg; --mouth-y: -3px; --mouth-scale: 1.2; --cheek-opacity: 0.55; --cheek-scale: 1; --mouth-ajar-opacity: 0.5; animation-duration: 4.4s; }
+.binocle[data-mood="curious"] { --lens-color: var(--mascot-lens); --shell-color: var(--mascot-shell); --tube-color: var(--mascot-tube); --iris-scale: 1; --mouth-smile-opacity: 0.8; }
+.binocle[data-mood="happy"] { --lens-color: var(--mood-happy-lens); --shell-color: var(--mood-happy-shell); --iris-scale: 1.15; --brow-y: -3px; --brow-left: -6deg; --brow-right: 6deg; --mouth-y: -3px; --mouth-scale: 1.2; --cheek-opacity: 0.55; --cheek-scale: 1; --mouth-ajar-opacity: 0.5; animation-duration: 4.4s; }
 .binocle[data-mood="happy"] .svg-star { opacity: 0.6; transform: scale(1) rotate(12deg); }
-.binocle[data-mood="excited"], .portal-growing { --lens-color: #ffb347; --shell-color: #ffe0b0; --iris-scale: 1.28; --iris-color: #ffffff; --shine-scale: 1.5; --brow-y: -7px; --brow-left: -14deg; --brow-right: 14deg; --brow-thickness: 4px; --mouth-open-opacity: 1; --mouth-open-scale-x: 1.4; --mouth-open-scale-y: 1.7; --mouth-y: -8px; --wave-left: 12deg; --wave-right: -18deg; --cheek-opacity: 0.8; --cheek-scale: 1.3; --body-float: -4px; --pulse-scale: 1.04; animation: mascot-bob 4.8s ease-in-out infinite, excited-shake 0.38s ease-in-out infinite; }
+.binocle[data-mood="excited"], .portal-growing { --lens-color: var(--mood-excited-lens); --shell-color: var(--mood-excited-shell); --iris-scale: 1.28; --iris-color: var(--mascot-mouth-fill); --shine-scale: 1.5; --brow-y: -7px; --brow-left: -14deg; --brow-right: 14deg; --brow-thickness: 4px; --mouth-open-opacity: 1; --mouth-open-scale-x: 1.4; --mouth-open-scale-y: 1.7; --mouth-y: -8px; --wave-left: 12deg; --wave-right: -18deg; --cheek-opacity: 0.8; --cheek-scale: 1.3; --body-float: -4px; --pulse-scale: 1.04; animation: mascot-bob 4.8s ease-in-out infinite, excited-shake 0.38s ease-in-out infinite; }
 .binocle[data-mood="excited"] .svg-star, .portal-growing .svg-star { opacity: 1; transform: scale(1.12) rotate(18deg); }
-.binocle[data-mood="laughing"] { --lens-color: #fff176; --shell-color: #fffde0; --tube-color: #f0df9b; --iris-scale: 0.72; --blink: 0.2; --brow-y: -6px; --brow-left: -16deg; --brow-right: 16deg; --brow-thickness: 4.4px; --mouth-open-opacity: 1; --mouth-open-scale-x: 1.55; --mouth-open-scale-y: 1.85; --mouth-y: -9px; --cheek-opacity: 1; --cheek-scale: 1.55; --tear-opacity: 0.95; --wave-left: 20deg; --wave-right: -24deg; --body-float: -5px; --pulse-scale: 1.06; animation: laugh-bounce 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) infinite; }
+.binocle[data-mood="laughing"] { --lens-color: var(--mood-happy-lens); --shell-color: var(--mood-happy-shell); --tube-color: var(--mood-laughing-tube); --iris-scale: 0.72; --blink: 0.2; --brow-y: -6px; --brow-left: -16deg; --brow-right: 16deg; --brow-thickness: 4.4px; --mouth-open-opacity: 1; --mouth-open-scale-x: 1.55; --mouth-open-scale-y: 1.85; --mouth-y: -9px; --cheek-opacity: 1; --cheek-scale: 1.55; --tear-opacity: 0.95; --wave-left: 20deg; --wave-right: -24deg; --body-float: -5px; --pulse-scale: 1.06; animation: laugh-bounce 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) infinite; }
 .binocle[data-mood="laughing"] .svg-tear { animation: tear-fall 0.9s ease-in infinite; }
 .binocle[data-mood="laughing"] .svg-star { opacity: 0.75; transform: scale(1) rotate(20deg); }
-.binocle[data-mood="love"] { --lens-color: #ffb3c6; --shell-color: #ffd6e0; --iris-scale: 1.22; --iris-color: #e8104a; --brow-y: -4px; --brow-left: -8deg; --brow-right: 8deg; --cheek-opacity: 0.9; --cheek-scale: 1.4; --tear-opacity: 0.55; --mouth-smile-opacity: 1; --mouth-scale: 1.18; --mouth-y: -4px; --wave-left: 8deg; --wave-right: -6deg; }
+.binocle[data-mood="love"] { --lens-color: var(--mood-love-lens); --shell-color: var(--mood-love-shell); --iris-scale: 1.22; --iris-color: var(--mascot-heart); --brow-y: -4px; --brow-left: -8deg; --brow-right: 8deg; --cheek-opacity: 0.9; --cheek-scale: 1.4; --tear-opacity: 0.55; --mouth-smile-opacity: 1; --mouth-scale: 1.18; --mouth-y: -4px; --wave-left: 8deg; --wave-right: -6deg; }
 .binocle[data-mood="love"] .svg-pupil, .binocle[data-mood="love"] .svg-pupil-shine { opacity: 0; }
 .binocle[data-mood="love"] .svg-pupil-heart { opacity: 1; transform: scale(1.08); }
 .binocle[data-mood="love"] .svg-tear { animation: tear-fall 1.2s ease-in forwards; }
-.binocle[data-mood="surprised"] { --lens-color: #ff6b6b; --shell-color: #ffc8c8; --iris-scale: 1.45; --brow-y: -10px; --brow-left: -18deg; --brow-right: 18deg; --brow-thickness: 4.2px; --mouth-open-opacity: 1; --mouth-open-scale-x: 1.5; --mouth-open-scale-y: 2; --mouth-y: -10px; --body-squeeze-x: 0.88; --body-squeeze-y: 1.12; --body-float: -6px; }
-.binocle[data-mood="thinking"] { --lens-color: #d4e8f5; --shell-color: #e8f4ff; --iris-scale: 0.82; --brow-left: 12deg; --brow-right: -2deg; --brow-y: 2px; --mouth-flat-opacity: 1; --mouth-scale: 0.78; --tilt: -4deg; --lean-x: -8deg; }
+.binocle[data-mood="surprised"] { --lens-color: var(--mood-surprised-lens); --shell-color: var(--mood-surprised-shell); --iris-scale: 1.45; --brow-y: -10px; --brow-left: -18deg; --brow-right: 18deg; --brow-thickness: 4.2px; --mouth-open-opacity: 1; --mouth-open-scale-x: 1.5; --mouth-open-scale-y: 2; --mouth-y: -10px; --body-squeeze-x: 0.88; --body-squeeze-y: 1.12; --body-float: -6px; }
+.binocle[data-mood="thinking"] { --lens-color: var(--mood-thinking-lens); --shell-color: var(--mood-thinking-shell); --iris-scale: 0.82; --brow-left: 12deg; --brow-right: -2deg; --brow-y: 2px; --mouth-flat-opacity: 1; --mouth-scale: 0.78; --tilt: -4deg; --lean-x: -8deg; }
 .binocle[data-mood="thinking"] .svg-thought-bubble { opacity: 1; transform: translate(0, 0) scale(1); }
-.binocle[data-mood="proud"] { --lens-color: #d4a8ff; --shell-color: #e8d4ff; --iris-scale: 1.1; --brow-y: -2px; --brow-left: 4deg; --brow-right: -4deg; --mouth-smirk-opacity: 1; --lean-y: -8deg; --wave-right: -10deg; animation: proud-lean 4s ease-in-out infinite; }
-.binocle[data-mood="silly"] { --lens-color: #a8f0a8; --shell-color: #d4ffd4; --iris-scale: 0.7; --brow-left: 22deg; --brow-right: -4deg; --brow-y: -3px; --mouth-silly-tongue-opacity: 1; --mouth-silly-open-opacity: 1; --wave-left: 25deg; --wave-right: 8deg; --tilt: 6deg; animation: silly-wobble 0.68s ease-in-out infinite; }
+.binocle[data-mood="proud"] { --lens-color: var(--mood-proud-lens); --shell-color: var(--mood-proud-shell); --iris-scale: 1.1; --brow-y: -2px; --brow-left: 4deg; --brow-right: -4deg; --mouth-smirk-opacity: 1; --lean-y: -8deg; --wave-right: -10deg; animation: proud-lean 4s ease-in-out infinite; }
+.binocle[data-mood="silly"] { --lens-color: var(--mood-silly-lens); --shell-color: var(--mood-silly-shell); --iris-scale: 0.7; --brow-left: 22deg; --brow-right: -4deg; --brow-y: -3px; --mouth-silly-tongue-opacity: 1; --mouth-silly-open-opacity: 1; --wave-left: 25deg; --wave-right: 8deg; --tilt: 6deg; animation: silly-wobble 0.68s ease-in-out infinite; }
 .binocle[data-mood="silly"] .svg-mouth.silly-tongue { animation: tongue-wag 0.5s ease-in-out infinite; }
-.binocle[data-mood="shy"] { --lens-color: #ffcba4; --shell-color: #ffe4cc; --iris-scale: 0.75; --brow-y: 4px; --brow-left: 6deg; --brow-right: -6deg; --cheek-opacity: 1; --cheek-scale: 1.5; --mouth-smile-opacity: 0.4; --mouth-scale: 0.72; --body-x: 4px; --lean-x: 8deg; }
-.binocle[data-mood="scared"] { --lens-color: #c8e6ff; --shell-color: #e0f0ff; --iris-scale: 1.38; --iris-color: #1c1612; --brow-y: -8px; --brow-left: -16deg; --brow-right: 16deg; --mouth-tremble-opacity: 1; --sweat-opacity: 0.9; --shake-intensity: 1; }
+.binocle[data-mood="shy"] { --lens-color: var(--mood-shy-lens); --shell-color: var(--mood-shy-shell); --iris-scale: 0.75; --brow-y: 4px; --brow-left: 6deg; --brow-right: -6deg; --cheek-opacity: 1; --cheek-scale: 1.5; --mouth-smile-opacity: 0.4; --mouth-scale: 0.72; --body-x: 4px; --lean-x: 8deg; }
+.binocle[data-mood="scared"] { --lens-color: var(--mood-scared-lens); --shell-color: var(--mood-scared-shell); --iris-scale: 1.38; --iris-color: var(--mascot-iris); --brow-y: -8px; --brow-left: -16deg; --brow-right: 16deg; --mouth-tremble-opacity: 1; --sweat-opacity: 0.9; --shake-intensity: 1; }
 .binocle[data-mood="scared"] .svg-body-group { animation: fear-shake 0.18s linear infinite; }
-.binocle[data-mood="angry"] { --lens-color: #ff4444; --shell-color: #ff9090; --iris-scale: 1.1; --iris-color: #ffffff; --shine-opacity: 0; --brow-y: 6px; --brow-left: -22deg; --brow-right: 22deg; --brow-thickness: 5px; --mouth-teeth-opacity: 1; --tilt: -2deg; animation: angry-rumble 0.52s ease-in-out infinite; }
-.binocle[data-mood="dizzy"] { --lens-color: #e8d4ff; --shell-color: #f0e4ff; --iris-scale: 0; --brow-y: 2px; --brow-left: 8deg; --brow-right: -8deg; --mouth-grimace-opacity: 1; --tilt: 5deg; animation: dizzy-sway 1.6s ease-in-out infinite; }
+.binocle[data-mood="angry"] { --lens-color: var(--mood-angry-lens); --shell-color: var(--mood-angry-shell); --iris-scale: 1.1; --iris-color: var(--mascot-mouth-fill); --shine-opacity: 0; --brow-y: 6px; --brow-left: -22deg; --brow-right: 22deg; --brow-thickness: 5px; --mouth-teeth-opacity: 1; --tilt: -2deg; animation: angry-rumble 0.52s ease-in-out infinite; }
+.binocle[data-mood="dizzy"] { --lens-color: var(--mood-dizzy-lens); --shell-color: var(--mood-dizzy-shell); --iris-scale: 0; --brow-y: 2px; --brow-left: 8deg; --brow-right: -8deg; --mouth-grimace-opacity: 1; --tilt: 5deg; animation: dizzy-sway 1.6s ease-in-out infinite; }
 .binocle[data-mood="dizzy"] .svg-spiral { opacity: 1; animation: spiral-spin 1.8s linear infinite; }
 .binocle[data-mood="dizzy"] .svg-pupil, .binocle[data-mood="dizzy"] .svg-pupil-shine { opacity: 0; }
-.binocle[data-mood="sleeping"] { --lens-color: #b8c8e8; --shell-color: #d0ddf0; --blink: 0.06; --brow-y: 6px; --mouth-flat-opacity: 1; --mouth-scale: 0.6; --lean-y: 12deg; --tilt: 8deg; --arm-droop: 9deg; animation: sleep-breathe 3.4s ease-in-out infinite; }
-.binocle[data-mood="gentle"] { --lens-color: #f0f4f0; --brow-y: 1px; --brow-left: 2deg; --brow-right: -2deg; --mouth-smile-opacity: 1; --mouth-scale: 1.06; --iris-scale: 0.92; transition-duration: 500ms; }
-.binocle[data-mood="listening"] { --lens-color: #e0f5e8; --iris-scale: 1.12; --brow-y: -5px; --brow-left: -6deg; --brow-right: 6deg; --tilt: 3deg; --lean-x: 6deg; --mouth-ajar-opacity: 0.8; }
-.binocle[data-mood="seller"] { --lens-color: #fff9c4; --iris-scale: 1.18; --brow-y: -3px; --brow-left: -4deg; --brow-right: 8deg; --mouth-smirk-opacity: 0.7; --mouth-smile-opacity: 0.3; --wave-right: -22deg; --cheek-opacity: 0.3; }
-.binocle[data-mood="close"] { --lens-color: #dceeff; --iris-scale: 1.3; --brow-y: -3px; --brow-left: 4deg; --brow-right: -4deg; --mouth-ajar-opacity: 0.85; --mouth-y: -3px; --cheek-opacity: 0.4; }
-.binocle[data-mood="bye"] { --lens-color: #e8e8e8; --shell-color: #f0f0f0; --iris-scale: 0.88; --brow-y: -1px; --mouth-flat-opacity: 0.6; --mouth-smile-opacity: 0.4; --wave-right: -32deg; --wave-left: 6deg; --tilt: -3deg; }
+.binocle[data-mood="sleeping"] { --lens-color: var(--mood-sleeping-lens); --shell-color: var(--mood-sleeping-shell); --blink: 0.06; --brow-y: 6px; --mouth-flat-opacity: 1; --mouth-scale: 0.6; --lean-y: 12deg; --tilt: 8deg; --arm-droop: 9deg; animation: sleep-breathe 3.4s ease-in-out infinite; }
+.binocle[data-mood="gentle"] { --lens-color: var(--mood-gentle-lens); --brow-y: 1px; --brow-left: 2deg; --brow-right: -2deg; --mouth-smile-opacity: 1; --mouth-scale: 1.06; --iris-scale: 0.92; transition-duration: 500ms; }
+.binocle[data-mood="listening"] { --lens-color: var(--mood-listening-lens); --iris-scale: 1.12; --brow-y: -5px; --brow-left: -6deg; --brow-right: 6deg; --tilt: 3deg; --lean-x: 6deg; --mouth-ajar-opacity: 0.8; }
+.binocle[data-mood="seller"] { --lens-color: var(--mood-seller-lens); --iris-scale: 1.18; --brow-y: -3px; --brow-left: -4deg; --brow-right: 8deg; --mouth-smirk-opacity: 0.7; --mouth-smile-opacity: 0.3; --wave-right: -22deg; --cheek-opacity: 0.3; }
+.binocle[data-mood="close"] { --lens-color: var(--mood-close-lens); --iris-scale: 1.3; --brow-y: -3px; --brow-left: 4deg; --brow-right: -4deg; --mouth-ajar-opacity: 0.85; --mouth-y: -3px; --cheek-opacity: 0.4; }
+.binocle[data-mood="bye"] { --lens-color: var(--mood-bye-lens); --shell-color: var(--mood-bye-shell); --iris-scale: 0.88; --brow-y: -1px; --mouth-flat-opacity: 0.6; --mouth-smile-opacity: 0.4; --wave-right: -32deg; --wave-left: 6deg; --tilt: -3deg; }
 .binocle.is-brow-pop .svg-brow { animation: brow-pop 680ms ease; }
-.binocle__ping { position: absolute; width: 18px; height: 18px; border: 2px solid rgba(28,22,18,0.45); border-radius: 50%; pointer-events: none; animation: ping 700ms ease-out forwards; }
-.binocle__heart { position: absolute; left: 50%; top: 34%; color: #e8104a; font-family: 'Caveat', cursive; font-size: 1.15rem; pointer-events: none; transform: translate(-50%, 0); animation: float-heart 1.4s ease-out forwards; }
-.binocle__z { position: absolute; top: 10%; font-family: 'Caveat', cursive; font-size: 0.9rem; color: #5577aa; animation: float-z 2.2s ease-out forwards; pointer-events: none; }
+.binocle__ping { position: absolute; width: 18px; height: 18px; border: 2px solid var(--surface-line); border-radius: 50%; pointer-events: none; animation: ping 700ms ease-out forwards; }
+.binocle__heart { position: absolute; left: 50%; top: 34%; color: var(--mascot-heart); font-family: 'Caveat', cursive; font-size: 1.15rem; pointer-events: none; transform: translate(-50%, 0); animation: float-heart 1.4s ease-out forwards; }
+.binocle__z { position: absolute; top: 10%; font-family: 'Caveat', cursive; font-size: 0.9rem; color: var(--hl-blue); animation: float-z 2.2s ease-out forwards; pointer-events: none; }
 .binocle__laugh, .binocle__laugh-tear { position: absolute; pointer-events: none; z-index: 8; font-family: 'Caveat Brush', cursive; animation: laugh-pop 1.05s ease-out forwards; }
 .binocle__laugh { color: var(--ink); font-size: 1.05rem; }
-.binocle__laugh-tear { color: #4fa3de; font-size: 1rem; }
+.binocle__laugh-tear { color: var(--hl-blue); font-size: 1rem; }
 
 .section-heading { max-width: 780px; margin-bottom: 2rem; }
 h2 { margin: 0 0 0.7rem; font-family: 'Caveat', cursive; font-size: clamp(3rem, 7vw, 5.6rem); line-height: 0.9; }
@@ -583,8 +733,8 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
 .portal::before { content: ''; position: fixed; inset: 0; z-index: 0; background: #030303; }
 .portal__lens-left, .portal__lens-right { position: fixed; top: 50%; width: 70vw; height: 112vh; min-height: 0; padding: clamp(2.8rem, 5vw, 5.2rem); display: grid; align-content: center; overflow: hidden; clip-path: ellipse(50% 49.5% at 50% 50%); opacity: 0; transform: translateY(-50%) scale(0.92); animation: world-pop 520ms cubic-bezier(0.22,1,0.36,1) 1300ms forwards; transition: transform 320ms cubic-bezier(0.22,1,0.36,1), clip-path 320ms cubic-bezier(0.22,1,0.36,1); }
 .portal--quick .portal__lens-left, .portal--quick .portal__lens-right { animation-delay: 60ms; animation-duration: 260ms; }
-.portal__lens-left { left: -18vw; background: var(--lens-left-bg); color: rgba(255,255,255,0.9); }
-.portal__lens-right { right: -18vw; background: repeating-linear-gradient(0deg, transparent 0 31px, rgba(26,20,16,0.035) 31px 32px), var(--lens-right-bg); color: var(--ink); }
+.portal__lens-left { left: -18vw; background: var(--lens-left-bg); color: var(--portal-left-text); }
+.portal__lens-right { right: -18vw; background: repeating-linear-gradient(0deg, transparent 0 31px, var(--lens-rule) 31px 32px), var(--lens-right-bg); color: var(--ink); }
 .portal.is-near .portal__lens-left, .portal.is-near .portal__lens-right { transform: translateY(-50%) scale(1.16); clip-path: ellipse(53% 52% at 50% 50%); }
 .portal.is-far .portal__lens-left, .portal.is-far .portal__lens-right { transform: translateY(-50%) scale(0.98); clip-path: ellipse(49% 48.5% at 50% 50%); }
 .portal__mascot-shell { position: fixed; inset: 0; z-index: 2; pointer-events: none; display: grid; place-items: center; }
@@ -593,10 +743,10 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
 .portal-growing .svg-inner-rim, .portal-growing .svg-rim { opacity: 0.04; }
 .portal-growing .svg-pupil, .portal-growing .svg-pupil-shine { opacity: 0.16; }
 .portal-growing .svg-body-group { filter: none; transition: transform 260ms ease; }
-.portal-growing .svg-detail, .portal-growing .svg-stitch { opacity: 0.18; }
+.portal-growing .svg-detail, .portal-growing .svg-stitch { opacity: 0.06; }
 .portal__viewer-frame { display: none; }
 .portal__divider { display: none; }
-.portal__scroll-hint { position: fixed; left: 50%; bottom: 1.2rem; z-index: 8; transform: translateX(-50%) rotate(-1deg); color: rgba(255,255,255,0.48); font-family: 'Architects Daughter', cursive; font-size: 0.95rem; pointer-events: none; opacity: 0; animation: viewer-frame-in 520ms ease 1700ms forwards; }
+.portal__scroll-hint { position: fixed; left: 50%; bottom: 1.2rem; z-index: 8; transform: translateX(-50%) rotate(-1deg); color: var(--portal-left-hint); font-family: 'Architects Daughter', cursive; font-size: 0.95rem; pointer-events: none; opacity: 0; animation: viewer-frame-in 520ms ease 1700ms forwards; }
 .portal--quick .portal__scroll-hint { animation-delay: 320ms; }
 .portal__close { position: fixed; top: 22px; right: 24px; z-index: 8; width: 54px; height: 54px; border: 0; background: transparent; color: rgba(255,255,255,0.92); filter: drop-shadow(0 5px 0 rgba(255,255,255,0.16)); transition: transform 140ms ease, filter 140ms ease; }
 .portal__close svg { width: 54px; height: 54px; overflow: visible; }
@@ -604,16 +754,16 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
 .portal__close:hover { transform: translateY(-2px) rotate(-3deg); filter: drop-shadow(0 7px 0 rgba(255,255,255,0.16)); }
 .portal__close:active { transform: translateY(4px) rotate(1deg) scale(0.96); filter: drop-shadow(0 1px 0 rgba(255,255,255,0.14)); }
 .portal-login-area { width: min(420px, 100%); max-width: 100%; margin-inline: auto; min-width: 0; }
-.portal-kicker { margin: 0 0 0.7rem; font-family: 'Special Elite', monospace; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.82); } /* WCAG 1.4.3: small portal text contrast is increased. */
-.portal-kicker--future { color: rgba(28,22,18,0.72); } /* WCAG 1.4.3: future-side kicker contrast is increased. */
-.portal-note { position: relative; margin: 0 0 2rem; font-family: 'Caveat', cursive; font-weight: 500; font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.18; color: rgba(255,255,255,0.84); transform: rotate(-2deg); } /* WCAG 1.4.3: portal note contrast is increased. */
+.portal-kicker { margin: 0 0 0.7rem; font-family: 'Special Elite', monospace; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--portal-left-muted); } /* WCAG 1.4.3: small portal text contrast is increased. */
+.portal-kicker--future { color: var(--ink-mid); } /* WCAG 1.4.3: future-side kicker contrast is increased. */
+.portal-note { position: relative; margin: 0 0 2rem; font-family: 'Caveat', cursive; font-weight: 500; font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.18; color: var(--portal-left-muted); transform: rotate(-2deg); } /* WCAG 1.4.3: portal note contrast is increased. */
 .portal-note svg { display: block; width: 130px; height: 72px; margin: 0.2rem 0 0 6rem; overflow: visible; }
 .portal-note path { fill: none; stroke: rgba(255,255,255,0.64); stroke-width: 1.8; stroke-linecap: round; }
 .portal-login { display: grid; gap: 1rem; width: min(360px, 100%); max-width: 100%; min-width: 0; }
 .field { position: relative; display: grid; gap: 0.28rem; min-width: 0; }
-.field label { font-family: 'Special Elite', monospace; font-size: 0.76rem; color: rgba(255,255,255,0.86); } /* WCAG 1.4.3: field label contrast is increased. */
+.field label { font-family: 'Special Elite', monospace; font-size: 0.76rem; color: var(--portal-left-muted); } /* WCAG 1.4.3: field label contrast is increased. */
 .field input { width: 100%; min-width: 0; max-width: 100%; padding: 0.85rem 1rem; border: 0; outline: 0; background: transparent; color: white; font-family: 'Caveat', cursive; font-weight: 500; font-size: clamp(1.08rem, 4vw, 1.35rem); }
-.field input::placeholder { color: rgba(255,255,255,0.68); } /* WCAG 1.4.3: placeholder contrast is increased. */
+.field input::placeholder { color: var(--portal-left-hint); } /* WCAG 1.4.3: placeholder contrast is increased. */
 .field input[aria-invalid="true"] { color: #fff4f4; } /* WCAG 3.3.1: invalid state is not conveyed only by the error text colour. */
 .field::before { content: ''; position: absolute; inset: 1.45rem 0 -2px; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 64'%3E%3Cpath d='M8 10 C62 3 204 5 250 10 C258 27 256 48 249 56 C190 62 66 61 9 56 C2 42 2 24 8 10Z' fill='none' stroke='%23bfc3c8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat; } /* WCAG 1.4.11: input border contrast is increased above 3:1. */
 .field:has(input[aria-invalid="true"])::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 64'%3E%3Cpath d='M8 10 C62 3 204 5 250 10 C258 27 256 48 249 56 C190 62 66 61 9 56 C2 42 2 24 8 10Z' fill='none' stroke='%23ffd0d0' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E"); } /* WCAG 3.3.1: invalid input gets a visible non-text state. */
@@ -634,7 +784,7 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
 .portal-brand svg { width: 64px; fill: none; stroke: var(--ink); stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
 .portal-demo-area { width: min(430px, 100%); max-width: 100%; margin-inline: auto; min-width: 0; }
 .portal-cards { display: grid; gap: 0.75rem; width: min(430px, 100%); max-width: 100%; min-width: 0; }
-.portal-card { position: relative; min-width: 0; padding: 0.85rem 0.9rem 0.85rem clamp(5.8rem, 25%, 7.6rem); min-height: 104px; background: rgba(255,253,246,0.82); opacity: 0; transform: translateY(24px) rotate(var(--r, 0deg)); animation: card-rise 560ms cubic-bezier(0.22,1,0.36,1) forwards; filter: drop-shadow(3px 5px 0 rgba(28,22,18,0.08)); overflow: clip; overflow-wrap: anywhere; }
+.portal-card { position: relative; min-width: 0; padding: 0.85rem 0.9rem 0.85rem clamp(5.8rem, 25%, 7.6rem); min-height: 104px; background: var(--surface-strong); color: var(--ink); opacity: 0; transform: translateY(24px) rotate(var(--r, 0deg)); animation: card-rise 560ms cubic-bezier(0.22,1,0.36,1) forwards; filter: drop-shadow(3px 5px 0 var(--control-shadow-soft)); overflow: clip; overflow-wrap: anywhere; }
 .portal-card:nth-child(1) { --r: 1.2deg; animation-delay: 150ms; }
 .portal-card:nth-child(2) { --r: -0.8deg; animation-delay: 300ms; }
 .portal-card:nth-child(3) { --r: 1.5deg; animation-delay: 450ms; }
@@ -642,7 +792,7 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
 .portal-card path, .portal-card circle, .portal-card line { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 180; stroke-dashoffset: 180; animation: future-draw 1.4s cubic-bezier(0.25,0,0.3,1) forwards; animation-delay: inherit; }
 .portal-card h3 { margin: 0 0 0.2rem; font-size: 1.7rem; }
 .portal-card p { margin: 0; color: var(--ink-mid); line-height: 1.45; }
-.portal-quote { margin: 1.3rem 0 0.6rem; color: rgba(28,22,18,0.7); }
+.portal-quote { margin: 1.3rem 0 0.6rem; color: var(--ink-mid); }
 .portal-discover { display: inline-block; color: var(--ink); font-family: 'Caveat', cursive; font-size: 1.35rem; font-weight: 700; text-decoration: underline wavy var(--hl-yellow) 2px; text-underline-offset: 5px; transition: transform 140ms ease; }
 .portal-discover:hover { transform: translateY(-2px) rotate(-1deg); }
 .portal-discover:active { transform: translateY(3px) rotate(0.5deg); }
@@ -724,4 +874,29 @@ h3 { margin: 0 0 0.4rem; font-family: 'Caveat', cursive; font-weight: 700; font-
   *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; } /* WCAG 2.3.3: reduced motion preference disables non-essential animation. */
   .sketch-bg path { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; }
   .binocle[data-mood="scared"] .svg-body-group, .binocle[data-mood="excited"], .binocle[data-mood="laughing"], .binocle[data-mood="dizzy"], .binocle[data-mood="dizzy"] .svg-spiral, .binocle[data-mood="silly"], .binocle[data-mood="silly"] .svg-mouth.silly-tongue { animation: none !important; }
+}
+
+:root[data-theme="dark"] .asset-icon-grid img,
+:root[data-theme="night"] .asset-icon-grid img {
+  filter: invert(1) hue-rotate(180deg) brightness(1.4);
+}
+
+:root[data-theme="dark"] .sketch-bg path,
+:root[data-theme="dark"] .sketch-bg circle,
+:root[data-theme="dark"] .sketch-bg line,
+:root[data-theme="night"] .sketch-bg path,
+:root[data-theme="night"] .sketch-bg circle,
+:root[data-theme="night"] .sketch-bg line {
+  stroke: var(--ink);
+}
+
+:root[data-theme="dark"] .sketch-bg text,
+:root[data-theme="night"] .sketch-bg text {
+  fill: var(--ink);
+}
+
+:root[data-theme="dark"] .portal-preview-sketch .preview-shell,
+:root[data-theme="night"] .portal-preview-sketch .preview-shell {
+  stroke: var(--ink);
+  fill: var(--surface-muted);
 }

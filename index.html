@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="light dark" />
   <title>Prismatica — Everything. One Space.</title>
   <meta name="description" content="Prismatica is the workspace that grows from one note to a full operating system: notes, dashboards, databases, apps, drawing and collaboration in one place." />
+  <link rel="icon" type="image/svg+xml" href="assets/brand/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Caveat+Brush&family=Kalam:wght@300;400;700&family=Architects+Daughter&family=Special+Elite&display=swap" rel="stylesheet" />
@@ -31,10 +32,10 @@
         <feBlend in="SourceGraphic" in2="grain" mode="multiply" />
       </filter>
       <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
-        <line x1="0" y1="0" x2="0" y2="8" stroke="#1c1612" stroke-width="0.7" opacity="0.18" />
+        <line x1="0" y1="0" x2="0" y2="8" style="stroke: var(--ink)" stroke-width="0.7" opacity="0.18" />
       </pattern>
       <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-        <path d="M1 1 L9 5 L1 9" fill="none" stroke="#1c1612" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M1 1 L9 5 L1 9" fill="none" style="stroke: var(--ink)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
       </marker>
     </defs>
   </svg>
@@ -42,7 +43,7 @@
   <svg class="sketch-bg" viewBox="0 0 1440 2100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: decorative background drawing is hidden from assistive technology. -->
     <defs>
       <pattern id="bg-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(32)">
-        <line x1="0" y1="0" x2="0" y2="7" stroke="#1c1612" stroke-width="0.7" opacity="0.16" />
+        <line x1="0" y1="0" x2="0" y2="7" style="stroke: var(--ink)" stroke-width="0.7" opacity="0.16" />
       </pattern>
     </defs>
     <g class="blueprint-drawing" transform="translate(70 110)">
@@ -136,10 +137,22 @@
       </ul>
     </nav>
     <div class="header-actions">
-      <button class="header-cta" type="button" data-open-portal aria-label="Start your Prismatica workspace">Start</button><!-- WCAG 2.4.6: button label purpose is explicit. -->
-      <button class="header-cta header-cta--connect" type="button" data-open-connect aria-label="Quick connection — open login"><span lang="fr">Connexion</span></button><!-- WCAG 3.1.2: French label language is declared. -->
-      <button id="theme-toggle" class="header-cta header-cta--theme" type="button" aria-label="Theme: light. Switch to dark mode" aria-live="polite">Theme: Light</button><!-- WCAG 1.4.3: users can switch to high-contrast dark and night colour schemes. -->
-      <button id="pause-animations" class="header-cta header-cta--motion" type="button" aria-pressed="false">Pause animations</button><!-- WCAG 2.2.2: moving content can be paused by the user. -->
+      <button class="header-cta header-cta--icon" type="button" data-open-portal aria-label="Start workspace" title="Start workspace">
+        <svg class="header-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 4 C20 7, 23 12, 24 19 L28 23 L23 24 C21 27, 18 29, 16 30 C14 29, 11 27, 9 24 L4 23 L8 19 C9 12, 12 7, 16 4Z" /><path d="M13 20 L19 20" /><circle cx="16" cy="13" r="3" /></svg>
+        <span class="visually-hidden">Start workspace</span>
+      </button><!-- WCAG 2.4.6: icon button has a short accessible name. -->
+      <button class="header-cta header-cta--icon header-cta--connect" type="button" data-open-connect aria-label="Open login" title="Open login">
+        <svg class="header-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M12 17 C10 15, 10 11, 12 9 C14 7, 18 7, 20 9 C22 11, 22 15, 20 17 C18 19, 14 19, 12 17Z" /><path d="M16 18 L16 28" /><path d="M16 23 L21 23" /><path d="M16 26 L20 26" /></svg>
+        <span class="visually-hidden">Open login</span>
+      </button><!-- WCAG 3.1.2: icon avoids visible mixed-language ambiguity while the accessible name is explicit. -->
+      <button id="theme-toggle" class="header-cta header-cta--icon header-cta--theme" type="button" aria-label="Theme: light. Switch to dark mode" aria-live="polite" title="Switch theme">
+        <span class="header-icon header-icon--theme" aria-hidden="true">☼</span>
+        <span class="visually-hidden" data-theme-label>Theme: Light</span>
+      </button><!-- WCAG 1.4.3: users can switch to high-contrast dark and night colour schemes. -->
+      <button id="pause-animations" class="header-cta header-cta--icon header-cta--motion" type="button" aria-label="Pause animations" aria-pressed="false" title="Pause animations">
+        <span class="header-icon header-icon--motion" aria-hidden="true">Ⅱ</span>
+        <span class="visually-hidden" data-motion-label>Pause animations</span>
+      </button><!-- WCAG 2.2.2: moving content can be paused by the user. -->
     </div>
   </header>
 
