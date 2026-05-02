@@ -5,19 +5,18 @@ const mascot = document.createElement('button');
 mascot.className = 'binocle';
 mascot.type = 'button';
 mascot.dataset.mood = 'curious';
-mascot.setAttribute('aria-label', 'Open the Prismatica mascot portal');
+mascot.setAttribute('aria-label', 'Play with the Binocle mascot');
 mascot.innerHTML = `
   <svg class="binocle__svg" viewBox="0 0 184 118" role="img" aria-labelledby="binocle-title binocle-desc">
     <title id="binocle-title">Prismatica mascot</title>
     <desc id="binocle-desc">Living binocular mascot with tracking pupils, expressive brows and an animated mouth.</desc>
     <defs>
       <filter id="handDrawn" x="-12%" y="-12%" width="124%" height="124%">
-        <feTurbulence id="mascotTurbulence" baseFrequency="0.028 0.07" numOctaves="3" seed="14" type="fractalNoise" result="noise" />
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.6" xChannelSelector="R" yChannelSelector="G" />
-        <feBlend in="SourceGraphic" in2="noise" mode="multiply" />
+        <feTurbulence id="mascotTurbulence" baseFrequency="0.023 0.055" numOctaves="2" seed="14" type="fractalNoise" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.15" xChannelSelector="R" yChannelSelector="G" />
       </filter>
     </defs>
-    <g class="svg-body-group" filter="url(#handDrawn) url(#pencil-texture)">
+    <g class="svg-body-group" filter="url(#handDrawn)">
       <path class="svg-arm left" d="M49 31 C39 18, 25 18, 19 32" />
       <path class="svg-arm right" d="M135 31 C147 18, 161 19, 166 33" />
       <g class="svg-volume">
@@ -46,8 +45,21 @@ mascot.innerHTML = `
       <path class="svg-stitch" d="M123 77 C134 86, 152 85, 162 78" />
       <path class="svg-brow left" d="M22 20 C34 14, 54 14, 66 21" />
       <path class="svg-brow right" d="M118 21 C130 14, 151 14, 163 20" />
+      <ellipse class="svg-cheek left" cx="22" cy="68" rx="10" ry="7" />
+      <ellipse class="svg-cheek right" cx="162" cy="68" rx="10" ry="7" />
       <g class="svg-eye left"><circle class="svg-pupil" cx="43" cy="57" r="11.4" /><circle class="svg-pupil-shine" cx="38.8" cy="52.8" r="2.7" /></g>
       <g class="svg-eye right"><circle class="svg-pupil" cx="141" cy="57" r="11.4" /><circle class="svg-pupil-shine" cx="136.8" cy="52.8" r="2.7" /></g>
+      <path class="svg-pupil-heart left" d="M43 52 C43 46, 35 43, 32 50 C29 57, 43 66, 43 66 C43 66, 57 57, 54 50 C51 43, 43 46, 43 52Z" />
+      <path class="svg-pupil-heart right" d="M141 52 C141 46, 133 43, 130 50 C127 57, 141 66, 141 66 C141 66, 155 57, 152 50 C149 43, 141 46, 141 52Z" />
+      <g class="svg-dizzy">
+        <path class="svg-spiral left" d="M43 57 C43 51, 37 48, 34 52 C31 57, 35 64, 41 64 C49 64, 54 56, 51 48 C48 40, 38 36, 30 40" />
+        <path class="svg-spiral right" d="M141 57 C141 51, 135 48, 132 52 C129 57, 133 64, 139 64 C147 64, 152 56, 149 48 C146 40, 136 36, 128 40" />
+      </g>
+      <g class="svg-thought-bubble">
+        <circle cx="14" cy="30" r="2.5" />
+        <circle cx="9" cy="22" r="4" />
+        <circle cx="5" cy="13" r="6" />
+      </g>
       <ellipse class="svg-mouth-pad" cx="92" cy="96" rx="23" ry="15" />
       <path class="svg-mouth smile" d="M76 93 C83 105, 101 105, 108 93" />
       <path class="svg-mouth ajar" d="M78 94 C84 102, 100 102, 106 94 C101 99, 84 99, 78 94Z" />
@@ -55,9 +67,26 @@ mascot.innerHTML = `
       <path class="svg-mouth-core" d="M83 95 C83 85, 88 80, 93 80 C100 80, 105 86, 104 96 C103 106, 96 110, 91 110 C85 110, 83 104, 83 95Z" />
       <ellipse class="svg-mouth-shine" cx="88" cy="88" rx="3" ry="2.2" />
       <path class="svg-mouth flat" d="M81 96 C87 98, 98 98, 103 96" />
+      <path class="svg-mouth grimace" d="M78 100 C84 94, 100 94, 106 100 C100 97, 84 97, 78 100Z" />
+      <path class="svg-mouth teeth" d="M80 96 L104 96 M84 93 L84 99 M88 93 L88 99 M92 93 L92 99 M96 93 L96 99 M100 93 L100 99" />
+      <ellipse class="svg-mouth ooh" cx="92" cy="98" rx="8" ry="10" />
+      <path class="svg-mouth tremble" d="M80 96 Q84 93 88 96 Q92 99 96 96 Q100 93 104 96" />
+      <path class="svg-mouth smirk" d="M80 97 C84 103, 96 104, 106 95" />
+      <path class="svg-mouth silly-open" d="M78 92 C78 80, 86 73, 93 73 C102 73, 110 81, 110 92" />
+      <ellipse class="svg-mouth silly-tongue" cx="92" cy="100" rx="9" ry="7" />
+      <path class="svg-mouth zip" d="M82 96 L102 96 M84 93 L84 99 M88 93 L88 99 M92 93 L92 99 M96 93 L96 99 M100 93 L100 99" />
+      <path class="svg-sweat" d="M172 16 C174 10, 178 10, 180 16 C181 20, 179 24, 176 24 C173 24, 171 20, 172 16Z" />
+      <path class="svg-tear left" d="M30 72 C30 72, 27 82, 30 86 C33 90, 36 88, 36 84 C36 80, 33 72, 30 72Z" />
+      <g class="svg-stars">
+        <path class="svg-star" d="M14 24 L16 29 L21 24 L16 19Z" />
+        <path class="svg-star" d="M168 20 L170 26 L176 20 L170 14Z" />
+        <path class="svg-star" d="M8 50 L10 55 L15 50 L10 45Z" />
+        <path class="svg-star" d="M174 50 L176 56 L182 50 L176 44Z" />
+      </g>
       <path class="svg-spark" d="M164 20 L164 29 M159.5 24.5 L168.5 24.5" />
     </g>
   </svg>
+  <span class="right-lens-hotspot" aria-hidden="true"></span>
 `;
 anchor?.append(mascot);
 
@@ -70,7 +99,13 @@ const state = {
   lockedUntil: 0,
   idleMoodShown: false,
   lastScrollMood: 0,
+  lastScrollY: window.scrollY,
+  clickCount: 0,
   moodTimer: null,
+  hoverTimer: null,
+  heartTimer: null,
+  zTimer: null,
+  fearAnimation: null,
   portalOpen: false,
 };
 
@@ -81,12 +116,116 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+const MOOD_TRANSITIONS = {
+  default: { duration: 220, easing: 'ease' },
+  excited: { duration: 180, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
+  surprised: { duration: 120, easing: 'ease-out' },
+  scared: { duration: 100, easing: 'ease-out' },
+  angry: { duration: 280, easing: 'ease-in-out' },
+  sleeping: { duration: 900, easing: 'ease-in' },
+  gentle: { duration: 500, easing: 'ease' },
+  love: { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+};
+
+function stopMoodEffects() {
+  globalThis.clearInterval(state.heartTimer);
+  globalThis.clearInterval(state.zTimer);
+  state.fearAnimation?.cancel();
+  state.heartTimer = null;
+  state.zTimer = null;
+  state.fearAnimation = null;
+}
+
+function triggerSurprise() {
+  if (reduceMotion) return;
+  mascot.animate(
+    [
+      { transform: 'scale(0.92) translateY(3px)' },
+      { transform: 'scale(1.08) translateY(-8px)' },
+      { transform: 'scale(1) translateY(0)' },
+    ],
+    { duration: 320, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
+  );
+}
+
+function triggerFearShake() {
+  if (reduceMotion) return;
+  const body = mascot.querySelector('.svg-body-group');
+  if (!body) return;
+  const frames = Array.from({ length: 9 }, () => ({
+    transform: `translate(${(Math.random() * 4 - 2).toFixed(1)}px, ${(Math.random() * 4 - 2).toFixed(1)}px) rotate(${(Math.random() * 2.6 - 1.3).toFixed(1)}deg)`,
+  }));
+  state.fearAnimation = body.animate([{ transform: 'translate(0, 0) rotate(0deg)' }, ...frames, { transform: 'translate(0, 0) rotate(0deg)' }], {
+    duration: 620,
+    iterations: Infinity,
+    easing: 'linear',
+  });
+}
+
+function createHeart() {
+  const heart = document.createElement('span');
+  heart.className = 'binocle__heart';
+  heart.textContent = '♥';
+  heart.style.left = `${38 + Math.random() * 28}%`;
+  heart.style.animationDelay = `${Math.random() * 120}ms`;
+  mascot.append(heart);
+  heart.addEventListener('animationend', () => heart.remove(), { once: true });
+}
+
+function floatZ() {
+  const z = document.createElement('span');
+  z.className = 'binocle__z';
+  z.textContent = ['Z', 'z', 'ᶻ'][Math.floor(Math.random() * 3)];
+  z.style.left = `${42 + Math.random() * 20}%`;
+  mascot.append(z);
+  z.addEventListener('animationend', () => z.remove(), { once: true });
+}
+
+function startHearts() {
+  if (reduceMotion || state.heartTimer) return;
+  createHeart();
+  state.heartTimer = globalThis.setInterval(createHeart, 380);
+}
+
+function startZs() {
+  if (reduceMotion || state.zTimer) return;
+  floatZ();
+  state.zTimer = globalThis.setInterval(floatZ, 720);
+}
+
+function startStars() {
+  if (reduceMotion) return;
+  mascot.querySelectorAll('.svg-star').forEach((star, index) => {
+    star.animate(
+      [
+        { transform: 'scale(0.25) rotate(-20deg)', opacity: 0 },
+        { transform: 'scale(1.35) rotate(12deg)', opacity: 1 },
+        { transform: 'scale(1) rotate(0deg)', opacity: 1 },
+      ],
+      { duration: 420, delay: index * 55, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
+    );
+  });
+}
+
 function setMood(mood, duration = 0, options = {}) {
   globalThis.clearTimeout(state.moodTimer);
+  stopMoodEffects();
+
+  const transition = MOOD_TRANSITIONS[mood] || MOOD_TRANSITIONS.default;
+  mascot.style.setProperty('--mood-transition-duration', `${transition.duration}ms`);
+  mascot.style.setProperty('--mood-transition-easing', transition.easing);
+
+  if (mood === 'surprised') triggerSurprise();
+  if (mood === 'scared') triggerFearShake();
+  if (mood === 'excited') startStars();
+  if (mood === 'love') startHearts();
+  if (mood === 'sleeping') startZs();
+  else mascot.style.setProperty('--blink', '1');
+
   mascot.dataset.mood = mood;
 
   if (options.lock) {
-    state.lockedUntil = Date.now() + duration;
+    state.lockedUntil = Date.now() + Math.max(duration, transition.duration);
   }
 
   if (duration) {
@@ -147,12 +286,26 @@ function updateTarget(pointerX, pointerY) {
 }
 
 function animateEyes() {
-  state.eyeX += (state.targetX - state.eyeX) * 0.075;
-  state.eyeY += (state.targetY - state.eyeY) * 0.075;
+  const mood = mascot.dataset.mood;
+  const trackingPaused = mood === 'sleeping' || mood === 'dizzy';
+
+  if (mood === 'thinking') {
+    state.targetX += (-4.4 - state.targetX) * 0.02;
+    state.targetY += (-2.8 - state.targetY) * 0.02;
+  } else if (mood === 'shy') {
+    state.targetX += (3.8 - state.targetX) * 0.045;
+    state.targetY += (3.1 - state.targetY) * 0.045;
+  } else if (trackingPaused) {
+    state.targetX += (0 - state.targetX) * 0.08;
+    state.targetY += (0 - state.targetY) * 0.08;
+  }
+
+  state.eyeX += (state.targetX - state.eyeX) * (trackingPaused ? 0.035 : 0.075);
+  state.eyeY += (state.targetY - state.eyeY) * (trackingPaused ? 0.035 : 0.075);
   mascot.style.setProperty('--look-x', `${state.eyeX.toFixed(2)}px`);
   mascot.style.setProperty('--look-y', `${state.eyeY.toFixed(2)}px`);
 
-  if (Date.now() - state.lastMove > 3600 && mascot.dataset.mood !== 'bye' && !state.portalOpen) {
+  if (Date.now() - state.lastMove > 3600 && !['bye', 'sleeping', 'dizzy'].includes(mascot.dataset.mood) && !state.portalOpen) {
     state.targetX = Math.sin(Date.now() / 1200) * 2.2;
     state.targetY = Math.cos(Date.now() / 1450) * 1.4;
     mascot.style.setProperty('--tilt', '0deg');
@@ -165,9 +318,13 @@ function animateEyes() {
     mascot.style.setProperty('--depth-y', '4px');
   }
 
-  if (Date.now() - state.lastMove > 6200 && !state.idleMoodShown && Date.now() > state.lockedUntil && !state.portalOpen) {
+  const idle = Date.now() - state.lastMove;
+  if (idle > 30000 && mascot.dataset.mood !== 'sleeping' && Date.now() > state.lockedUntil && !state.portalOpen) {
+    setMood('sleeping');
+  } else if (idle > 8000 && !state.idleMoodShown && Date.now() > state.lockedUntil && !state.portalOpen) {
     state.idleMoodShown = true;
-    setMood('thinking', 1900, { lock: true });
+    const idleMoods = ['thinking', 'shy', 'proud'];
+    setMood(idleMoods[Math.floor(Math.random() * idleMoods.length)], 2200, { lock: true });
     liftBrows();
   }
 
@@ -175,6 +332,11 @@ function animateEyes() {
 }
 
 function blink() {
+  if (mascot.dataset.mood === 'sleeping') {
+    mascot.style.setProperty('--blink', '0.06');
+    globalThis.setTimeout(blink, 1800 + Math.random() * 2400);
+    return;
+  }
   mascot.style.setProperty('--blink', '0.08');
   globalThis.setTimeout(() => mascot.style.setProperty('--blink', '1'), 105);
   globalThis.setTimeout(blink, 2600 + Math.random() * 3200);
@@ -320,6 +482,7 @@ function createPortalMarkup() {
     <div id="portal" class="portal" aria-modal="true" role="dialog" aria-label="Prismatica portal">
       <div class="portal__lens-left">
         <div class="portal-login-area">
+          <p class="portal-kicker">Present / account access</p>
           <p class="portal-note">Do you know what's the common point between you and future celebrities?<br />You've both started right here 😄<svg viewBox="0 0 150 80" aria-hidden="true"><path d="M16 12 C48 18, 75 34, 101 62" marker-end="url(#arrow)" /></svg></p>
           <form class="portal-login" novalidate>
             <div class="field"><label for="portal-email">Email</label><input id="portal-email" type="email" placeholder="you@example.com" autocomplete="email" required /></div>
@@ -333,6 +496,7 @@ function createPortalMarkup() {
       </div>
       <div class="portal__lens-right">
         <div class="portal-demo-area">
+          <p class="portal-kicker portal-kicker--future">Future / what becomes possible</p>
           <div class="portal-brand"><svg viewBox="0 0 88 42" aria-hidden="true"><path d="M9 23 C12 9, 30 7, 42 18 C49 7, 70 8, 78 23 C84 36, 66 43, 51 34 C47 31, 45 27, 44 23 C42 31, 34 38, 23 38 C13 38, 5 32, 9 23Z" /><path d="M23 23 C28 17, 36 18, 39 24 M52 24 C56 17, 66 17, 70 24" /></svg><span>Prismatica</span></div>
           <div class="portal-cards">
             <article class="portal-card">${portalCardSvg('rules')}<h3>Your workspace, your rules</h3><p>A grid, a note, an app and a live dashboard can share the same page.</p></article>
@@ -344,30 +508,14 @@ function createPortalMarkup() {
         </div>
       </div>
       <div class="portal__mascot-shell"></div>
+      <p class="portal__scroll-hint">scroll down to see more · scroll up to step back</p>
       <button class="portal__close" type="button" aria-label="Close portal"><svg viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="21" /><path d="M19 19 L35 35 M35 19 L19 35" /></svg></button>
     </div>`;
 }
 
 function revealPortalLenses(portal, clone) {
-  const leftPanel = portal.querySelector('.portal__lens-left');
-  const rightPanel = portal.querySelector('.portal__lens-right');
-  const leftLens = clone.querySelector('.svg-eye.left .svg-pupil');
-  const rightLens = clone.querySelector('.svg-eye.right .svg-pupil');
-
-  const makeClip = (panel, lens, fallbackX) => {
-    const rect = lens?.getBoundingClientRect();
-    const cx = rect ? rect.left + rect.width / 2 : window.innerWidth * fallbackX;
-    const cy = rect ? rect.top + rect.height / 2 : window.innerHeight * 0.5;
-    const targetRadius = Math.max(window.innerWidth, window.innerHeight) * (window.innerWidth <= 768 ? 0.78 : 0.55);
-    panel.style.clipPath = `circle(0px at ${cx}px ${cy}px)`;
-    panel.animate(
-      [{ clipPath: `circle(0px at ${cx}px ${cy}px)` }, { clipPath: `circle(${targetRadius}px at ${cx}px ${cy}px)` }],
-      { duration: reduceMotion ? 300 : 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' }
-    );
-  };
-
-  makeClip(leftPanel, leftLens, 0.28);
-  makeClip(rightPanel, rightLens, 0.72);
+  portal.classList.add('is-revealed');
+  clone.setAttribute('aria-hidden', 'true');
 }
 
 function closePortal() {
@@ -408,9 +556,17 @@ function openPortal() {
   const clone = mascot.cloneNode(true);
   clone.classList.add('portal-growing');
   clone.dataset.mood = 'excited';
+  clone.style.setProperty('--look-x', '0px');
+  clone.style.setProperty('--look-y', '0px');
+  clone.style.setProperty('--tilt', '0deg');
+  clone.style.setProperty('--lean-x', '0deg');
+  clone.style.setProperty('--lean-y', '0deg');
+  clone.style.setProperty('--body-x', '0px');
+  clone.style.setProperty('--body-y', '0px');
+  clone.style.setProperty('--body-roll', '0deg');
   portal.querySelector('.portal__mascot-shell').append(clone);
 
-  const revealDelay = reduceMotion ? 320 : 1600;
+  const revealDelay = reduceMotion ? 320 : 1900;
   globalThis.setTimeout(() => revealPortalLenses(portal, clone), revealDelay);
 
   portal.querySelector('.portal__close').addEventListener('click', closePortal);
@@ -418,6 +574,21 @@ function openPortal() {
   portal.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closePortal();
   });
+  portal.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+
+      if (event.deltaY > 18) {
+        portal.classList.add('is-near');
+        portal.classList.remove('is-far');
+      } else if (event.deltaY < -18) {
+        portal.classList.remove('is-near');
+        portal.classList.add('is-far');
+      }
+    },
+    { passive: false }
+  );
   portal.querySelector('.portal-login').addEventListener('submit', (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -451,25 +622,60 @@ document.querySelectorAll('[data-open-portal]').forEach((trigger) => {
   trigger.addEventListener('focus', () => setMood('excited', 450));
 });
 
-mascot.addEventListener('click', openPortal);
+mascot.addEventListener('click', () => {
+  const clickMoods = ['excited', 'surprised', 'silly', 'love'];
+  const mood = clickMoods[state.clickCount % clickMoods.length];
+  state.clickCount += 1;
+  setMood(mood, 1400, { lock: true });
+  liftBrows(780);
+  createPing();
+});
+
+mascot.addEventListener('dblclick', () => {
+  setMood('silly', 2200, { lock: true });
+  liftBrows(720);
+});
 mascot.addEventListener('pointerenter', () => {
+  globalThis.clearTimeout(state.hoverTimer);
+  state.hoverTimer = globalThis.setTimeout(() => {
+    if (!state.portalOpen) setMood('sleeping', 3000, { lock: true });
+  }, 4000);
   setMood('gentle');
   startShimmer();
 });
 mascot.addEventListener('pointerleave', () => {
+  globalThis.clearTimeout(state.hoverTimer);
   setMood('curious', 250);
   stopShimmer();
 });
 
-document.querySelectorAll('.button, .nav-links a, .header-cta').forEach((interactiveElement) => {
+document.querySelectorAll('.button--primary, .button.primary, .header-cta').forEach((interactiveElement) => {
   interactiveElement.addEventListener('pointerenter', () => showSellerCue());
   interactiveElement.addEventListener('focus', () => showSellerCue());
+});
+
+document.querySelectorAll('.button--ghost, .button.ghost, .nav-links a').forEach((interactiveElement) => {
+  interactiveElement.addEventListener('pointerenter', () => {
+    setMood('proud', 800, { lock: true });
+    liftBrows(400);
+  });
+  interactiveElement.addEventListener('focus', () => {
+    setMood('proud', 800, { lock: true });
+    liftBrows(400);
+  });
 });
 
 globalThis.addEventListener('pointermove', (event) => updateTarget(event.clientX, event.clientY), { passive: true });
 globalThis.addEventListener('scroll', () => {
   const now = Date.now();
-  if (now - state.lastScrollMood > 900 && now > state.lockedUntil && !state.portalOpen) {
+  const delta = Math.abs(window.scrollY - state.lastScrollY);
+  state.lastScrollY = window.scrollY;
+
+  if (delta > 40 && now > state.lockedUntil && !state.portalOpen) {
+    state.lastScrollMood = now;
+    setMood('scared', 600, { lock: true });
+    liftBrows(400);
+  } else if (delta > 8 && now - state.lastScrollMood > 650 && now > state.lockedUntil && !state.portalOpen) {
     state.lastScrollMood = now;
     setMood('listening', 650, { lock: true });
     liftBrows(520);
