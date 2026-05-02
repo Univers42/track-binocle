@@ -1,0 +1,9 @@
+[submodule "docker/baas"]
+	path = docker/baas
+	url = git@github.com:Univers42/mini-baas-infra.git
+[submodule "docker/baas/mini-baas-infra"]
+	path = docker/baas/mini-baas-infra
+	url = git@github.com:Univers42/mini-baas-infra.git
+[submodule "docker/baas/--recursive"]
+	path = docker/baas/--recursive
+	url = git@github.com:Univers42/mini-baas-sdk.git

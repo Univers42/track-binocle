@@ -1,3 +1,5 @@
+import { fetchSeededUsers } from '../lib/baas-client';
+
 type ThemeName = 'light' | 'dark' | 'night';
 
 type PortalMode = 'start' | 'connect';
@@ -836,6 +838,39 @@ function bindInteractions(): void {
 	window.addEventListener('resize', renderPaperGrain);
 }
 
+/** Loads seeded BaaS data into the frontend status card. */
+async function mountBaasStatus(): Promise<void> {
+	const root = queryElement('[data-baas-status]', isHtmlElement);
+	if (!root) {
+		return;
+	}
+
+	const state = root.querySelector('[data-baas-state]');
+	const list = root.querySelector('[data-baas-users]');
+	if (!(state instanceof HTMLElement) || !(list instanceof HTMLUListElement)) {
+		return;
+	}
+
+	try {
+		const users = await fetchSeededUsers(3);
+		state.textContent = `Connected securely — loaded ${users.length} seeded users.`;
+		list.replaceChildren(
+			...users.map((user) => {
+				const item = document.createElement('li');
+				const name = document.createElement('strong');
+				const email = document.createElement('span');
+				name.textContent = user.username;
+				email.textContent = user.email;
+				item.append(name, email);
+				return item;
+			}),
+		);
+	} catch (error) {
+		state.textContent = error instanceof Error ? error.message : 'Unable to reach the BaaS gateway.';
+		list.replaceChildren();
+	}
+}
+
 /** Starts all client-side page behavior. */
 function init(): void {
 	applyTheme(initialTheme());
@@ -843,6 +878,7 @@ function init(): void {
 	renderPaperGrain();
 	mountMascot();
 	bindInteractions();
+	void mountBaasStatus();
 }
 
 init();
