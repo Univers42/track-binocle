@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
   <title>Prismatica — Everything. One Space.</title>
   <meta name="description" content="Prismatica is the workspace that grows from one note to a full operating system: notes, dashboards, databases, apps, drawing and collaboration in one place." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,9 +12,11 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <canvas id="paper-grain" tabindex="-1"></canvas>
+  <a href="#main-content" class="skip-link">Skip to main content</a><!-- WCAG 2.4.1: provides a keyboard shortcut to bypass repeated navigation. -->
+  <div aria-live="polite" aria-atomic="true" class="visually-hidden" id="global-announcer"></div><!-- WCAG 4.1.3: announces dynamic portal state changes. -->
+  <canvas id="paper-grain"></canvas><!-- WCAG 1.1.1: decorative texture has no fallback text and is not keyboard focusable. -->
 
-  <svg class="visually-hidden" width="0" height="0" aria-hidden="true" focusable="false">
+  <svg class="visually-hidden" width="0" height="0" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: shared decorative SVG definitions are not exposed as content. -->
     <defs>
       <filter id="roughen" x="-8%" y="-8%" width="116%" height="116%">
         <feTurbulence type="fractalNoise" baseFrequency="0.025 0.065" numOctaves="3" seed="7" stitchTiles="stitch" result="noise" />
@@ -36,7 +39,7 @@
     </defs>
   </svg>
 
-  <svg class="sketch-bg" viewBox="0 0 1440 2100" preserveAspectRatio="none" aria-hidden="true">
+  <svg class="sketch-bg" viewBox="0 0 1440 2100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: decorative background drawing is hidden from assistive technology. -->
     <defs>
       <pattern id="bg-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(32)">
         <line x1="0" y1="0" x2="0" y2="7" stroke="#1c1612" stroke-width="0.7" opacity="0.16" />
@@ -118,41 +121,47 @@
     </g>
   </svg>
 
-  <header class="floating-header" aria-label="Primary navigation">
+  <header class="floating-header" role="banner" aria-label="Primary navigation"><!-- WCAG 1.3.1: exposes the page header landmark. -->
     <a href="#top" class="brand-mark" aria-label="Prismatica home">Prismatica</a>
-    <div class="header-mascot-slot" aria-label="Mascot portal launcher">
+    <div class="header-mascot-slot" aria-label="Mascot portal launcher"><!-- WCAG 4.1.2: labelled custom visual launcher region. -->
       <div id="mascot-anchor"></div>
       <span class="header-mascot-note">click to laugh</span>
     </div>
     <nav class="nav-links" aria-label="Sections">
-      <a href="#powers">Powers</a>
-      <a href="#grid">Grid</a>
-      <a href="#characters">Guides</a>
+      <ul><!-- WCAG 1.3.1: navigation links are grouped as a semantic list. -->
+        <li><a href="#powers">Powers</a></li>
+        <li><a href="#media-assets">Visuals</a></li>
+        <li><a href="#grid">Grid</a></li>
+        <li><a href="#characters">Guides</a></li>
+      </ul>
     </nav>
     <div class="header-actions">
-      <button class="header-cta" type="button" data-open-portal>Start</button>
-      <button class="header-cta header-cta--connect" type="button" data-open-connect>Connexion</button>
+      <button class="header-cta" type="button" data-open-portal aria-label="Start your Prismatica workspace">Start</button><!-- WCAG 2.4.6: button label purpose is explicit. -->
+      <button class="header-cta header-cta--connect" type="button" data-open-connect aria-label="Quick connection — open login"><span lang="fr">Connexion</span></button><!-- WCAG 3.1.2: French label language is declared. -->
+      <button id="theme-toggle" class="header-cta header-cta--theme" type="button" aria-label="Theme: light. Switch to dark mode" aria-live="polite">Theme: Light</button><!-- WCAG 1.4.3: users can switch to high-contrast dark and night colour schemes. -->
+      <button id="pause-animations" class="header-cta header-cta--motion" type="button" aria-pressed="false">Pause animations</button><!-- WCAG 2.2.2: moving content can be paused by the user. -->
     </div>
   </header>
 
-  <main id="top">
-    <section class="hero section-shell">
+  <main id="main-content" tabindex="-1"><!-- WCAG 1.3.1/2.4.1: exposes the main landmark and can receive skip-link focus. -->
+    <span id="top" class="visually-hidden" aria-hidden="true"></span>
+    <section class="hero section-shell" aria-labelledby="hero-title"><!-- WCAG 2.4.6: section has an accessible name. -->
       <div class="hero__copy">
         <p class="eyebrow">The workspace that grows with you</p>
-        <h1>Everything.<br /><span>One Space.</span></h1>
-        <svg class="hero-underline" viewBox="0 0 420 38" aria-hidden="true"><path d="M10 22 C76 7, 128 35, 193 17 C268 -4, 326 36, 411 14" /></svg>
+        <h1 id="hero-title">Everything.<br /><span>One Space.</span></h1>
+        <svg class="hero-underline" viewBox="0 0 420 38" aria-hidden="true" focusable="false"><path d="M10 22 C76 7, 128 35, 193 17 C268 -4, 326 36, 411 14" /></svg><!-- WCAG 1.1.1: decorative underline is hidden. -->
         <p class="hero__text">Write, draw, build databases, connect apps — all in one workspace that understands how you think.</p>
         <div class="hero__actions">
-          <button class="button button--primary" type="button" data-open-portal>Start your workspace →</button>
-          <button class="button button--connect" type="button" data-open-connect>Connexion rapide →</button>
+          <button class="button button--primary" type="button" data-open-portal>Start your workspace <span aria-hidden="true">→</span></button><!-- WCAG 2.5.3: visible text remains the accessible label; arrow is decorative. -->
+          <button class="button button--connect" type="button" data-open-connect aria-label="Quick connection — open login"><span lang="fr">Connexion rapide</span> <span aria-hidden="true">→</span></button><!-- WCAG 3.1.2: French text is marked. -->
           <a class="button button--ghost" href="#powers">Explore the drawings</a>
         </div>
       </div>
       <div class="hero__portal-preview" aria-label="Present and future portal preview">
-        <svg class="click-arrow" viewBox="0 0 190 120" aria-hidden="true"><path d="M174 24 C118 6, 54 20, 30 82" marker-end="url(#arrow)" /><text x="34" y="36">↑ open from header</text></svg>
+        <svg class="click-arrow" viewBox="0 0 190 120" aria-hidden="true" focusable="false"><path d="M174 24 C118 6, 54 20, 30 82" marker-end="url(#arrow)" /><text x="34" y="36">↑ open from header</text></svg><!-- WCAG 1.1.1: decorative hint is hidden because header controls expose the action. -->
         <div class="thought-bubble" aria-hidden="true">...</div>
-        <span class="star s1">✦</span><span class="star s2">✧</span><span class="star s3">✦</span>
-        <svg class="portal-preview-sketch" viewBox="0 0 420 280" aria-hidden="true">
+        <span class="star s1" aria-hidden="true">✦</span><span class="star s2" aria-hidden="true">✧</span><span class="star s3" aria-hidden="true">✦</span><!-- WCAG 1.1.1: decorative symbols are hidden. -->
+        <svg class="portal-preview-sketch" viewBox="0 0 420 280" aria-hidden="true" focusable="false">
           <g filter="url(#roughen)">
             <path class="preview-shell" d="M42 102 C73 42, 157 42, 200 88 C238 42, 333 41, 377 103 C416 158, 381 236, 302 236 C252 236, 218 209, 210 166 C198 211, 161 238, 111 235 C35 230, 8 158, 42 102Z" />
             <path class="preview-lens present" d="M63 117 C85 77, 148 73, 174 113 C202 157, 175 208, 119 211 C64 213, 35 164, 63 117Z" />
@@ -167,15 +176,15 @@
       </div>
     </section>
 
-    <section id="powers" class="section-shell powers-section">
+    <section id="powers" class="section-shell powers-section" aria-labelledby="powers-title"><!-- WCAG 1.3.1: section is named by its heading. -->
       <div class="section-heading">
         <p class="eyebrow">What is Prismatica?</p>
-        <h2>Six blocks. One engine.</h2>
+        <h2 id="powers-title">Six blocks. One engine.</h2>
         <p>Every block can be a note, a database view, a drawing, a dashboard cell or a custom app — all governed by the same reliable data layer.</p>
       </div>
       <div class="powers-grid">
         <article class="power-card rot-a">
-          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true">
+          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: decorative card illustration is hidden. -->
             <g filter="url(#roughen)">
               <path class="paper-fill" d="M20 14 C56 10, 125 11, 154 16 C158 50, 157 103, 151 124 C112 130, 59 128, 19 123 C14 86, 15 42, 20 14Z" />
               <path class="heavy-line" d="M35 31 L110 31 M35 43 L126 43 M35 55 L92 55" />
@@ -194,7 +203,7 @@
         </article>
 
         <article class="power-card rot-b">
-          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true">
+          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true" focusable="false">
             <g filter="url(#roughen)">
               <path class="paper-fill" d="M35 18 C72 14, 123 15, 149 21 C152 54, 150 100, 145 122 C110 129, 65 126, 35 121 C31 85, 31 45, 35 18Z" />
               <path class="dash" d="M52 106 L52 62 L91 34 L131 63 L131 108" />
@@ -211,7 +220,7 @@
         </article>
 
         <article class="power-card rot-c">
-          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true">
+          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true" focusable="false">
             <g filter="url(#roughen)">
               <path class="paper-fill" d="M18 19 C59 14, 128 15, 159 20 C164 51, 162 101, 157 121 C111 127, 61 127, 19 121 C14 86, 14 45, 18 19Z" />
               <path d="M30 34 L75 34 L75 63 L30 63Z M84 34 L148 34 L148 63 L84 63Z M30 72 L58 72 L58 110 L30 110Z M68 72 L112 72 L112 110 L68 110Z M121 72 L148 72 L148 110 L121 110Z" />
@@ -226,7 +235,7 @@
         </article>
 
         <article class="power-card rot-b">
-          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true">
+          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true" focusable="false">
             <g filter="url(#roughen)">
               <path class="paper-fill" d="M16 24 C44 19, 72 21, 91 25 C94 57, 92 93, 89 115 C62 121, 36 120, 15 115 C11 84, 12 50, 16 24Z" />
               <path class="paper-fill" d="M100 20 C126 16, 153 18, 166 24 C170 56, 169 93, 164 118 C139 124, 116 121, 98 116 C94 83, 95 48, 100 20Z" />
@@ -242,7 +251,7 @@
         </article>
 
         <article class="power-card rot-a">
-          <svg class="power-illustration app-lines" viewBox="0 0 180 140" aria-hidden="true">
+          <svg class="power-illustration app-lines" viewBox="0 0 180 140" aria-hidden="true" focusable="false">
             <g filter="url(#roughen)">
               <path class="hub" d="M91 48 L119 64 L119 96 L91 112 L63 96 L63 64Z" />
               <path class="flow-line" d="M88 48 C68 28, 48 23, 28 30" /><path class="flow-line" d="M117 66 C135 47, 150 42, 163 52" /><path class="flow-line" d="M120 93 C143 98, 155 108, 160 124" /><path class="flow-line" d="M88 112 C74 129, 52 130, 34 121" /><path class="flow-line" d="M64 93 C40 97, 24 88, 18 72" /><path class="flow-line" d="M91 48 C93 28, 107 18, 124 17" />
@@ -254,7 +263,7 @@
         </article>
 
         <article class="power-card rot-c">
-          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true">
+          <svg class="power-illustration" viewBox="0 0 180 140" aria-hidden="true" focusable="false">
             <g filter="url(#roughen)">
               <path d="M32 31 L52 86 L63 67 L88 91 L99 80 L73 57 L96 47Z" fill="none" />
               <path d="M101 39 L119 92 L130 73 L155 96 L166 85 L141 62 L164 52Z" fill="none" />
@@ -271,13 +280,83 @@
       </div>
     </section>
 
-    <section id="grid" class="section-shell grid-demo">
+    <section id="media-assets" class="section-shell media-assets-section" aria-labelledby="media-assets-title"><!-- WCAG 1.3.1: all imported media is grouped under a named section. -->
+      <div class="section-heading compact">
+        <p class="eyebrow">Visual workspace library</p>
+        <h2 id="media-assets-title">Product screenshots and team icons, described in text.</h2>
+        <p>The image files in the asset folder are used here with meaningful alternative text, visible captions and high-contrast supporting copy so the visuals never carry information alone.</p>
+      </div>
+
+      <div class="media-showcase" aria-label="Product preview screenshots">
+        <figure class="media-feature media-feature--wide">
+          <img src="assets/ChatGPT%20Image%20May%201,%202026,%2009_43_58%20PM.png" width="1536" height="1024" loading="lazy" decoding="async" alt="Wide concept view of a creative Prismatica workspace with notebook-style surfaces and connected planning areas." />
+          <figcaption>
+            <strong>Workspace concept</strong>
+            <span>A broad overview of the all-in-one workspace story.</span>
+          </figcaption>
+        </figure>
+        <figure class="media-feature">
+          <img src="assets/image%206.svg" width="1005" height="670" loading="lazy" decoding="async" alt="Prismatica interface mockup showing a structured workspace with multiple panels for planning and content." />
+          <figcaption>
+            <strong>Interface mockup</strong>
+            <span>Panels, notes and structured views share one canvas.</span>
+          </figcaption>
+        </figure>
+        <figure class="media-feature">
+          <img src="assets/design.png.png" width="1022" height="639" loading="lazy" decoding="async" alt="Design workspace screenshot with visual planning blocks and a hand-drawn interface style." />
+          <figcaption>
+            <strong>Design surface</strong>
+            <span>Creative work remains close to the operating data.</span>
+          </figcaption>
+        </figure>
+        <figure class="media-feature">
+          <img src="assets/kanban.png.png" width="954" height="597" loading="lazy" decoding="async" alt="Kanban board screenshot with organized cards for tracking work across stages." />
+          <figcaption>
+            <strong>Kanban view</strong>
+            <span>Tasks can move through reliable team workflows.</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <ul class="asset-icon-grid" aria-label="Team and department icons">
+        <li>
+          <img src="assets/product.png.svg" width="70" height="70" loading="lazy" decoding="async" alt="Product team icon." />
+          <span>Product</span>
+        </li>
+        <li>
+          <img src="assets/marketing.png.svg" width="70" height="70" loading="lazy" decoding="async" alt="Marketing team icon." />
+          <span>Marketing</span>
+        </li>
+        <li>
+          <img src="assets/operations.png.svg" width="70" height="70" loading="lazy" decoding="async" alt="Operations team icon." />
+          <span>Operations</span>
+        </li>
+        <li>
+          <img src="assets/hr-v2.png.svg" width="70" height="70" loading="lazy" decoding="async" alt="Human resources team icon." />
+          <span>People</span>
+        </li>
+        <li>
+          <img src="assets/design-v2.png.png" width="70" height="70" loading="lazy" decoding="async" alt="Design team icon." />
+          <span>Design</span>
+        </li>
+        <li>
+          <img src="assets/span.svg" width="70" height="70" loading="lazy" decoding="async" alt="Workspace block icon representing one active product area." />
+          <span>Block A</span>
+        </li>
+        <li>
+          <img src="assets/span%20%281%29.svg" width="70" height="70" loading="lazy" decoding="async" alt="Workspace block icon representing a second active product area." />
+          <span>Block B</span>
+        </li>
+      </ul>
+    </section>
+
+    <section id="grid" class="section-shell grid-demo" aria-labelledby="grid-title"><!-- WCAG 1.3.1: section is named by its heading. -->
       <div class="section-heading compact">
         <p class="eyebrow">The grid</p>
-        <h2>A workspace that can become your business OS.</h2>
-        <p>Reliable dashboards are not exports anymore. They are native blocks, linked to DBMS data and designed for teams.</p>
+        <h2 id="grid-title">A workspace that can become your business OS.</h2>
+        <p>Reliable dashboards are not exports anymore. They are native blocks, linked to <abbr title="Database Management System: software that stores, organizes and retrieves data">DBMS</abbr> data and designed for teams.</p>
       </div>
-      <svg class="workspace-illustration" viewBox="0 0 820 500" aria-hidden="true">
+      <svg class="workspace-illustration" viewBox="0 0 820 500" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: surrounding text explains this decorative illustration. -->
         <g filter="url(#roughen)">
           <path class="window" d="M28 36 C175 25, 657 27, 789 39 C800 145, 795 390, 784 464 C594 480, 202 477, 29 463 C17 340, 17 160, 28 36Z" />
           <path d="M35 76 C191 69, 642 70, 783 78" />
@@ -305,10 +384,10 @@
       </svg>
     </section>
 
-    <section class="section-shell intelligence-section">
+    <section class="section-shell intelligence-section" aria-labelledby="intelligence-title"><!-- WCAG 1.3.1: section is named by its heading. -->
       <div class="intelligence-card">
         <p class="eyebrow">Workspace intelligence</p>
-        <h2>DBMS-aware dashboards without dashboard debt.</h2>
+        <h2 id="intelligence-title"><abbr title="Database Management System: software that stores, organizes and retrieves data">DBMS</abbr>-aware dashboards without dashboard debt.</h2>
         <p>Prismatica was built for reliable business management: CRM work, exports from database engines, cloud collaboration and design choices that teams can adapt without rebuilding a stack every quarter.</p>
         <ul>
           <li>One data core for notes, apps and dashboard blocks.</li>
@@ -318,10 +397,10 @@
       </div>
     </section>
 
-    <section id="characters" class="section-shell characters-section">
+    <section id="characters" class="section-shell characters-section" aria-labelledby="characters-title"><!-- WCAG 1.3.1: section is named by its heading. -->
       <div class="section-heading compact">
         <p class="eyebrow">Guides</p>
-        <h2>Minimal characters, precise proportions.</h2>
+        <h2 id="characters-title">Minimal characters, precise proportions.</h2>
         <p>Reader, Student and Chatter are line-clear companions that guide the story without stealing attention.</p>
       </div>
       <div class="character-grid">
@@ -344,10 +423,10 @@
     </section>
   </main>
 
-  <footer class="site-footer section-shell">
+  <footer id="footer" class="site-footer section-shell" role="contentinfo"><!-- WCAG 1.3.1: exposes the footer landmark. -->
     <h2>The workspace that grows with you.</h2>
     <p>From a single note to an entire operating system.</p>
-    <button class="button button--primary" type="button" data-open-portal>Enter Prismatica →</button>
+    <button class="button button--primary" type="button" data-open-portal>Enter Prismatica <span aria-hidden="true">→</span></button><!-- WCAG 2.5.3: decorative arrow is hidden from the accessible name. -->
   </footer>
 
   <script src="mascot.js" defer></script>

@@ -1,5 +1,31 @@
+function mediaQueryMatches(query) {
+  return Boolean(globalThis.matchMedia?.(query).matches);
+}
+
+function readStoredPreference(key) {
+  try {
+    return globalThis.localStorage?.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredPreference(key, value) {
+  try {
+    globalThis.localStorage?.setItem(key, value);
+  } catch {
+    // Storage can be unavailable in private or embedded contexts; the active theme still applies for this visit.
+  }
+}
+
 const anchor = document.querySelector('#mascot-anchor');
-const reduceMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduceMotion = mediaQueryMatches('(prefers-reduced-motion: reduce)');
+const THEME_SEQUENCE = ['light', 'dark', 'night'];
+const THEME_LABELS = {
+  light: 'Light',
+  dark: 'Dark',
+  night: 'Night',
+};
 
 const mascot = document.createElement('button');
 mascot.className = 'binocle';
@@ -11,12 +37,12 @@ mascot.innerHTML = `
     <title id="binocle-title">Prismatica mascot</title>
     <desc id="binocle-desc">Living binocular mascot with tracking pupils, expressive brows and an animated mouth.</desc>
     <defs>
-      <filter id="handDrawn" x="-12%" y="-12%" width="124%" height="124%">
+      <filter id="mascot-roughen" x="-12%" y="-12%" width="124%" height="124%"><!-- WCAG 4.1.1: unique SVG ID prevents duplicate DOM identifiers. -->
         <feTurbulence id="mascotTurbulence" baseFrequency="0.023 0.055" numOctaves="2" seed="14" type="fractalNoise" result="noise" />
         <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.15" xChannelSelector="R" yChannelSelector="G" />
       </filter>
     </defs>
-    <g class="svg-body-group" filter="url(#handDrawn)">
+    <g class="svg-body-group" filter="url(#mascot-roughen)">
       <path class="svg-arm left" d="M49 31 C39 18, 25 18, 19 32" />
       <path class="svg-arm right" d="M135 31 C147 18, 161 19, 166 33" />
       <g class="svg-volume">
@@ -108,6 +134,8 @@ const state = {
   laughTimer: null,
   fearAnimation: null,
   portalOpen: false,
+  previousFocus: null,
+  releaseFocusTrap: null,
 };
 
 const turbulence = mascot.querySelector('#mascotTurbulence');
@@ -410,6 +438,124 @@ function renderPaperGrain(canvas) {
   ctx.putImageData(img, 0, 0);
 }
 
+function announce(message) {
+  const announcer = document.querySelector('#global-announcer');
+  if (announcer) announcer.textContent = message;
+} // WCAG 4.1.3: dynamic portal state changes are exposed to assistive technology.
+
+function getInitialTheme() {
+  const savedTheme = readStoredPreference('prismatica-theme');
+  if (THEME_SEQUENCE.includes(savedTheme)) return savedTheme;
+  return mediaQueryMatches('(prefers-color-scheme: dark)') ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  const nextTheme = THEME_SEQUENCE.includes(theme) ? theme : 'light';
+  document.documentElement.dataset.theme = nextTheme;
+  document.documentElement.style.colorScheme = nextTheme === 'light' ? 'light' : 'dark';
+  writeStoredPreference('prismatica-theme', nextTheme);
+
+  const control = document.querySelector('#theme-toggle');
+  if (control) {
+    const currentIndex = THEME_SEQUENCE.indexOf(nextTheme);
+    const followingTheme = THEME_SEQUENCE[(currentIndex + 1) % THEME_SEQUENCE.length];
+    control.textContent = `Theme: ${THEME_LABELS[nextTheme]}`;
+    control.setAttribute('aria-label', `Theme: ${nextTheme}. Switch to ${followingTheme} mode`);
+  }
+}
+
+function cycleTheme() {
+  const currentTheme = document.documentElement.dataset.theme || 'light';
+  const currentIndex = THEME_SEQUENCE.indexOf(currentTheme);
+  const nextTheme = THEME_SEQUENCE[(currentIndex + 1) % THEME_SEQUENCE.length];
+  applyTheme(nextTheme);
+  announce(`${THEME_LABELS[nextTheme]} theme enabled`);
+} // WCAG 1.4.3/1.4.6: users can choose light, dark or night colour schemes.
+
+function isEditableElement(element) {
+  return Boolean(element?.closest?.('input, textarea, select, [contenteditable="true"]'));
+}
+
+function scrollPageFromKeyboard(event) {
+  if (state.portalOpen || isEditableElement(event.target) || event.altKey || event.ctrlKey || event.metaKey) return;
+
+  const scrollAmount = Math.max(120, Math.round(window.innerHeight * 0.82));
+  const smallStep = Math.max(48, Math.round(window.innerHeight * 0.12));
+  const keyActions = {
+    ArrowDown: () => window.scrollBy({ top: smallStep, behavior: 'smooth' }),
+    ArrowUp: () => window.scrollBy({ top: -smallStep, behavior: 'smooth' }),
+    PageDown: () => window.scrollBy({ top: scrollAmount, behavior: 'smooth' }),
+    PageUp: () => window.scrollBy({ top: -scrollAmount, behavior: 'smooth' }),
+    Home: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+    End: () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }),
+  };
+
+  if (event.key === ' ' && !event.target?.closest?.('button, a, summary')) {
+    event.preventDefault();
+    window.scrollBy({ top: event.shiftKey ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    return;
+  }
+
+  if (!keyActions[event.key]) return;
+  event.preventDefault();
+  keyActions[event.key]();
+} // WCAG 2.1.1: the page remains fully scrollable with keyboard keys, even when focus is on non-editable content.
+
+function setBackgroundInert(isInert) {
+  document.querySelectorAll('header, main, footer').forEach((region) => {
+    if (isInert) {
+      region.setAttribute('inert', '');
+    } else {
+      region.removeAttribute('inert');
+    }
+  });
+} // WCAG 2.4.3: background content is removed from keyboard and assistive-technology navigation while the modal is open.
+
+function getFocusableElements(container) {
+  return Array.from(container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter((element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
+} // WCAG 2.1.1: modal focus trap uses the full set of keyboard-focusable elements.
+
+function trapFocus(container) {
+  const handleKeydown = (event) => {
+    if (event.key !== 'Tab') return;
+    const focusable = getFocusableElements(container);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable.at(-1);
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  container.addEventListener('keydown', handleKeydown);
+  return () => container.removeEventListener('keydown', handleKeydown);
+} // WCAG 2.1.2: prevents accidental focus escape/trap failures in the dialog.
+
+function uniquifySvgIds(root, prefix) {
+  const ids = new Map();
+  root.querySelectorAll('[id]').forEach((element, index) => {
+    const oldId = element.id;
+    const newId = `${prefix}-${oldId}-${index}`;
+    ids.set(oldId, newId);
+    element.id = newId;
+  });
+
+  root.querySelectorAll('*').forEach((element) => {
+    Array.from(element.attributes).forEach((attribute) => {
+      let value = attribute.value;
+      ids.forEach((newId, oldId) => {
+        value = value.replaceAll(`url(#${oldId})`, `url(#${newId})`).replaceAll(`#${oldId}`, `#${newId}`);
+      });
+      if (value !== attribute.value) element.setAttribute(attribute.name, value);
+    });
+  });
+} // WCAG 4.1.1: cloned decorative mascot SVGs keep unique IDs.
+
 function animateSketchPaths() {
   if (reduceMotion) return;
   document.querySelectorAll('.sketch-bg path, .sketch-bg circle').forEach((shape, index) => {
@@ -428,7 +574,7 @@ function characterMarkup(type) {
   const common = `filter="url(#roughen)"`;
   if (type === 'student') {
     return `
-      <svg class="character-svg student-svg" viewBox="0 0 190 220" aria-hidden="true">
+      <svg class="character-svg student-svg" viewBox="0 0 190 220" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: decorative character SVG is hidden from assistive technology. -->
         <g ${common}>
           <g class="bulb"><circle cx="126" cy="18" r="12" /><path d="M120 18 C124 11, 130 13, 132 18 M121 31 L132 31 M123 36 L130 36" /></g>
           <path class="limb" d="M83 145 C79 164, 78 181, 75 196" /><path class="limb" d="M108 145 C116 163, 121 181, 124 196" />
@@ -449,7 +595,7 @@ function characterMarkup(type) {
 
   if (type === 'chatter') {
     return `
-      <svg class="character-svg chatter-svg" viewBox="0 0 190 220" aria-hidden="true">
+      <svg class="character-svg chatter-svg" viewBox="0 0 190 220" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: decorative character SVG is hidden from assistive technology. -->
         <g ${common}>
           <path class="bubble" d="M119 20 C150 10, 174 23, 169 49 C166 67, 139 70, 124 59 L108 68 L114 53 C105 43, 106 27, 119 20Z" />
           <path d="M130 39 L155 39 M131 49 L149 49" />
@@ -469,7 +615,7 @@ function characterMarkup(type) {
   }
 
   return `
-    <svg class="character-svg reader-svg" viewBox="0 0 190 220" aria-hidden="true">
+    <svg class="character-svg reader-svg" viewBox="0 0 190 220" aria-hidden="true" focusable="false"><!-- WCAG 1.1.1: decorative character SVG is hidden from assistive technology. -->
       <g ${common}>
         <path class="limb" d="M82 145 C70 160, 62 177, 55 194" /><path class="limb" d="M108 145 C121 159, 131 176, 139 194" />
         <ellipse cx="53" cy="198" rx="11" ry="4" /><ellipse cx="141" cy="198" rx="11" ry="4" />
@@ -493,48 +639,49 @@ function characterMarkup(type) {
 
 function portalCardSvg(type) {
   if (type === 'universe') {
-    return `<svg viewBox="0 0 120 90" aria-hidden="true"><circle cx="23" cy="45" r="6" /><circle cx="54" cy="27" r="5" /><circle cx="75" cy="57" r="5" /><circle cx="96" cy="30" r="5" /><path d="M29 43 L50 30 M29 47 L70 56 M59 28 L91 31 M80 55 L97 34" /><text x="16" y="72">note → universe</text></svg>`;
+    return `<svg viewBox="0 0 120 90" aria-hidden="true" focusable="false"><circle cx="23" cy="45" r="6" /><circle cx="54" cy="27" r="5" /><circle cx="75" cy="57" r="5" /><circle cx="96" cy="30" r="5" /><path d="M29 43 L50 30 M29 47 L70 56 M59 28 L91 31 M80 55 L97 34" /><text x="16" y="72">note → universe</text></svg>`;
   }
   if (type === 'team') {
-    return `<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M18 20 L30 58 L38 44 L55 61" /><path d="M55 18 L66 55 L75 42 L92 59" /><path d="M83 12 L94 49 L103 36 L115 51" /><path d="M22 70 L100 70 M32 32 L72 32 M32 43 L88 43" /><text x="16" y="14">Ana</text><text x="57" y="14">Bo</text><text x="82" y="10">Cy</text></svg>`;
+    return `<svg viewBox="0 0 120 90" aria-hidden="true" focusable="false"><path d="M18 20 L30 58 L38 44 L55 61" /><path d="M55 18 L66 55 L75 42 L92 59" /><path d="M83 12 L94 49 L103 36 L115 51" /><path d="M22 70 L100 70 M32 32 L72 32 M32 43 L88 43" /><text x="16" y="14">Ana</text><text x="57" y="14">Bo</text><text x="82" y="10">Cy</text></svg>`;
   }
-  return `<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M16 12 C47 8, 86 9, 104 14 C108 36, 106 62, 102 76 C72 82, 42 80, 17 76 C12 54, 12 31, 16 12Z" /><path d="M28 25 L56 25 L56 45 L28 45Z M65 25 L93 25 L93 45 L65 45Z M28 52 L56 52 L56 69 L28 69Z M65 52 L93 52 L93 69 L65 69Z" /><path d="M34 39 C39 31, 45 41, 50 30 M72 37 L87 37 M72 61 L86 61" /></svg>`;
+  return `<svg viewBox="0 0 120 90" aria-hidden="true" focusable="false"><path d="M16 12 C47 8, 86 9, 104 14 C108 36, 106 62, 102 76 C72 82, 42 80, 17 76 C12 54, 12 31, 16 12Z" /><path d="M28 25 L56 25 L56 45 L28 45Z M65 25 L93 25 L93 45 L65 45Z M28 52 L56 52 L56 69 L28 69Z M65 52 L93 52 L93 69 L65 69Z" /><path d="M34 39 C39 31, 45 41, 50 30 M72 37 L87 37 M72 61 L86 61" /></svg>`;
 }
 
 function createPortalMarkup() {
   return `
-    <div id="portal" class="portal" aria-modal="true" role="dialog" aria-label="Prismatica portal">
+    <div id="portal" class="portal" aria-modal="true" role="dialog" aria-labelledby="portal-title"><!-- WCAG 4.1.2: dialog has a programmatic accessible name. -->
+      <h2 id="portal-title" class="visually-hidden">Prismatica workspace portal</h2><!-- WCAG 2.4.6: modal heading supports screen reader navigation. -->
       <div class="portal__lens-left">
         <div class="portal-login-area">
           <p class="portal-kicker">Present / account access</p>
-          <p class="portal-note">Do you know what's the common point between you and future celebrities?<br />You've both started right here 😄<svg viewBox="0 0 150 80" aria-hidden="true"><path d="M16 12 C48 18, 75 34, 101 62" marker-end="url(#arrow)" /></svg></p>
+          <p class="portal-note">Do you know what's the common point between you and future celebrities?<br />You've both started right here 😄<svg viewBox="0 0 150 80" aria-hidden="true" focusable="false"><path d="M16 12 C48 18, 75 34, 101 62" marker-end="url(#arrow)" /></svg></p><!-- WCAG 1.1.1: decorative note arrow is hidden. -->
           <form class="portal-login" novalidate>
             <div class="field"><label for="portal-email">Email</label><input id="portal-email" type="email" placeholder="you@example.com" autocomplete="email" required /></div>
             <div class="field"><label for="portal-password">Password</label><input id="portal-password" type="password" placeholder="············" autocomplete="current-password" required minlength="6" /></div>
-            <button type="submit" class="portal-cta">Connect now →</button>
-            <button type="button" class="portal-secondary" data-start-from-connect>No account yet? Start first →</button>
+            <button type="submit" class="portal-cta">Connect now <span aria-hidden="true">→</span></button><!-- WCAG 2.5.3: decorative arrow excluded from accessible name. -->
+            <button type="button" class="portal-secondary" data-start-from-connect>No account yet? Start first <span aria-hidden="true">→</span></button><!-- WCAG 2.5.3: decorative arrow excluded from accessible name. -->
             <a class="portal-link" href="#top">Need context? Return to the page</a>
-            <output class="portal-error" aria-live="polite"></output>
+            <output id="portal-error-msg" class="portal-error" role="status" aria-live="polite" aria-atomic="true"></output><!-- WCAG 4.1.3: validation and success messages are announced. -->
           </form>
         </div>
-        <svg class="night-desk" viewBox="0 0 100 80" aria-hidden="true"><path d="M29 34 C31 25, 45 25, 48 34 M42 34 C45 25, 59 25, 62 34 M55 34 C59 25, 71 25, 73 34" /><ellipse cx="51" cy="52" rx="24" ry="10" /><path d="M72 51 C87 47, 88 64, 72 62" /><path d="M19 67 C41 62, 66 65, 87 70 M25 73 C43 70, 64 72, 78 76" /></svg>
+        <svg class="night-desk" viewBox="0 0 100 80" aria-hidden="true" focusable="false"><path d="M29 34 C31 25, 45 25, 48 34 M42 34 C45 25, 59 25, 62 34 M55 34 C59 25, 71 25, 73 34" /><ellipse cx="51" cy="52" rx="24" ry="10" /><path d="M72 51 C87 47, 88 64, 72 62" /><path d="M19 67 C41 62, 66 65, 87 70 M25 73 C43 70, 64 72, 78 76" /></svg><!-- WCAG 1.1.1: decorative night desk is hidden. -->
       </div>
       <div class="portal__lens-right">
         <div class="portal-demo-area">
           <p class="portal-kicker portal-kicker--future">Future / what becomes possible</p>
-          <div class="portal-brand"><svg viewBox="0 0 88 42" aria-hidden="true"><path d="M9 23 C12 9, 30 7, 42 18 C49 7, 70 8, 78 23 C84 36, 66 43, 51 34 C47 31, 45 27, 44 23 C42 31, 34 38, 23 38 C13 38, 5 32, 9 23Z" /><path d="M23 23 C28 17, 36 18, 39 24 M52 24 C56 17, 66 17, 70 24" /></svg><span>Prismatica</span></div>
+          <div class="portal-brand"><svg viewBox="0 0 88 42" aria-hidden="true" focusable="false"><path d="M9 23 C12 9, 30 7, 42 18 C49 7, 70 8, 78 23 C84 36, 66 43, 51 34 C47 31, 45 27, 44 23 C42 31, 34 38, 23 38 C13 38, 5 32, 9 23Z" /><path d="M23 23 C28 17, 36 18, 39 24 M52 24 C56 17, 66 17, 70 24" /></svg><span>Prismatica</span></div><!-- WCAG 1.1.1: decorative brand mark is hidden while text remains. -->
           <div class="portal-cards">
             <article class="portal-card">${portalCardSvg('rules')}<h3>Your workspace, your rules</h3><p>A grid, a note, an app and a live dashboard can share the same page.</p></article>
             <article class="portal-card">${portalCardSvg('universe')}<h3>From a note to a universe</h3><p>Start with one node, then grow into databases, apps and business views.</p></article>
             <article class="portal-card">${portalCardSvg('team')}<h3>Invite your team, keep your sanity</h3><p>Multiple people can edit the same operational story without losing context.</p></article>
           </div>
           <p class="portal-quote">“The workspace that grows with you.”</p>
-          <a class="portal-discover" href="#powers">Discover all features ↓</a>
+          <a class="portal-discover" href="#powers">Discover all features <span aria-hidden="true">↓</span></a><!-- WCAG 2.5.3: decorative arrow excluded from accessible name. -->
         </div>
       </div>
       <div class="portal__mascot-shell"></div>
       <p class="portal__scroll-hint">scroll down to see more · scroll up to step back</p>
-      <button class="portal__close" type="button" aria-label="Close portal"><svg viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="21" /><path d="M19 19 L35 35 M35 19 L19 35" /></svg></button>
+      <button class="portal__close" type="button" aria-label="Close portal"><svg viewBox="0 0 54 54" aria-hidden="true" focusable="false"><circle cx="27" cy="27" r="21" /><path d="M19 19 L35 35 M35 19 L19 35" /></svg></button><!-- WCAG 1.1.1: icon is hidden because the button has an accessible name. -->
     </div>`;
 }
 
@@ -546,18 +693,27 @@ function revealPortalLenses(portal, clone) {
 function closePortal() {
   const portal = document.querySelector('#portal');
   if (!portal) return;
+  state.releaseFocusTrap?.();
+  state.releaseFocusTrap = null;
   portal.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: 'ease-out', fill: 'forwards' }).addEventListener('finish', () => {
     portal.remove();
     document.body.classList.remove('portal-open');
+    setBackgroundInert(false);
     state.portalOpen = false;
     setMood('curious');
     resetPose(0);
+    announce('Workspace portal closed');
+    if (state.previousFocus && typeof state.previousFocus.focus === 'function') {
+      state.previousFocus.focus({ preventScroll: true });
+    }
+    state.previousFocus = null;
   });
-}
+} // WCAG 2.4.3: closing the modal restores focus to the triggering control.
 
 function openPortal(options = {}) {
   if (state.portalOpen) return;
   const quick = Boolean(options.quick);
+  state.previousFocus = document.activeElement;
   state.portalOpen = true;
   document.body.classList.add('portal-open');
   setMood(quick ? 'listening' : 'excited', quick ? 260 : 600, { lock: true });
@@ -582,6 +738,9 @@ function openPortal(options = {}) {
   const portal = portalWrapper.firstElementChild;
   if (quick) portal.classList.add('portal--quick');
   document.body.append(portal);
+  setBackgroundInert(true);
+  state.releaseFocusTrap = trapFocus(portal);
+  announce('Workspace portal opened');
 
   if (quick) {
     portal.classList.add('is-revealed');
@@ -589,6 +748,10 @@ function openPortal(options = {}) {
     const clone = mascot.cloneNode(true);
     clone.classList.add('portal-growing');
     clone.dataset.mood = 'excited';
+    clone.setAttribute('aria-hidden', 'true');
+    clone.disabled = true;
+    clone.tabIndex = -1;
+    uniquifySvgIds(clone, `portal-mascot-${Date.now()}`);
     clone.style.setProperty('--look-x', '0px');
     clone.style.setProperty('--look-y', '0px');
     clone.style.setProperty('--tilt', '0deg');
@@ -611,6 +774,16 @@ function openPortal(options = {}) {
   });
   portal.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closePortal();
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      portal.classList.add('is-near');
+      portal.classList.remove('is-far');
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      portal.classList.remove('is-near');
+      portal.classList.add('is-far');
+    }
   });
   portal.addEventListener(
     'wheel',
@@ -634,25 +807,54 @@ function openPortal(options = {}) {
     const email = form.querySelector('input[type="email"]');
     const password = form.querySelector('input[type="password"]');
 
+    [email, password].forEach((field) => {
+      field.removeAttribute('aria-invalid');
+      field.removeAttribute('aria-describedby');
+    });
+
     if (!email.validity.valid) {
-      output.textContent = 'Write a valid email to enter the sketch.';
+      output.innerHTML = '<span aria-hidden="true">⚠</span> Error: Write a valid email address, for example you@example.com.';
+      email.setAttribute('aria-invalid', 'true');
+      email.setAttribute('aria-describedby', 'portal-error-msg');
       email.focus();
       return;
     }
     if (!password.validity.valid) {
-      output.textContent = 'Use at least 6 characters for the password.';
+      output.innerHTML = '<span aria-hidden="true">⚠</span> Error: Use at least 6 characters for the password.';
+      password.setAttribute('aria-invalid', 'true');
+      password.setAttribute('aria-describedby', 'portal-error-msg');
       password.focus();
       return;
     }
-    output.textContent = 'Welcome sketch saved — demo login accepted.';
+    output.textContent = 'Success: welcome sketch saved — demo login accepted.';
     setMood('happy', 1100, { lock: true });
   });
+  portal.querySelectorAll('input').forEach((field) => {
+    field.addEventListener('input', () => {
+      if (field.validity.valid) {
+        field.removeAttribute('aria-invalid');
+        field.removeAttribute('aria-describedby');
+      }
+    });
+  });
   portal.querySelector('#portal-email')?.focus({ preventScroll: true });
-}
+} // WCAG 2.1.1: portal opens with focus inside and supports keyboard alternatives for wheel gestures.
 
 document.querySelectorAll('[data-character]').forEach((slot) => {
   slot.innerHTML = characterMarkup(slot.dataset.character);
 });
+
+document.querySelector('#pause-animations')?.addEventListener('click', (event) => {
+  const control = event.currentTarget;
+  const paused = control.getAttribute('aria-pressed') === 'true';
+  control.setAttribute('aria-pressed', String(!paused));
+  control.textContent = paused ? 'Pause animations' : 'Resume animations';
+  document.documentElement.classList.toggle('motion-paused', !paused);
+  announce(paused ? 'Animations resumed' : 'Animations paused');
+}); // WCAG 2.2.2: user can pause and resume decorative motion.
+
+applyTheme(getInitialTheme());
+document.querySelector('#theme-toggle')?.addEventListener('click', cycleTheme);
 
 document.querySelectorAll('[data-open-portal]').forEach((trigger) => {
   trigger.addEventListener('click', () => openPortal());
@@ -707,6 +909,7 @@ document.querySelectorAll('.button--ghost, .button.ghost, .nav-links a').forEach
 });
 
 globalThis.addEventListener('pointermove', (event) => updateTarget(event.clientX, event.clientY), { passive: true });
+globalThis.addEventListener('keydown', scrollPageFromKeyboard);
 globalThis.addEventListener('scroll', () => {
   const now = Date.now();
   const delta = Math.abs(window.scrollY - state.lastScrollY);

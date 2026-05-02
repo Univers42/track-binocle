@@ -1,0 +1,26 @@
+{
+  "name": "track-binocle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "mascot.js",
+  "scripts": {
+    "extract:draw": "node extract.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Univers42/track-binocle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Univers42/track-binocle/issues"
+  },
+  "homepage": "https://github.com/Univers42/track-binocle#readme",
+  "dependencies": {
+    "jsdom": "^29.1.1",
+    "svgo": "^4.0.1"
+  }
+}
