@@ -105,6 +105,7 @@ const state = {
   hoverTimer: null,
   heartTimer: null,
   zTimer: null,
+  laughTimer: null,
   fearAnimation: null,
   portalOpen: false,
 };
@@ -125,14 +126,17 @@ const MOOD_TRANSITIONS = {
   sleeping: { duration: 900, easing: 'ease-in' },
   gentle: { duration: 500, easing: 'ease' },
   love: { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+  laughing: { duration: 160, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
 };
 
 function stopMoodEffects() {
   globalThis.clearInterval(state.heartTimer);
   globalThis.clearInterval(state.zTimer);
+  globalThis.clearInterval(state.laughTimer);
   state.fearAnimation?.cancel();
   state.heartTimer = null;
   state.zTimer = null;
+  state.laughTimer = null;
   state.fearAnimation = null;
 }
 
@@ -207,6 +211,25 @@ function startStars() {
   });
 }
 
+function createLaughParticle() {
+  const laugh = document.createElement('span');
+  laugh.className = Math.random() > 0.45 ? 'binocle__laugh' : 'binocle__laugh-tear';
+  laugh.textContent = laugh.className === 'binocle__laugh' ? ['HA!', 'haha!', 'HAA!'][Math.floor(Math.random() * 3)] : '💧';
+  laugh.style.left = `${30 + Math.random() * 44}%`;
+  laugh.style.top = `${18 + Math.random() * 32}%`;
+  laugh.style.setProperty('--laugh-x', `${Math.random() * 60 - 30}px`);
+  laugh.style.setProperty('--laugh-rot', `${Math.random() * 34 - 17}deg`);
+  mascot.append(laugh);
+  laugh.addEventListener('animationend', () => laugh.remove(), { once: true });
+}
+
+function startLaughing() {
+  if (reduceMotion) return;
+  createLaughParticle();
+  createLaughParticle();
+  state.laughTimer = globalThis.setInterval(createLaughParticle, 170);
+}
+
 function setMood(mood, duration = 0, options = {}) {
   globalThis.clearTimeout(state.moodTimer);
   stopMoodEffects();
@@ -219,6 +242,7 @@ function setMood(mood, duration = 0, options = {}) {
   if (mood === 'scared') triggerFearShake();
   if (mood === 'excited') startStars();
   if (mood === 'love') startHearts();
+  if (mood === 'laughing') startLaughing();
   if (mood === 'sleeping') startZs();
   else mascot.style.setProperty('--blink', '1');
 
@@ -487,8 +511,9 @@ function createPortalMarkup() {
           <form class="portal-login" novalidate>
             <div class="field"><label for="portal-email">Email</label><input id="portal-email" type="email" placeholder="you@example.com" autocomplete="email" required /></div>
             <div class="field"><label for="portal-password">Password</label><input id="portal-password" type="password" placeholder="············" autocomplete="current-password" required minlength="6" /></div>
-            <button type="submit" class="portal-cta">Enter Prismatica →</button>
-            <a class="portal-link" href="#top">Don't have an account? Create one</a>
+            <button type="submit" class="portal-cta">Connect now →</button>
+            <button type="button" class="portal-secondary" data-start-from-connect>No account yet? Start first →</button>
+            <a class="portal-link" href="#top">Need context? Return to the page</a>
             <output class="portal-error" aria-live="polite"></output>
           </form>
         </div>
@@ -530,47 +555,60 @@ function closePortal() {
   });
 }
 
-function openPortal() {
+function openPortal(options = {}) {
   if (state.portalOpen) return;
+  const quick = Boolean(options.quick);
   state.portalOpen = true;
   document.body.classList.add('portal-open');
-  setMood('excited', 600, { lock: true });
-  liftBrows();
-  [0, 120, 280].forEach((delay) => globalThis.setTimeout(createPing, delay));
-  mascot.animate(
-    [
-      { transform: 'translateX(0) rotate(0deg) scale(1)' },
-      { transform: 'translateX(-3px) rotate(-2deg) scale(1.04)' },
-      { transform: 'translateX(3px) rotate(2deg) scale(1.06)' },
-      { transform: 'translateX(-2px) rotate(-1deg) scale(1.08)' },
-      { transform: 'translateX(2px) rotate(1deg) scale(1.1)' },
-    ],
-    { duration: reduceMotion ? 300 : 600, easing: 'ease-in-out' }
-  );
+  setMood(quick ? 'listening' : 'excited', quick ? 260 : 600, { lock: true });
+
+  if (!quick) {
+    liftBrows();
+    [0, 120, 280].forEach((delay) => globalThis.setTimeout(createPing, delay));
+    mascot.animate(
+      [
+        { transform: 'translateX(0) rotate(0deg) scale(1)' },
+        { transform: 'translateX(-3px) rotate(-2deg) scale(1.04)' },
+        { transform: 'translateX(3px) rotate(2deg) scale(1.06)' },
+        { transform: 'translateX(-2px) rotate(-1deg) scale(1.08)' },
+        { transform: 'translateX(2px) rotate(1deg) scale(1.1)' },
+      ],
+      { duration: reduceMotion ? 300 : 600, easing: 'ease-in-out' }
+    );
+  }
 
   const portalWrapper = document.createElement('div');
   portalWrapper.innerHTML = createPortalMarkup();
   const portal = portalWrapper.firstElementChild;
+  if (quick) portal.classList.add('portal--quick');
   document.body.append(portal);
 
-  const clone = mascot.cloneNode(true);
-  clone.classList.add('portal-growing');
-  clone.dataset.mood = 'excited';
-  clone.style.setProperty('--look-x', '0px');
-  clone.style.setProperty('--look-y', '0px');
-  clone.style.setProperty('--tilt', '0deg');
-  clone.style.setProperty('--lean-x', '0deg');
-  clone.style.setProperty('--lean-y', '0deg');
-  clone.style.setProperty('--body-x', '0px');
-  clone.style.setProperty('--body-y', '0px');
-  clone.style.setProperty('--body-roll', '0deg');
-  portal.querySelector('.portal__mascot-shell').append(clone);
+  if (quick) {
+    portal.classList.add('is-revealed');
+  } else {
+    const clone = mascot.cloneNode(true);
+    clone.classList.add('portal-growing');
+    clone.dataset.mood = 'excited';
+    clone.style.setProperty('--look-x', '0px');
+    clone.style.setProperty('--look-y', '0px');
+    clone.style.setProperty('--tilt', '0deg');
+    clone.style.setProperty('--lean-x', '0deg');
+    clone.style.setProperty('--lean-y', '0deg');
+    clone.style.setProperty('--body-x', '0px');
+    clone.style.setProperty('--body-y', '0px');
+    clone.style.setProperty('--body-roll', '0deg');
+    portal.querySelector('.portal__mascot-shell').append(clone);
 
-  const revealDelay = reduceMotion ? 320 : 1900;
-  globalThis.setTimeout(() => revealPortalLenses(portal, clone), revealDelay);
+    const revealDelay = reduceMotion ? 320 : 1900;
+    globalThis.setTimeout(() => revealPortalLenses(portal, clone), revealDelay);
+  }
 
   portal.querySelector('.portal__close').addEventListener('click', closePortal);
   portal.querySelector('.portal-discover').addEventListener('click', closePortal);
+  portal.querySelector('[data-start-from-connect]').addEventListener('click', () => {
+    closePortal();
+    globalThis.setTimeout(() => openPortal(), 430);
+  });
   portal.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closePortal();
   });
@@ -617,16 +655,19 @@ document.querySelectorAll('[data-character]').forEach((slot) => {
 });
 
 document.querySelectorAll('[data-open-portal]').forEach((trigger) => {
-  trigger.addEventListener('click', openPortal);
+  trigger.addEventListener('click', () => openPortal());
   trigger.addEventListener('pointerenter', () => setMood('excited', 450));
   trigger.addEventListener('focus', () => setMood('excited', 450));
 });
 
+document.querySelectorAll('[data-open-connect]').forEach((trigger) => {
+  trigger.addEventListener('click', () => openPortal({ quick: true }));
+  trigger.addEventListener('pointerenter', () => setMood('listening', 450));
+  trigger.addEventListener('focus', () => setMood('listening', 450));
+});
+
 mascot.addEventListener('click', () => {
-  const clickMoods = ['excited', 'surprised', 'silly', 'love'];
-  const mood = clickMoods[state.clickCount % clickMoods.length];
-  state.clickCount += 1;
-  setMood(mood, 1400, { lock: true });
+  setMood('laughing', 1900, { lock: true });
   liftBrows(780);
   createPing();
 });
