@@ -258,12 +258,12 @@ h1 span { position: relative; display: inline-block; }
 .svg-arm.left { transform: rotate(calc(var(--wave-left) + var(--arm-droop))); }
 .svg-arm.right { transform: rotate(calc(var(--wave-right) - var(--arm-droop))); }
 .svg-detail, .svg-stitch { stroke-width: 1.4; opacity: 0.55; }
-.svg-shell, .svg-back { fill: var(--shell-color); stroke: var(--ink); stroke-width: 2.2; transition: fill 280ms ease; }
-.svg-back { opacity: 0.62; transform: translate(var(--depth-x), var(--depth-y)); }
-.svg-barrel { fill: #d8d0c4; fill: var(--tube-color); stroke: var(--ink); stroke-width: 2.1; opacity: 1; transition: fill 280ms ease; }
-.svg-frame { fill: var(--shell-color); stroke: var(--ink); stroke-width: 3.5; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
-.svg-inner-rim { fill: var(--lens-color); stroke: var(--ink); stroke-width: 2; opacity: 0.98; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
-.svg-rim { fill: rgba(255,253,246,0.86); stroke: var(--ink); stroke-width: 1.9; opacity: 0.72; transition: opacity 240ms ease, fill 280ms ease; }
+.svg-shell, .svg-back { fill: var(--shell-color); stroke: var(--ink); stroke-width: 2.2; transition: fill 280ms ease; opacity: 1; }
+.svg-back { opacity: 1; fill: color-mix(in srgb, var(--shell-color) 80%, #1c1612); transform: translate(var(--depth-x), var(--depth-y)); }
+.svg-barrel { fill: var(--tube-color, #d8d0c4); stroke: var(--ink); stroke-width: 2.1; opacity: 1 !important; transition: fill 280ms ease; }
+.svg-frame { fill: var(--shell-color); stroke: var(--ink); stroke-width: 3.5; opacity: 1; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+.svg-inner-rim { fill: var(--lens-color); stroke: var(--ink); stroke-width: 2; opacity: 1; transition: fill 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+.svg-rim { fill: rgba(255,253,246,0.86); stroke: var(--ink); stroke-width: 1.9; opacity: 0.9; transition: opacity 240ms ease, fill 280ms ease; }
 .svg-center-band { stroke-width: 2.8; }
 .svg-bridge { stroke-width: 3.6; }
 .svg-bridge-shadow { stroke-width: 1.2; opacity: 0.34; }
