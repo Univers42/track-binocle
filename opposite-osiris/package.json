@@ -8,10 +8,16 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "check": "astro check",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "sass": "^1.94.2",
     "astro": "^6.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

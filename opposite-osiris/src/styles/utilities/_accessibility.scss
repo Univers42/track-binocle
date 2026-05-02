@@ -1,0 +1,51 @@
+html.motion-paused *,
+html.motion-paused *::before,
+html.motion-paused *::after {
+	animation-play-state: paused !important;
+	transition: none !important;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.skip-link {
+	position: fixed;
+	top: -100%;
+	left: 1rem;
+	z-index: 9999;
+	padding: 0.65rem 1rem;
+	background: var(--ink);
+	color: var(--paper);
+	border: 3px solid var(--hl-yellow);
+	font-family: var(--font-mono-sketch);
+	text-decoration: underline;
+}
+
+.skip-link:focus-visible {
+	top: 1rem;
+	outline: 3px solid var(--paper);
+	outline-offset: 2px;
+}
+
+.button:focus-visible,
+.header-cta:focus-visible,
+.portal-cta:focus-visible,
+.portal-secondary:focus-visible,
+.portal__close:focus-visible,
+.nav-links a:focus-visible,
+.portal-link:focus-visible,
+.portal-discover:focus-visible,
+.right-lens-hotspot:focus-visible {
+	outline: var(--stroke-focus) solid var(--ink);
+	outline-offset: 5px;
+	box-shadow: 0 0 0 6px var(--hl-yellow);
+}
