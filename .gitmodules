@@ -4,3 +4,6 @@
 [submodule "infrastructure/baas/mini-baas-infra"]
 	path = infrastructure/baas/mini-baas-infra
 	url = git@github.com:Univers42/mini-baas-infra.git
+[submodule "vendor/scripts"]
+	path = vendor/scripts
+	url = git@github.com:Univers42/scripts.git
