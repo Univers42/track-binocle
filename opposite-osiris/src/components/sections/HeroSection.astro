@@ -1,4 +1,5 @@
 ---
+import NewsletterSignup from '../gdpr/NewsletterSignup.astro';
 import HeroPortalPreview from '../svg/HeroPortalPreview.astro';
 ---
 
@@ -13,6 +14,7 @@ import HeroPortalPreview from '../svg/HeroPortalPreview.astro';
 			<button class="button button--connect" type="button" data-open-connect aria-label="Quick connection — open login"><span lang="fr">Connexion rapide</span> <span aria-hidden="true">→</span></button>
 			<a class="button button--ghost" href="#powers">Explore the drawings</a>
 		</div>
+		<NewsletterSignup />
 	</div>
 	<div class="hero__portal-preview" aria-label="Present and future portal preview">
 		<svg class="click-arrow" viewBox="0 0 190 120" aria-hidden="true" focusable="false"><path d="M174 24 C118 6, 54 20, 30 82" marker-end="url(#arrow)" /><text x="34" y="36">↑ open from header</text></svg>

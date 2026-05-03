@@ -1,0 +1,55 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const baasUrl = import.meta.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000';
+const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
+---
+
+<Layout title="Confirm newsletter subscription" description="Confirm your Prismatica newsletter double opt-in.">
+	<main class="auth-page" data-newsletter-confirm data-baas-url={baasUrl} data-anon-key={anonKey}>
+		<section class="auth-card" aria-labelledby="newsletter-confirm-title">
+			<p class="eyebrow">Newsletter</p>
+			<h1 id="newsletter-confirm-title">Confirming your subscription…</h1>
+			<p data-newsletter-confirm-status role="status" aria-live="polite">Checking the confirmation token.</p>
+			<a class="text-link" href="/">Return home</a>
+		</section>
+	</main>
+	<script is:inline>
+		const root = document.querySelector('[data-newsletter-confirm]');
+		const status = root?.querySelector('[data-newsletter-confirm-status]');
+		const token = new URLSearchParams(window.location.search).get('token');
+		const baasUrl = root?.dataset.baasUrl?.replace(/\/$/, '') ?? '';
+		const anonKey = root?.dataset.anonKey ?? '';
+		const setStatus = (message, isError = false) => {
+			if (!status) return;
+			status.textContent = message;
+			status.classList.toggle('is-error', isError);
+		};
+		async function confirmNewsletter() {
+			if (!token) {
+				setStatus('This newsletter link is missing its token.', true);
+				return;
+			}
+			if (!baasUrl || !anonKey) {
+				setStatus('Newsletter confirmation is not configured for this environment.', true);
+				return;
+			}
+			const response = await fetch(`${baasUrl}/rest/v1/rpc/gdpr_confirm_newsletter_optin`, {
+				method: 'POST',
+				headers: {
+					apikey: anonKey,
+					Authorization: `Bearer ${anonKey}`,
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ token }),
+			});
+			if (!response.ok) {
+				setStatus('This confirmation link is invalid or expired.', true);
+				return;
+			}
+			setStatus('Your newsletter subscription is confirmed. Thank you.');
+		}
+		void confirmNewsletter().catch(() => setStatus('Could not confirm the newsletter right now. Please try again later.', true));
+	</script>
+</Layout>

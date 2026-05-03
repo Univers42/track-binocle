@@ -1,4 +1,8 @@
 import { fetchSeededUsers } from '../lib/baas-client';
+import { baasConfig } from '../lib/baas-config';
+import { authConfig } from '../lib/auth-config';
+import { type RegisterProfile, useAuth, validatePassword } from '../hooks/useAuth';
+import { CONSENT_STORAGE_KEY, CSRF_STORAGE_KEY, NEWSLETTER_INTENT_KEY, POLICY_VERSION } from '../data/legal';
 
 type ThemeName = 'light' | 'dark' | 'night';
 
@@ -32,9 +36,56 @@ type MascotState = {
 	releaseFocusTrap: (() => void) | null;
 };
 
+type PortalNoticeTone = 'success' | 'error';
+
+type AuthTokenResponse = {
+	access_token?: string;
+	expires_in?: number;
+};
+
+type ConsentPreferences = {
+	analytics: boolean;
+	newsletter: boolean;
+	marketing: boolean;
+	policyVersion: string;
+	savedAt: string;
+};
+
+type TurnstileApi = {
+	render: (container: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'error-callback': () => void; 'expired-callback': () => void }) => string;
+	reset?: (widgetId?: string) => void;
+};
+
+type TrustedHtmlPolicy = {
+	createHTML: (markup: string) => unknown;
+};
+
+type TrustedTypesFactory = {
+	createPolicy: (name: string, rules: { createHTML: (markup: string) => string }) => TrustedHtmlPolicy;
+};
+
+type AuthModeControls = {
+	authTitle: Element | null;
+	authNote: Element | null;
+	submitButton: Element | null;
+	termsConsent: Element | null;
+	email: Element | null;
+	username: Element | null;
+	confirmEmail: Element | null;
+	password: Element | null;
+	confirmPassword: Element | null;
+};
+
+declare global {
+	var turnstile: TurnstileApi | undefined;
+}
+
 const THEME_KEY = 'prismatica-theme';
 const MOTION_KEY = 'prismatica-motion-paused';
+const AUTH_TOKEN_KEY = 'prismatica-auth-token-v1';
 const THEMES: ThemeName[] = ['light', 'dark', 'night'];
+const authClient = useAuth();
+let trustedHtmlPolicy: TrustedHtmlPolicy | null | undefined;
 const mascotState: MascotState = {
 	targetX: 0,
 	targetY: 0,
@@ -60,6 +111,29 @@ const mascotState: MascotState = {
 	previousFocus: null,
 	releaseFocusTrap: null,
 };
+
+/** Returns an internal TrustedHTML value when the browser enforces Trusted Types. */
+function trustedHTML(markup: string): unknown {
+	if (trustedHtmlPolicy === undefined) {
+		const trustedTypes = (globalThis as typeof globalThis & { trustedTypes?: TrustedTypesFactory }).trustedTypes;
+		try {
+			trustedHtmlPolicy = trustedTypes?.createPolicy('default', { createHTML: (value) => value }) ?? null;
+		} catch {
+			trustedHtmlPolicy = null;
+		}
+	}
+	return trustedHtmlPolicy ? trustedHtmlPolicy.createHTML(markup) : markup;
+}
+
+/** Assigns static internal markup through Trusted Types-aware DOM sinks. */
+function setTrustedInnerHTML(element: HTMLElement, markup: string): void {
+	(element as unknown as { innerHTML: unknown }).innerHTML = trustedHTML(markup);
+}
+
+/** Inserts static internal markup through Trusted Types-aware DOM sinks. */
+function insertTrustedHTML(element: HTMLElement, position: InsertPosition, markup: string): void {
+	element.insertAdjacentHTML(position, trustedHTML(markup) as string);
+}
 
 /** Restricts a number to the expected animation range. */
 function clamp(value: number, min: number, max: number): number {
@@ -91,6 +165,50 @@ function isHtmlElement(element: Element): element is HTMLElement {
 /** Narrows an element to an input field. */
 function isInput(element: Element): element is HTMLInputElement {
 	return element instanceof HTMLInputElement;
+}
+
+/** Returns the current Turnstile token or a localhost bypass token when configured. */
+function readTurnstileToken(portal: HTMLElement): string {
+	const token = portal.querySelector('[data-turnstile-token]');
+	if (token instanceof HTMLInputElement && token.value) {
+		return token.value;
+	}
+	return authConfig.turnstileSiteKey ? '' : 'localhost-turnstile-token';
+}
+
+/** Renders the Cloudflare Turnstile widget into the active auth portal. */
+function mountTurnstile(portal: HTMLElement): void {
+	const container = portal.querySelector('[data-turnstile-widget]');
+	const token = portal.querySelector('[data-turnstile-token]');
+	if (!(container instanceof HTMLElement) || !(token instanceof HTMLInputElement)) {
+		return;
+	}
+	if (!authConfig.turnstileSiteKey) {
+		token.value = 'localhost-turnstile-token';
+		container.hidden = true;
+		return;
+	}
+	const render = (): void => {
+		if (!globalThis.turnstile || container.dataset.widgetId) {
+			return;
+		}
+		container.dataset.widgetId = globalThis.turnstile.render(container, {
+			sitekey: authConfig.turnstileSiteKey,
+			callback: (value: string) => {
+				token.value = value;
+			},
+			'error-callback': () => {
+				token.value = '';
+			},
+			'expired-callback': () => {
+				token.value = '';
+			},
+		});
+	};
+	render();
+	if (!container.dataset.widgetId) {
+		globalThis.setTimeout(render, 600);
+	}
 }
 
 /** Safely reads a persisted value. */
@@ -222,6 +340,132 @@ function announce(message: string): void {
 	const announcer = queryElement('#global-announcer', isHtmlElement);
 	if (announcer) {
 		announcer.textContent = message;
+	}
+}
+
+/** Returns a PostgREST RPC endpoint URL. */
+function rpcUrl(name: string): string {
+	return `${baasConfig.url.replace(/\/$/, '')}/rest/v1/rpc/${name}`;
+}
+
+/** Reads the current demo auth token for authenticated RPC calls. */
+function readAuthToken(): string | null {
+	return readStorage(AUTH_TOKEN_KEY);
+}
+
+/** Calls a GDPR RPC with either the user's token or the anon key. */
+async function callGdprRpc(name: string, body: Record<string, unknown>, token = readAuthToken()): Promise<Response> {
+	if (!baasConfig.anonKey) {
+		throw new Error('Missing PUBLIC_BAAS_ANON_KEY.');
+	}
+
+	return fetch(rpcUrl(name), {
+		method: 'POST',
+		headers: {
+			apikey: baasConfig.anonKey,
+			Authorization: `Bearer ${token ?? baasConfig.anonKey}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(body),
+	});
+}
+
+/** Authenticates a portal login through the public BaaS gateway. */
+async function authenticatePortalLogin(email: string, password: string, turnstileToken: string): Promise<AuthTokenResponse | null> {
+	const payload = await authClient.signIn({ email, password, turnstileToken });
+	if (payload.ok && typeof payload.accessToken === 'string' && payload.accessToken.length > 0) {
+		writeStorage(AUTH_TOKEN_KEY, payload.accessToken);
+		return { access_token: payload.accessToken, expires_in: payload.expiresIn };
+	}
+	return null;
+}
+
+/** Registers a portal account through the Turnstile-protected auth gateway. */
+async function registerPortalAccount(email: string, password: string, turnstileToken: string, profile: RegisterProfile): Promise<boolean> {
+	const payload = await authClient.register({ email, password, turnstileToken, profile });
+	return payload.ok;
+}
+
+/** Requests a password recovery email without revealing whether the account exists. */
+async function requestPasswordRecovery(email: string, turnstileToken: string): Promise<void> {
+	const response = await authClient.recover({ email, turnstileToken });
+	if (!response.ok && response.status >= 500) {
+		throw new Error('Password recovery service is unavailable.');
+	}
+}
+
+/** Persists consent preferences locally when no user token exists yet. */
+function storeConsentPreferences(preferences: Omit<ConsentPreferences, 'policyVersion' | 'savedAt'>): ConsentPreferences {
+	const record: ConsentPreferences = {
+		...preferences,
+		policyVersion: POLICY_VERSION,
+		savedAt: new Date().toISOString(),
+	};
+	writeStorage(CONSENT_STORAGE_KEY, JSON.stringify(record));
+	return record;
+}
+
+/** Reads locally stored consent preferences. */
+function readConsentPreferences(): ConsentPreferences | null {
+	const raw = readStorage(CONSENT_STORAGE_KEY);
+	if (!raw) {
+		return null;
+	}
+	try {
+		return JSON.parse(raw) as ConsentPreferences;
+	} catch {
+		return null;
+	}
+}
+
+/** Synchronises locally stored newsletter consent after login when possible. */
+async function syncStoredConsents(token: string, email?: string): Promise<void> {
+	const preferences = readConsentPreferences();
+	if (preferences?.newsletter && email) {
+		await callGdprRpc('gdpr_request_newsletter_optin', { email }, token).catch(() => undefined);
+	}
+
+	const newsletterIntent = readStorage(NEWSLETTER_INTENT_KEY);
+	if (newsletterIntent && email) {
+		await callGdprRpc('gdpr_request_newsletter_optin', { email }, token).catch(() => undefined);
+		localStorage.removeItem(NEWSLETTER_INTENT_KEY);
+	}
+}
+
+/** Clears any existing portal connection notification. */
+function clearPortalNotification(portal: HTMLElement): void {
+	portal.querySelector('.portal-notification')?.remove();
+}
+
+/** Shows an accessible portal connection notification above the login form. */
+function showPortalNotification(portal: HTMLElement, tone: PortalNoticeTone, message: string, autoDismiss = false): void {
+	clearPortalNotification(portal);
+	const form = portal.querySelector('.portal-login');
+	if (!(form instanceof HTMLFormElement)) {
+		return;
+	}
+
+	const notification = document.createElement('div');
+	notification.className = `portal-notification portal-notification--${tone}`;
+	notification.setAttribute('role', 'status');
+	notification.setAttribute('aria-live', 'polite');
+	notification.setAttribute('aria-atomic', 'true');
+	notification.tabIndex = -1;
+	const iconPath = tone === 'success'
+		? '<path d="M4 13.5 9.1 18 20 6" />'
+		: '<path d="M12 4 21 20H3L12 4Z" /><path d="M12 9v4" /><path d="M12 16h.01" />';
+	setTrustedInnerHTML(notification, `
+		<svg class="portal-notification__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${iconPath}</svg>
+		<span>${message}</span>
+		<button class="portal-notification__dismiss" type="button" aria-label="Dismiss message">×</button>
+	`);
+	form.before(notification);
+	notification.querySelector('.portal-notification__dismiss')?.addEventListener('click', () => notification.remove());
+	notification.focus({ preventScroll: true });
+
+	if (autoDismiss) {
+		globalThis.setTimeout(() => notification.remove(), 4000);
 	}
 }
 
@@ -666,7 +910,7 @@ function mountMascot(): void {
 	if (!anchor) {
 		return;
 	}
-	anchor.innerHTML = characterMarkup();
+	setTrustedInnerHTML(anchor, characterMarkup());
 	const mascot = queryElement('.binocle', isButton);
 	if (mascot) {
 		bindMascotInteractions(mascot);
@@ -684,20 +928,84 @@ function createPortalMarkup(mode: PortalMode): string {
 			<div class="portal__stage" aria-hidden="true"><span></span><span></span><span></span></div>
 			<section class="portal__panel portal__panel--login" aria-label="Secure connection panel">
 				<div class="portal-login-area">
-					<p class="portal-kicker">${quick ? 'Quick login' : 'Secure workspace access'}</p>
-					<h2 aria-hidden="true">${quick ? 'Open your workspace' : 'Connect to Prismatica'}</h2>
-					<p class="portal-note">A calm, protected entry point for notes, teams, automations and data spaces.</p>
-					<div class="portal-trust-row" aria-hidden="true"><span>SSO ready</span><span>Encrypted</span><span>WCAG aware</span></div>
+					<p class="portal-kicker">${quick ? 'Verified sign in' : 'Secure account onboarding'}</p>
+					<h2 aria-hidden="true" data-auth-title>${quick ? 'Open your workspace' : 'Create your workspace'}</h2>
+					<p class="portal-note" data-auth-note>${quick ? 'Sign in through the protected gateway with anti-abuse checks and rotated refresh cookies.' : 'Create a verified profile that matches the local users schema and activates only after email confirmation.'}</p>
+					<div class="portal-trust-row" aria-hidden="true"><span>Turnstile</span><span>HttpOnly refresh</span><span>Email verification</span></div>
+					<div class="portal-auth-switch" role="group" aria-label="Authentication mode">
+						<button class="portal-auth-switch__button" type="button" data-auth-switch="register" aria-pressed="${quick ? 'false' : 'true'}">Create account</button>
+						<button class="portal-auth-switch__button" type="button" data-auth-switch="login" aria-pressed="${quick ? 'true' : 'false'}">Sign in</button>
+					</div>
 					<form class="portal-login" novalidate>
+						<div class="portal-register-only portal-field-grid">
+							<div class="field">
+								<label for="portal-username">Username <span aria-hidden="true">*</span></label>
+								<input id="portal-username" name="username" type="text" autocomplete="username" placeholder="prism-user" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_][a-zA-Z0-9_.-]{2,31}" required />
+							</div>
+							<div class="field">
+								<label for="portal-first-name">First name <span class="optional">optional</span></label>
+								<input id="portal-first-name" name="first_name" type="text" autocomplete="given-name" placeholder="Ada" maxlength="80" />
+							</div>
+							<div class="field">
+								<label for="portal-last-name">Last name <span class="optional">optional</span></label>
+								<input id="portal-last-name" name="last_name" type="text" autocomplete="family-name" placeholder="Lovelace" maxlength="80" />
+							</div>
+							<div class="field">
+								<label for="portal-theme">Theme</label>
+								<select id="portal-theme" name="theme">
+									<option value="light">Light</option>
+									<option value="dark">Dark</option>
+								</select>
+							</div>
+						</div>
 						<div class="field">
-							<label for="portal-email">Email</label>
+							<label for="portal-email">Email <span aria-hidden="true">*</span></label>
 							<input id="portal-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
 						</div>
-						<div class="field">
-							<label for="portal-password">Password</label>
-							<input id="portal-password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required minlength="6" />
+						<div class="field portal-register-only">
+							<label for="portal-email-confirm">Confirm email <span aria-hidden="true">*</span></label>
+							<input id="portal-email-confirm" name="email_confirm" type="email" autocomplete="email" placeholder="you@example.com" required />
 						</div>
-						<button class="portal-cta" type="submit">Enter secure workspace →</button>
+						<div class="field" data-password-field>
+							<label for="portal-password">Password <span aria-hidden="true">*</span></label>
+							<input id="portal-password" name="password" type="password" autocomplete="current-password" placeholder="12+ chars, A–z, 0–9, symbol" required />
+							<p class="portal-password-hint portal-register-only">Minimum 12 characters with uppercase, lowercase, number and symbol.</p>
+							<button class="portal-link portal-link--button portal-login-only" type="button" data-forgot-password>Forgot your password?</button>
+						</div>
+						<div class="field portal-register-only">
+							<label for="portal-password-confirm">Repeat password <span aria-hidden="true">*</span></label>
+							<input id="portal-password-confirm" name="password_confirm" type="password" autocomplete="new-password" placeholder="Repeat your password" required />
+						</div>
+						<div class="portal-register-only portal-field-grid portal-field-grid--optional">
+							<div class="field">
+								<label for="portal-avatar-url">Avatar URL <span class="optional">optional HTTPS</span></label>
+								<input id="portal-avatar-url" name="avatar_url" type="url" inputmode="url" placeholder="https://example.com/avatar.png" maxlength="255" />
+							</div>
+							<div class="field field--textarea">
+								<label for="portal-bio">Bio <span class="optional">optional</span></label>
+								<textarea id="portal-bio" name="bio" rows="3" maxlength="280" placeholder="Tell your team what you are building."></textarea>
+							</div>
+						</div>
+						<label class="consent-toggle portal-consent" for="portal-terms-consent">
+							<input id="portal-terms-consent" name="terms_consent" type="checkbox" required />
+							<span>I have read and accept the <a href="/legal/terms/" target="_blank" rel="noreferrer">Terms of Service</a> and <a href="/legal/privacy-policy/" target="_blank" rel="noreferrer">Privacy Policy</a>.</span>
+						</label>
+						<label class="consent-toggle portal-consent" for="portal-newsletter-consent">
+							<input id="portal-newsletter-consent" name="newsletter_consent" type="checkbox" />
+							<span>I agree to receive the Prismatica newsletter. This is optional and has no effect on account access.</span>
+						</label>
+						<label class="consent-toggle portal-consent" for="portal-notifications-enabled">
+							<input id="portal-notifications-enabled" name="notifications_enabled" type="checkbox" checked />
+							<span>Enable security and workspace notifications by default.</span>
+						</label>
+						<p class="portal-verification-note portal-register-only">After submission, open the confirmation email to activate the account before your first sign-in.</p>
+						<div class="turnstile-box" data-turnstile-widget aria-label="Anti-abuse verification"></div>
+						<input type="hidden" name="turnstile_token" data-turnstile-token />
+						<button class="portal-cta" type="submit" data-login-submit>${quick ? 'Sign in securely →' : 'Create protected account →'}</button>
+						<div class="portal-recovery-actions" data-recovery-actions hidden>
+							<button class="portal-cta" type="submit" data-recovery-submit>Send reset link</button>
+							<button class="portal-secondary" type="button" data-cancel-recovery>Back to login</button>
+						</div>
 						<button class="portal-secondary" type="button" data-close-portal>Return to the tour</button>
 						<a class="portal-link" href="#media-assets">Need a preview first?</a>
 						<output id="portal-error-msg" class="portal-error" role="status" aria-live="polite" aria-atomic="true"></output>
@@ -753,6 +1061,344 @@ function trapFocus(portal: HTMLElement): () => void {
 	return () => portal.removeEventListener('keydown', handleKeydown);
 }
 
+type PortalFormElements = {
+	error: HTMLOutputElement;
+	email: HTMLInputElement;
+	confirmEmail: HTMLInputElement | null;
+	password: HTMLInputElement;
+	confirmPassword: HTMLInputElement | null;
+	username: HTMLInputElement | null;
+	firstName: HTMLInputElement | null;
+	lastName: HTMLInputElement | null;
+	avatarUrl: HTMLInputElement | null;
+	bio: HTMLTextAreaElement | null;
+	theme: HTMLSelectElement | null;
+	notificationsEnabled: HTMLInputElement | null;
+	termsConsent: HTMLInputElement | null;
+	newsletterConsent: HTMLInputElement | null;
+	submitButton: HTMLButtonElement | null;
+};
+
+/** Returns the typed portal form controls needed by submit handlers. */
+function portalFormElements(portal: HTMLElement): PortalFormElements | null {
+	const error = portal.querySelector('.portal-error');
+	const email = portal.querySelector('#portal-email');
+	const confirmEmail = portal.querySelector('#portal-email-confirm');
+	const password = portal.querySelector('#portal-password');
+	const confirmPassword = portal.querySelector('#portal-password-confirm');
+	const username = portal.querySelector('#portal-username');
+	const firstName = portal.querySelector('#portal-first-name');
+	const lastName = portal.querySelector('#portal-last-name');
+	const avatarUrl = portal.querySelector('#portal-avatar-url');
+	const bio = portal.querySelector('#portal-bio');
+	const theme = portal.querySelector('#portal-theme');
+	const notificationsEnabled = portal.querySelector('#portal-notifications-enabled');
+	const termsConsent = portal.querySelector('#portal-terms-consent');
+	const newsletterConsent = portal.querySelector('#portal-newsletter-consent');
+	const submitButton = portal.querySelector('[data-login-submit]');
+	if (!(error instanceof HTMLOutputElement) || !(email instanceof HTMLInputElement) || !(password instanceof HTMLInputElement)) {
+		return null;
+	}
+	return {
+		error,
+		email,
+		confirmEmail: confirmEmail instanceof HTMLInputElement ? confirmEmail : null,
+		password,
+		confirmPassword: confirmPassword instanceof HTMLInputElement ? confirmPassword : null,
+		username: username instanceof HTMLInputElement ? username : null,
+		firstName: firstName instanceof HTMLInputElement ? firstName : null,
+		lastName: lastName instanceof HTMLInputElement ? lastName : null,
+		avatarUrl: avatarUrl instanceof HTMLInputElement ? avatarUrl : null,
+		bio: bio instanceof HTMLTextAreaElement ? bio : null,
+		theme: theme instanceof HTMLSelectElement ? theme : null,
+		notificationsEnabled: notificationsEnabled instanceof HTMLInputElement ? notificationsEnabled : null,
+		termsConsent: termsConsent instanceof HTMLInputElement ? termsConsent : null,
+		newsletterConsent: newsletterConsent instanceof HTMLInputElement ? newsletterConsent : null,
+		submitButton: submitButton instanceof HTMLButtonElement ? submitButton : null,
+	};
+}
+
+/** Clears invalid state from portal controls. */
+function clearPortalFieldErrors(...fields: HTMLInputElement[]): void {
+	fields.forEach((field) => {
+		field.removeAttribute('aria-invalid');
+		field.removeAttribute('aria-describedby');
+	});
+}
+
+/** Marks a portal input as invalid and focuses it. */
+function showPortalFieldError(error: HTMLOutputElement, field: HTMLInputElement, message: string): void {
+	error.textContent = message;
+	field.setAttribute('aria-invalid', 'true');
+	field.setAttribute('aria-describedby', 'portal-error-msg');
+	field.focus();
+}
+
+/** Validates the optional HTTPS avatar URL field. */
+function hasValidOptionalHttpsUrl(field: HTMLInputElement | null): boolean {
+	if (!field || field.value.trim().length === 0) {
+		return true;
+	}
+	try {
+		return new URL(field.value).protocol === 'https:';
+	} catch {
+		return false;
+	}
+}
+
+/** Builds the schema-aligned registration profile payload. */
+function portalRegistrationProfile(elements: PortalFormElements): RegisterProfile {
+	return {
+		username: elements.username?.value.trim() ?? '',
+		confirmEmail: elements.confirmEmail?.value.trim() ?? '',
+		confirmPassword: elements.confirmPassword?.value ?? '',
+		firstName: elements.firstName?.value.trim() || undefined,
+		lastName: elements.lastName?.value.trim() || undefined,
+		avatarUrl: elements.avatarUrl?.value.trim() || undefined,
+		bio: elements.bio?.value.trim() || undefined,
+		theme: elements.theme?.value === 'dark' ? 'dark' : 'light',
+		notificationsEnabled: elements.notificationsEnabled?.checked ?? true,
+	};
+}
+
+/** Clears invalid states across the dynamic portal auth controls. */
+function clearPortalAuthErrors(elements: PortalFormElements): void {
+	const optionalFields = [elements.confirmEmail, elements.confirmPassword, elements.username, elements.avatarUrl].filter((field): field is HTMLInputElement => field instanceof HTMLInputElement);
+	clearPortalFieldErrors(elements.email, elements.password, ...optionalFields);
+}
+
+/** Validates registration-only identity fields. */
+function validateRegistrationIdentity(elements: PortalFormElements, isRegister: boolean): boolean {
+	const { confirmEmail, email, error, username } = elements;
+	const usernamePattern = /^\w[\w.-]{2,31}$/;
+	if (isRegister && username && !usernamePattern.test(username.value.trim())) {
+		showPortalFieldError(error, username, 'Error: Choose a username with 3–32 letters, numbers, dots, underscores, or hyphens.');
+		return false;
+	}
+	if (!email.validity.valid) {
+		showPortalFieldError(error, email, 'Error: Write a valid email address, for example you@example.com.');
+		return false;
+	}
+	if (isRegister && confirmEmail && email.value.trim().toLowerCase() !== confirmEmail.value.trim().toLowerCase()) {
+		showPortalFieldError(error, confirmEmail, 'Error: Confirm the same email address so the activation link reaches the right inbox.');
+		return false;
+	}
+	return true;
+}
+
+/** Validates login and registration password fields. */
+function validatePortalPasswordFields(elements: PortalFormElements, isRegister: boolean): boolean {
+	const { confirmPassword, error, password } = elements;
+	if (isRegister && !validatePassword(password.value)) {
+		showPortalFieldError(error, password, 'Error: Use at least 12 characters with uppercase, lowercase, number and symbol.');
+		return false;
+	}
+	if (isRegister && confirmPassword && password.value !== confirmPassword.value) {
+		showPortalFieldError(error, confirmPassword, 'Error: Repeat the same password.');
+		return false;
+	}
+	if (!isRegister && password.value.length === 0) {
+		showPortalFieldError(error, password, 'Error: Enter your password.');
+		return false;
+	}
+	return true;
+}
+
+/** Validates profile-only fields that mirror optional users schema columns. */
+function validatePortalProfileFields(elements: PortalFormElements, isRegister: boolean): boolean {
+	const { avatarUrl, error, termsConsent } = elements;
+	if (isRegister && avatarUrl && !hasValidOptionalHttpsUrl(avatarUrl)) {
+		showPortalFieldError(error, avatarUrl, 'Error: Avatar URL must start with https:// or stay empty.');
+		return false;
+	}
+	if (isRegister && termsConsent && !termsConsent.checked) {
+		showPortalFieldError(error, termsConsent, 'Error: Accept the Terms of Service and Privacy Policy to create an account.');
+		return false;
+	}
+	return true;
+}
+
+/** Applies a temporary mood to the mounted mascot when it exists. */
+function setMountedMascotMood(mood: MascotMood, duration: number): void {
+	const mascot = queryElement('.binocle', isButton);
+	if (mascot) {
+		setMascotMood(mascot, mood, duration, true);
+	}
+}
+
+/** Handles the password recovery variant of the portal form. */
+async function submitPortalRecovery(portal: HTMLElement, elements: PortalFormElements): Promise<void> {
+	const { email, error } = elements;
+	const turnstileToken = readTurnstileToken(portal);
+	clearPortalFieldErrors(email);
+	if (!email.validity.valid) {
+		showPortalFieldError(error, email, 'Error: Write a valid email address, for example you@example.com.');
+		return;
+	}
+	if (!turnstileToken) {
+		error.textContent = 'Error: Complete the anti-abuse check.';
+		return;
+	}
+	const recoverySubmit = portal.querySelector('[data-recovery-submit]');
+	setMountedMascotMood('listening', 1600);
+	if (recoverySubmit instanceof HTMLButtonElement) {
+		recoverySubmit.disabled = true;
+		recoverySubmit.textContent = 'Sending…';
+	}
+	try {
+		await requestPasswordRecovery(email.value, turnstileToken);
+		showPortalNotification(portal, 'success', 'If an account exists for that email, a reset link has been sent.');
+		announce('If an account exists for that email, a reset link has been sent.');
+		setMountedMascotMood('happy', 1800);
+	} catch {
+		showPortalNotification(portal, 'error', 'Network error — please try again later.');
+		announce('Network error — please try again later.');
+		setMountedMascotMood('scared', 1200);
+	} finally {
+		if (recoverySubmit instanceof HTMLButtonElement) {
+			recoverySubmit.disabled = false;
+			recoverySubmit.textContent = 'Send reset link';
+		}
+	}
+}
+
+/** Validates portal auth input and returns the Turnstile token when valid. */
+function validatePortalAuth(portal: HTMLElement, elements: PortalFormElements, isRegister: boolean): string | null {
+	const turnstileToken = readTurnstileToken(portal);
+	clearPortalAuthErrors(elements);
+	if (!validateRegistrationIdentity(elements, isRegister) || !validatePortalPasswordFields(elements, isRegister) || !validatePortalProfileFields(elements, isRegister)) {
+		return null;
+	}
+	if (!turnstileToken) {
+		elements.error.textContent = 'Error: Complete the anti-abuse check.';
+		return null;
+	}
+	elements.error.textContent = '';
+	return turnstileToken;
+}
+
+/** Updates the portal submit button busy state. */
+function setPortalSubmitBusy(button: HTMLButtonElement | null, busy: boolean, isRegister: boolean): void {
+	if (!button) {
+		return;
+	}
+	button.disabled = busy;
+	if (busy) {
+		button.textContent = isRegister ? 'Creating…' : 'Connecting…';
+		return;
+	}
+	button.textContent = isRegister ? 'Create protected account →' : 'Sign in securely →';
+}
+
+/** Handles a validated registration request. */
+async function processPortalRegistration(portal: HTMLElement, elements: PortalFormElements, turnstileToken: string): Promise<void> {
+	const registered = await registerPortalAccount(elements.email.value, elements.password.value, turnstileToken, portalRegistrationProfile(elements));
+	if (registered) {
+		showPortalNotification(portal, 'success', 'Account created. Check your email before signing in.', true);
+		announce('Account created. Check your email before signing in.');
+		setMountedMascotMood('happy', 1800);
+		return;
+	}
+	showPortalNotification(portal, 'error', 'Registration failed. Check the form and try again.');
+	announce('Registration failed. Check the form and try again.');
+	setMountedMascotMood('scared', 1200);
+}
+
+/** Handles a validated login request. */
+async function processPortalLogin(portal: HTMLElement, elements: PortalFormElements, turnstileToken: string): Promise<void> {
+	const authenticated = await authenticatePortalLogin(elements.email.value, elements.password.value, turnstileToken);
+	if (!authenticated) {
+		showPortalNotification(portal, 'error', 'Connection failed — please check your credentials.');
+		announce('Connection failed — please check your credentials.');
+		setMountedMascotMood('scared', 1200);
+		return;
+	}
+	await syncStoredConsents(authenticated.access_token ?? '', elements.email.value);
+	if (elements.newsletterConsent?.checked) {
+		await callGdprRpc('gdpr_request_newsletter_optin', { email: elements.email.value }, authenticated.access_token).catch(() => undefined);
+	}
+	showPortalNotification(portal, 'success', 'Successfully connected — welcome back.', true);
+	announce('Successfully connected — welcome back.');
+	setMountedMascotMood('happy', 1800);
+}
+
+/** Handles the standard login variant of the portal form. */
+async function submitPortalLogin(portal: HTMLElement, elements: PortalFormElements): Promise<void> {
+	const isRegister = portal.dataset.authMode === 'register';
+	const turnstileToken = validatePortalAuth(portal, elements, isRegister);
+	if (!turnstileToken) {
+		return;
+	}
+	setPortalSubmitBusy(elements.submitButton, true, isRegister);
+	try {
+		if (isRegister) {
+			await processPortalRegistration(portal, elements, turnstileToken);
+			return;
+		}
+		await processPortalLogin(portal, elements, turnstileToken);
+	} catch {
+		showPortalNotification(portal, 'error', 'Connection failed — please check your credentials.');
+		announce('Connection failed — please check your credentials.');
+		setMountedMascotMood('scared', 1200);
+	} finally {
+		setPortalSubmitBusy(elements.submitButton, false, portal.dataset.authMode === 'register');
+	}
+}
+
+/** Updates portal heading and call-to-action copy for the selected auth mode. */
+function syncAuthModeCopy(controls: AuthModeControls, authMode: 'login' | 'register'): void {
+	const isLogin = authMode === 'login';
+	if (controls.authTitle instanceof HTMLElement) {
+		controls.authTitle.textContent = isLogin ? 'Open your workspace' : 'Create your workspace';
+	}
+	if (controls.authNote instanceof HTMLElement) {
+		controls.authNote.textContent = isLogin
+			? 'Sign in through the protected gateway with anti-abuse checks and rotated refresh cookies.'
+			: 'Create a verified profile that matches the local users schema and activates only after email confirmation.';
+	}
+	if (controls.submitButton instanceof HTMLButtonElement) {
+		controls.submitButton.textContent = isLogin ? 'Sign in securely →' : 'Create protected account →';
+		controls.submitButton.disabled = !isLogin && controls.termsConsent instanceof HTMLInputElement && !controls.termsConsent.checked;
+	}
+}
+
+/** Shows the relevant login or registration controls. */
+function syncAuthModeVisibility(portal: HTMLElement, authMode: 'login' | 'register'): void {
+	const isLogin = authMode === 'login';
+	portal.querySelectorAll('.portal-register-only, .portal-consent').forEach((element) => {
+		if (element instanceof HTMLElement) {
+			element.hidden = isLogin;
+		}
+	});
+	portal.querySelectorAll('.portal-login-only').forEach((element) => {
+		if (element instanceof HTMLElement) {
+			element.hidden = !isLogin;
+		}
+	});
+	portal.querySelectorAll('[data-auth-switch]').forEach((button) => {
+		if (button instanceof HTMLElement) {
+			button.setAttribute('aria-pressed', String(button.dataset.authSwitch === authMode));
+		}
+	});
+}
+
+/** Updates required/autocomplete states for dynamic auth inputs. */
+function syncAuthModeInputs(controls: AuthModeControls, authMode: 'login' | 'register'): void {
+	const isLogin = authMode === 'login';
+	if (controls.email instanceof HTMLInputElement) {
+		controls.email.placeholder = isLogin ? 'you@example.com' : 'you@company.com';
+	}
+	[controls.username, controls.confirmEmail, controls.confirmPassword, controls.termsConsent].forEach((field) => {
+		if (field instanceof HTMLInputElement) {
+			field.required = !isLogin;
+		}
+	});
+	if (controls.password instanceof HTMLInputElement) {
+		controls.password.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+		controls.password.placeholder = isLogin ? 'Your password' : '12+ chars, A–z, 0–9, symbol';
+	}
+}
+
 /** Closes any active portal. */
 function closePortal(): void {
 	const portal = queryElement('.portal', isHtmlElement);
@@ -773,7 +1419,7 @@ function closePortal(): void {
 function openPortal(mode: PortalMode): void {
 	closePortal();
 	mascotState.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-	document.body.insertAdjacentHTML('beforeend', createPortalMarkup(mode));
+	insertTrustedHTML(document.body, 'beforeend', createPortalMarkup(mode));
 	const portal = queryElement('.portal', isHtmlElement);
 	if (!portal) {
 		return;
@@ -785,33 +1431,96 @@ function openPortal(mode: PortalMode): void {
 	portal.querySelector('.portal__close')?.addEventListener('click', closePortal);
 	portal.querySelector('[data-close-portal]')?.addEventListener('click', closePortal);
 	mascotState.releaseFocusTrap = trapFocus(portal);
+	const initialTermsConsent = portal.querySelector('#portal-terms-consent');
+	const initialSubmitButton = portal.querySelector('.portal-cta');
+	const authModeControls: AuthModeControls = {
+		authTitle: portal.querySelector('[data-auth-title]'),
+		authNote: portal.querySelector('[data-auth-note]'),
+		submitButton: initialSubmitButton,
+		termsConsent: initialTermsConsent,
+		email: portal.querySelector('#portal-email'),
+		username: portal.querySelector('#portal-username'),
+		confirmEmail: portal.querySelector('#portal-email-confirm'),
+		password: portal.querySelector('#portal-password'),
+		confirmPassword: portal.querySelector('#portal-password-confirm'),
+	};
+	const setAuthMode = (authMode: 'login' | 'register'): void => {
+		portal.dataset.authMode = authMode;
+		syncAuthModeCopy(authModeControls, authMode);
+		syncAuthModeVisibility(portal, authMode);
+		syncAuthModeInputs(authModeControls, authMode);
+	};
+	if (initialTermsConsent instanceof HTMLInputElement) {
+		initialTermsConsent.addEventListener('change', () => {
+			if (initialSubmitButton instanceof HTMLButtonElement && portal.dataset.authMode === 'register') {
+				initialSubmitButton.disabled = !initialTermsConsent.checked;
+			}
+			initialTermsConsent.removeAttribute('aria-invalid');
+			initialTermsConsent.removeAttribute('aria-describedby');
+		});
+	}
+	portal.querySelectorAll('[data-auth-switch]').forEach((button) => {
+		if (button instanceof HTMLElement) {
+			button.addEventListener('click', () => setAuthMode(button.dataset.authSwitch === 'login' ? 'login' : 'register'));
+		}
+	});
+	setAuthMode(mode === 'connect' ? 'login' : 'register');
+	mountTurnstile(portal);
+	const passwordField = portal.querySelector('[data-password-field]');
+	const passwordInput = portal.querySelector('#portal-password');
+	const forgotPassword = portal.querySelector('[data-forgot-password]');
+	const recoveryActions = portal.querySelector('[data-recovery-actions]');
+	const cancelRecovery = portal.querySelector('[data-cancel-recovery]');
+	const closePortalButton = portal.querySelector('[data-close-portal]');
+	const setRecoveryMode = (enabled: boolean): void => {
+		portal.dataset.portalMode = enabled ? 'recovery' : 'login';
+		if (passwordField instanceof HTMLElement) {
+			passwordField.hidden = enabled;
+		}
+		if (passwordInput instanceof HTMLInputElement) {
+			passwordInput.required = !enabled;
+			passwordInput.value = enabled ? '' : passwordInput.value;
+		}
+		if (initialSubmitButton instanceof HTMLButtonElement) {
+			initialSubmitButton.hidden = enabled;
+		}
+		if (recoveryActions instanceof HTMLElement) {
+			recoveryActions.hidden = !enabled;
+		}
+		if (closePortalButton instanceof HTMLElement) {
+			closePortalButton.hidden = enabled;
+		}
+		portal.querySelectorAll('.portal-consent, .portal-register-only').forEach((element) => {
+			if (element instanceof HTMLElement) {
+				element.hidden = enabled || portal.dataset.authMode === 'login';
+			}
+		});
+		portal.querySelectorAll('.portal-login-only').forEach((element) => {
+			if (element instanceof HTMLElement) {
+				element.hidden = enabled || portal.dataset.authMode === 'register';
+			}
+		});
+		clearPortalNotification(portal);
+		const error = portal.querySelector('.portal-error');
+		if (error instanceof HTMLOutputElement) {
+			error.textContent = '';
+		}
+		queryElement('#portal-email', isInput)?.focus();
+	};
+	if (forgotPassword instanceof HTMLButtonElement) {
+		forgotPassword.addEventListener('click', () => setRecoveryMode(true));
+	}
+	if (cancelRecovery instanceof HTMLButtonElement) {
+		cancelRecovery.addEventListener('click', () => setRecoveryMode(false));
+	}
 	portal.querySelector('.portal-login')?.addEventListener('submit', (event) => {
 		event.preventDefault();
-		const error = portal.querySelector('.portal-error');
-		const email = portal.querySelector('#portal-email');
-		const password = portal.querySelector('#portal-password');
-		if (!(error instanceof HTMLOutputElement) || !(email instanceof HTMLInputElement) || !(password instanceof HTMLInputElement)) {
+		const elements = portalFormElements(portal);
+		if (!elements) {
 			return;
 		}
-		[email, password].forEach((field) => {
-			field.removeAttribute('aria-invalid');
-			field.removeAttribute('aria-describedby');
-		});
-		if (!email.validity.valid) {
-			error.textContent = 'Error: Write a valid email address, for example you@example.com.';
-			email.setAttribute('aria-invalid', 'true');
-			email.setAttribute('aria-describedby', 'portal-error-msg');
-			email.focus();
-			return;
-		}
-		if (!password.validity.valid) {
-			error.textContent = 'Error: Use at least 6 characters for the password.';
-			password.setAttribute('aria-invalid', 'true');
-			password.setAttribute('aria-describedby', 'portal-error-msg');
-			password.focus();
-			return;
-		}
-		error.textContent = 'Success: welcome sketch saved — demo login accepted.';
+		clearPortalNotification(portal);
+		void (portal.dataset.portalMode === 'recovery' ? submitPortalRecovery(portal, elements) : submitPortalLogin(portal, elements));
 	});
 	portal.querySelectorAll('input').forEach((field) => {
 		field.addEventListener('input', () => {
@@ -824,10 +1533,140 @@ function openPortal(mode: PortalMode): void {
 	queryElement('#portal-email', isInput)?.focus();
 }
 
+/** Installs the consent banner controls. */
+function bindConsentBanner(): void {
+	const banner = queryElement('[data-consent-banner]', isHtmlElement);
+	if (!banner) {
+		return;
+	}
+	const form = banner.querySelector('[data-consent-form]');
+	const manageButton = banner.querySelector('[data-consent-manage]');
+	const acceptAll = banner.querySelector('[data-consent-accept-all]');
+	const rejectAll = banner.querySelector('[data-consent-reject-all]');
+	const showBanner = (): void => banner.removeAttribute('hidden');
+	const hideBanner = (): void => banner.setAttribute('hidden', '');
+	const save = (analytics: boolean, newsletter: boolean, marketing: boolean): void => {
+		storeConsentPreferences({ analytics, newsletter, marketing });
+		hideBanner();
+		announce('Consent preferences saved.');
+	};
+
+	if (!readConsentPreferences()) {
+		showBanner();
+	}
+
+	queryElements('[data-manage-cookies]', isButton).forEach((button) => button.addEventListener('click', () => {
+		showBanner();
+		banner.focus({ preventScroll: false });
+	}));
+
+	if (manageButton instanceof HTMLButtonElement && form instanceof HTMLFormElement) {
+		manageButton.addEventListener('click', () => {
+			const isExpanded = manageButton.getAttribute('aria-expanded') === 'true';
+			manageButton.setAttribute('aria-expanded', String(!isExpanded));
+			form.hidden = isExpanded;
+		});
+
+		form.addEventListener('submit', (event) => {
+			event.preventDefault();
+			const analytics = form.elements.namedItem('analytics');
+			const newsletter = form.elements.namedItem('newsletter');
+			const marketing = form.elements.namedItem('marketing');
+			save(
+				analytics instanceof HTMLInputElement && analytics.checked,
+				newsletter instanceof HTMLInputElement && newsletter.checked,
+				marketing instanceof HTMLInputElement && marketing.checked,
+			);
+		});
+	}
+
+	acceptAll?.addEventListener('click', () => save(true, true, true));
+	rejectAll?.addEventListener('click', () => save(false, false, false));
+}
+
+/** Installs newsletter opt-in form handlers. */
+function bindNewsletterSignup(): void {
+	queryElements('[data-newsletter-signup]', isHtmlElement).forEach((form) => {
+		if (!(form instanceof HTMLFormElement)) {
+			return;
+		}
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			const email = form.elements.namedItem('email');
+			const checkbox = form.elements.namedItem('newsletter_consent');
+			const status = form.querySelector('[data-newsletter-status]');
+			if (!(email instanceof HTMLInputElement) || !(checkbox instanceof HTMLInputElement) || !(status instanceof HTMLOutputElement)) {
+				return;
+			}
+			if (!email.validity.valid) {
+				status.textContent = 'Enter a valid email address.';
+				email.focus();
+				return;
+			}
+			if (!checkbox.checked) {
+				status.textContent = 'Please tick the newsletter consent box to subscribe.';
+				checkbox.focus();
+				return;
+			}
+			const response = await callGdprRpc('gdpr_request_newsletter_optin', { email: email.value }).catch(() => null);
+			if (response?.ok) {
+				writeStorage(NEWSLETTER_INTENT_KEY, JSON.stringify({ email: email.value, pendingDoubleOptIn: true, policyVersion: POLICY_VERSION, savedAt: new Date().toISOString() }));
+				status.textContent = 'Check your inbox to confirm the newsletter subscription.';
+			} else {
+				status.textContent = 'Could not start the double opt-in request yet; please try again later.';
+			}
+		});
+	});
+}
+
+/** Reads a string value from FormData without accepting File object stringification. */
+function formDataString(formData: FormData, key: string): string {
+	const value = formData.get(key);
+	return typeof value === 'string' ? value : '';
+}
+
+/** Installs the public data-rights request form. */
+function bindDataRightsForm(): void {
+	const form = queryElement('[data-gdpr-request-form]', isHtmlElement);
+	if (!(form instanceof HTMLFormElement)) {
+		return;
+	}
+	let csrf = readStorage(CSRF_STORAGE_KEY);
+	if (!csrf) {
+		csrf = crypto.randomUUID();
+		writeStorage(CSRF_STORAGE_KEY, csrf);
+	}
+	const csrfInput = form.querySelector('[data-csrf-token]');
+	if (csrfInput instanceof HTMLInputElement) {
+		csrfInput.value = csrf;
+	}
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const status = form.querySelector('[data-gdpr-request-status]');
+		const formData = new FormData(form);
+		if (!(status instanceof HTMLOutputElement)) {
+			return;
+		}
+		if (formData.get('csrf') !== csrf) {
+			status.textContent = 'Security token mismatch. Refresh and try again.';
+			return;
+		}
+		const response = await callGdprRpc('gdpr_submit_request', {
+			request_type: formDataString(formData, 'request_type'),
+			email: formDataString(formData, 'email'),
+			details: { message: formDataString(formData, 'message'), csrf, policyVersion: POLICY_VERSION },
+		}).catch(() => null);
+		status.textContent = response?.ok ? 'Your request has been recorded. We may contact you to verify identity.' : 'Could not record the request right now.';
+	});
+}
+
 /** Installs document-level interaction handlers. */
 function bindInteractions(): void {
 	queryElement('#theme-toggle', isButton)?.addEventListener('click', cycleTheme);
 	queryElement('#pause-animations', isButton)?.addEventListener('click', () => applyMotionPreference(!document.documentElement.classList.contains('motion-paused')));
+	bindConsentBanner();
+	bindNewsletterSignup();
+	bindDataRightsForm();
 	queryElements('[data-open-portal]', isButton).forEach((button) => button.addEventListener('click', () => openPortal('start')));
 	queryElements('[data-open-connect]', isButton).forEach((button) => button.addEventListener('click', () => openPortal('connect')));
 	document.addEventListener('keydown', (event) => {

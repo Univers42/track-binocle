@@ -7,10 +7,24 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "dev:https": "node scripts/dev-https.mjs",
     "build": "astro build",
     "check": "astro check",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "cert:localhost": "sh ../infrastructure/baas/mini-baas-infra/scripts/generate-localhost-cert.sh",
+    "cert:trust": "sh ../infrastructure/baas/mini-baas-infra/scripts/trust-localhost-cert.sh",
+    "auth:gateway": "node scripts/auth-gateway.mjs",
+    "test:security": "node scripts/security/run-all.mjs",
+    "test:smtp": "node --env-file=.env.local scripts/verify-smtp.mjs",
+    "test:email": "node --env-file=.env.local scripts/verify-email-delivery.mjs",
+    "test:templates": "node scripts/verify-templates.mjs",
+    "baas:verify": "npm run baas:verify:connection && npm run baas:verify:schema && npm run baas:verify:seeds && npm run baas:verify:auth",
+    "baas:verify:cors": "node scripts/verify-cors.mjs",
+    "baas:verify:connection": "node scripts/verify-connection.mjs",
+    "baas:verify:schema": "node scripts/verify-schema.mjs",
+    "baas:verify:seeds": "node scripts/verify-seeds.mjs",
+    "baas:verify:auth": "node scripts/verify-auth.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

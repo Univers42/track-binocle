@@ -1,0 +1,60 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const baasUrl = import.meta.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000';
+const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
+---
+
+<Layout title="Confirm your Prismatica account" description="Confirm your Prismatica account email address.">
+	<main class="auth-page" data-auth-confirm data-baas-url={baasUrl} data-anon-key={anonKey}>
+		<section class="auth-card" aria-labelledby="confirm-title">
+			<p class="eyebrow">Email verification</p>
+			<h1 id="confirm-title">Confirming your Prismatica account…</h1>
+			<p data-auth-status role="status" aria-live="polite">Checking the verification link.</p>
+			<p class="auth-card__hint">You will be redirected to the home page after a successful confirmation.</p>
+			<a class="text-link" href="/">Return home</a>
+		</section>
+	</main>
+	<script is:inline>
+		const root = document.querySelector('[data-auth-confirm]');
+		const status = root?.querySelector('[data-auth-status]');
+		const token = new URLSearchParams(window.location.search).get('token');
+		const baasUrl = root?.dataset.baasUrl?.replace(/\/$/, '') ?? '';
+		const anonKey = root?.dataset.anonKey ?? '';
+		const setStatus = (message, isError = false) => {
+			if (!status) return;
+			status.textContent = message;
+			status.classList.toggle('is-error', isError);
+		};
+		const headers = {
+			apikey: anonKey,
+			Authorization: `Bearer ${anonKey}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		};
+		async function confirmEmail() {
+			if (!token) {
+				setStatus('This verification link is missing its token.', true);
+				return;
+			}
+			if (!baasUrl || !anonKey) {
+				setStatus('Email verification is not configured for this environment.', true);
+				return;
+			}
+			const endpoint = `${baasUrl}/auth/v1/verify`;
+			const attempts = [{ type: 'signup', token }, { type: 'signup', token_hash: token }];
+			let lastMessage = '';
+			for (const body of attempts) {
+				const response = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
+				if (response.ok) {
+					setStatus('Your email is confirmed. Redirecting…');
+					window.setTimeout(() => window.location.assign('/'), 3000);
+					return;
+				}
+				lastMessage = await response.text().catch(() => '');
+			}
+			setStatus(`The verification link is invalid or expired.${lastMessage ? ' Please request a new link.' : ''}`, true);
+		}
+		void confirmEmail().catch(() => setStatus('Could not confirm the email right now. Please try again later.', true));
+	</script>
+</Layout>

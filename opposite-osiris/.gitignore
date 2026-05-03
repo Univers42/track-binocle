@@ -15,7 +15,10 @@ pnpm-debug.log*
 
 # environment variables
 .env
+.env.local
 .env.production
+*.secret
+docker-compose.override.yml
 
 # macOS-specific files
 .DS_Store

@@ -1,37 +1,66 @@
+---
+import { DATA_CONTROLLER, LEGAL_LINKS } from '../../data/legal';
+
+const portalUrl = import.meta.env.PUBLIC_PORTAL_URL ?? 'https://portal.example.com/sign-in';
+
+const socialLinks = [
+	{ label: 'GitHub', href: 'https://github.com/Univers42' },
+	{ label: 'LinkedIn', href: 'https://www.linkedin.com/' },
+	{ label: 'X', href: 'https://x.com/' },
+];
+---
+
 <footer id="footer" class="site-footer section-shell" role="contentinfo">
-	<div class="site-footer__paper">
-		<div class="site-footer__intro">
-			<p class="eyebrow">Prismatica closing note</p>
-			<h2>The workspace that grows with you.</h2>
-			<p>From a single note to an entire operating system: sketches, rules, teams, dashboards and living data stay in the same calm place.</p>
-			<div class="site-footer__actions">
-				<button class="button button--primary" type="button" data-open-portal>Enter Prismatica <span aria-hidden="true">→</span></button>
-				<button class="button button--ghost" type="button" data-open-connect>Open login <span aria-hidden="true">↗</span></button>
-			</div>
-		</div>
-		<nav class="site-footer__map" aria-label="Footer navigation">
-			<a href="#powers">Powers</a>
-			<a href="#media-assets">Media</a>
-			<a href="#grid">Grid</a>
-			<a href="#characters">Characters</a>
+	<div class="site-footer__classic" aria-label="Prismatica footer">
+		<section class="site-footer__brand" aria-labelledby="footer-brand-title">
+			<a class="site-footer__logo" href="/" aria-label="Prismatica home">
+				<span aria-hidden="true">✦</span>
+				<strong id="footer-brand-title">Prismatica</strong>
+			</a>
+			<p>Accessible workspace infrastructure for notes, dashboards, automations and privacy-aware product teams.</p>
+		</section>
+
+		<nav class="site-footer__nav" aria-label="Primary footer navigation">
+			<h2>Navigate</h2>
+			<a href="/">Home</a>
+			<a href="/#powers">Features</a>
+			<a href="/#baas-status">Pricing</a>
 		</nav>
-		<div class="site-footer__cards" aria-label="Prismatica promises">
-			<article>
-				<span>01</span>
-				<h3>Readable</h3>
-				<p>Every surface keeps the sketch language, strong contrast and accessible focus states.</p>
-			</article>
-			<article>
-				<span>02</span>
-				<h3>Alive</h3>
-				<p>The mascot reacts like a quiet companion: curious, gentle, sleepy, proud and bright.</p>
-			</article>
-			<article>
-				<span>03</span>
-				<h3>Expandable</h3>
-				<p>Notes can become teams, rules, automations, dashboards and full workspaces.</p>
-			</article>
-		</div>
-		<p class="site-footer__legal">© 2026 Prismatica · Built as a hand-drawn operating canvas.</p>
+
+		<section class="site-footer__auth" aria-labelledby="footer-auth-title">
+			<h2 id="footer-auth-title">Account</h2>
+			<a class="site-footer__signin" href={portalUrl} rel="noopener noreferrer">Sign In <span aria-hidden="true">↗</span></a>
+			<form class="site-footer__newsletter" data-newsletter-signup novalidate>
+				<label for="footer-newsletter-email">Subscribe for product updates</label>
+				<div class="site-footer__newsletter-row">
+					<input id="footer-newsletter-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+					<button class="site-footer__subscribe" type="submit">Subscribe</button>
+				</div>
+				<label class="site-footer__newsletter-consent" for="footer-newsletter-consent">
+					<input id="footer-newsletter-consent" name="newsletter_consent" type="checkbox" required />
+					<span>Email me occasional updates. I can unsubscribe anytime.</span>
+				</label>
+				<output class="form-status" role="status" aria-live="polite" data-newsletter-status></output>
+			</form>
+		</section>
+
+		<section class="site-footer__legal-social" aria-labelledby="footer-legal-title">
+			<h2 id="footer-legal-title">Legal & social</h2>
+			<nav class="site-footer__legal-links" aria-label="Legal navigation">
+				{LEGAL_LINKS.filter((link) => link.label === 'Privacy Policy' || link.label === 'Terms of Service').map((link) => <a href={link.href}>{link.label}</a>)}
+				<button class="link-button" type="button" data-manage-cookies>Cookie preferences</button>
+			</nav>
+			<nav class="site-footer__social" aria-label="Social links">
+				{socialLinks.map((link) => <a href={link.href} rel="noopener noreferrer" aria-label={`${link.label} profile`}>{link.label.slice(0, 2)}</a>)}
+			</nav>
+			<address class="site-footer__controller">
+				<strong>Data controller</strong>
+				<span>{DATA_CONTROLLER.name}</span>
+				<span>{DATA_CONTROLLER.address}</span>
+				<a href={`mailto:${DATA_CONTROLLER.email}`}>{DATA_CONTROLLER.email}</a>
+			</address>
+		</section>
+
+		<p class="site-footer__legal">© 2026 Prismatica · Predictable navigation, high contrast, keyboard focus states, and no tracking pixels in footer emails.</p>
 	</div>
 </footer>
