@@ -20,60 +20,76 @@ function metaTags(html) {
 	}
 }
 
-function isAttributeNameCharacter(charCode) {
-	return (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || charCode === 45;
+function isAttributeNameCharacter(character) {
+	return (character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z') || character === '-';
 }
 
-function isWhitespace(charCode) {
-	return charCode === 9 || charCode === 10 || charCode === 12 || charCode === 13 || charCode === 32;
+function isWhitespace(character) {
+	return character === '\t' || character === '\n' || character === '\f' || character === '\r' || character === ' ';
+}
+
+function skipWhitespace(text, index) {
+	let nextIndex = index;
+	while (nextIndex < text.length && isWhitespace(text[nextIndex])) {
+		nextIndex += 1;
+	}
+	return nextIndex;
+}
+
+function readAttributeName(tag, index) {
+	let nextIndex = index;
+	while (nextIndex < tag.length && isAttributeNameCharacter(tag[nextIndex])) {
+		nextIndex += 1;
+	}
+	if (nextIndex === index) {
+		return null;
+	}
+	return { name: tag.slice(index, nextIndex).toLowerCase(), nextIndex };
+}
+
+function readQuotedAttributeValue(tag, index) {
+	const quote = tag[index];
+	if (quote !== '"' && quote !== "'") {
+		return null;
+	}
+
+	const valueStart = index + 1;
+	const valueEnd = tag.indexOf(quote, valueStart);
+	if (valueEnd < 0) {
+		return undefined;
+	}
+
+	return { value: tag.slice(valueStart, valueEnd), nextIndex: valueEnd + 1 };
 }
 
 function metaAttributes(tag) {
 	const attributes = new Map();
 	let index = 0;
 	while (index < tag.length) {
-		while (index < tag.length && isWhitespace(tag.charCodeAt(index))) {
-			index += 1;
-		}
-
-		const nameStart = index;
-		while (index < tag.length && isAttributeNameCharacter(tag.charCodeAt(index))) {
-			index += 1;
-		}
-
-		if (nameStart === index) {
+		index = skipWhitespace(tag, index);
+		const attributeName = readAttributeName(tag, index);
+		if (attributeName === null) {
 			index += 1;
 			continue;
 		}
 
-		const name = tag.slice(nameStart, index).toLowerCase();
-		while (index < tag.length && isWhitespace(tag.charCodeAt(index))) {
-			index += 1;
-		}
-
+		index = skipWhitespace(tag, attributeName.nextIndex);
 		if (tag[index] !== '=') {
 			continue;
 		}
 
-		index += 1;
-		while (index < tag.length && isWhitespace(tag.charCodeAt(index))) {
-			index += 1;
+		index = skipWhitespace(tag, index + 1);
+		const attributeValue = readQuotedAttributeValue(tag, index);
+		if (attributeValue === undefined) {
+			break;
 		}
-
-		const quote = tag[index];
-		if (quote !== '"' && quote !== "'") {
+		if (attributeValue === null) {
+			index += 1;
 			continue;
 		}
 
-		index += 1;
-		const valueStart = index;
-		const valueEnd = tag.indexOf(quote, index);
-		if (valueEnd < 0) {
-			break;
-		}
-
-		attributes.set(name, tag.slice(valueStart, valueEnd));
-		index = valueEnd + 1;
+		attributes.set(attributeName.name, attributeValue.value);
+		index = attributeValue.nextIndex;
 	}
 	return attributes;
 }
