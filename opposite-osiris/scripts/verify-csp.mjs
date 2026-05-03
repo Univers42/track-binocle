@@ -20,11 +20,60 @@ function metaTags(html) {
 	}
 }
 
+function isAttributeNameCharacter(charCode) {
+	return (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || charCode === 45;
+}
+
+function isWhitespace(charCode) {
+	return charCode === 9 || charCode === 10 || charCode === 12 || charCode === 13 || charCode === 32;
+}
+
 function metaAttributes(tag) {
 	const attributes = new Map();
-	const attributePattern = /([A-Za-z-]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
-	for (const match of tag.matchAll(attributePattern)) {
-		attributes.set(match[1].toLowerCase(), match[3] ?? match[4] ?? '');
+	let index = 0;
+	while (index < tag.length) {
+		while (index < tag.length && isWhitespace(tag.charCodeAt(index))) {
+			index += 1;
+		}
+
+		const nameStart = index;
+		while (index < tag.length && isAttributeNameCharacter(tag.charCodeAt(index))) {
+			index += 1;
+		}
+
+		if (nameStart === index) {
+			index += 1;
+			continue;
+		}
+
+		const name = tag.slice(nameStart, index).toLowerCase();
+		while (index < tag.length && isWhitespace(tag.charCodeAt(index))) {
+			index += 1;
+		}
+
+		if (tag[index] !== '=') {
+			continue;
+		}
+
+		index += 1;
+		while (index < tag.length && isWhitespace(tag.charCodeAt(index))) {
+			index += 1;
+		}
+
+		const quote = tag[index];
+		if (quote !== '"' && quote !== "'") {
+			continue;
+		}
+
+		index += 1;
+		const valueStart = index;
+		const valueEnd = tag.indexOf(quote, index);
+		if (valueEnd < 0) {
+			break;
+		}
+
+		attributes.set(name, tag.slice(valueStart, valueEnd));
+		index = valueEnd + 1;
 	}
 	return attributes;
 }

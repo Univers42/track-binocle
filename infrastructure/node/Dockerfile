@@ -19,7 +19,10 @@ RUN apk add --no-cache python3 build-base cmake git bash \
 
 WORKDIR /app
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh \
+	&& chown -R node:node /app
+
+USER node
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["sleep", "infinity"]
