@@ -6,10 +6,14 @@
 #    By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/05/02 23:39:42 by dlesieur          #+#    #+#              #
-#    Updated: 2026/05/02 23:54:40 by dlesieur         ###   ########.fr        #
+#    Updated: 2026/05/03 18:54:33 by dlesieur         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 # syntax=docker/dockerfile:1
-FROM dlesieur/mini-baas-infra:latest
-EXPOSE 10001
+FROM dlesieur/mini-baas-infra:smtp-v1
+
+ENV MINI_BAAS_CONFIG_FILE=/etc/mini-baas/mini-baas-infra.conf
+COPY config/mini-baas-infra.conf /etc/mini-baas/mini-baas-infra.conf
+
+EXPOSE 8000 9999 5432 3001

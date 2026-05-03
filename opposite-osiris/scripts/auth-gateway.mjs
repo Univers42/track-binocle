@@ -2,7 +2,9 @@
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { resolve4, resolve6, resolveMx } from 'node:dns/promises';
+import tls from 'node:tls';
 
 for (const file of ['.env.local', '.env', '../infrastructure/baas/mini-baas-infra/.env']) {
 	const path = resolve(process.cwd(), file);
@@ -19,22 +21,31 @@ for (const file of ['.env.local', '.env', '../infrastructure/baas/mini-baas-infr
 
 const config = {
 	port: Number(process.env.AUTH_GATEWAY_PORT ?? 8787),
-	baasUrl: (process.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000').replace(/\/$/, ''),
+	baasUrl: (process.env.PUBLIC_BAAS_URL?.startsWith('/api') ? 'http://localhost:8000' : (process.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000')).replace(/\/$/, ''),
 	anonKey: process.env.PUBLIC_BAAS_ANON_KEY ?? process.env.KONG_PUBLIC_API_KEY ?? '',
 	serviceKey: process.env.SERVICE_ROLE_KEY ?? process.env.KONG_SERVICE_API_KEY ?? process.env.PUBLIC_BAAS_ANON_KEY ?? '',
 	turnstileSecret: process.env.TURNSTILE_SECRET_KEY ?? '',
 	turnstileBypassLocal: process.env.TURNSTILE_BYPASS_LOCAL === 'true',
 	siteUrl: process.env.PUBLIC_SITE_URL ?? 'http://localhost:4322',
+	smtpHost: process.env.SMTP_HOST ?? '',
+	smtpPort: Number(process.env.SMTP_PORT ?? 465),
+	smtpUsername: process.env.SMTP_USERNAME ?? process.env.SMTP_USER ?? '',
+	smtpPassword: process.env.SMTP_PASSWORD ?? process.env.SMTP_PASS ?? '',
+	smtpFromName: process.env.SMTP_FROM_NAME ?? 'Prismatica',
+	smtpFromAddress: process.env.SMTP_FROM_ADDRESS ?? process.env.EMAIL_FROM ?? process.env.SMTP_USERNAME ?? process.env.SMTP_USER ?? '',
+	requireEmailVerification: process.env.AUTH_REQUIRE_EMAIL_VERIFICATION !== 'false' && process.env.PUBLIC_AUTH_REQUIRE_EMAIL_VERIFICATION !== 'false',
 };
 
 const buckets = new Map();
+const mailDomainCache = new Map();
 const EMAIL_ATEXT = "A-Za-z0-9!#$%&'*+/=?^_`{|}~-";
 const EMAIL_LOCAL_PART = String.raw`(?:[${EMAIL_ATEXT}]+(?:\.[${EMAIL_ATEXT}]+)*|"[^"\r\n]+")`;
 const EMAIL_DOMAIN_LABEL = '(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)';
 const EMAIL_REGEX = new RegExp(String.raw`^${EMAIL_LOCAL_PART}@(?:${EMAIL_DOMAIN_LABEL}\.)+[A-Za-z]{2,63}$`);
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const USERNAME_REGEX = /^\w[\w.-]{2,31}$/;
-const THEME_VALUES = new Set(['light', 'dark']);
+const MAIL_DOMAIN_CACHE_MS = 10 * 60 * 1000;
+const DNS_LOOKUP_TIMEOUT_MS = 3500;
 
 function clientIp(request) {
 	return (request.headers['cf-connecting-ip'] ?? request.headers['x-forwarded-for'] ?? request.socket.remoteAddress ?? 'unknown').toString().split(',')[0].trim();
@@ -85,6 +96,21 @@ function rateLimit(ip, action) {
 	return retryAfter;
 }
 
+function emailDomain(email) {
+	return String(email).split('@').pop()?.toLowerCase() ?? '';
+}
+
+async function hasDeliverableEmailDomain(email) {
+	const domain = emailDomain(email);
+	const cached = mailDomainCache.get(domain);
+	if (cached && cached.expiresAt > Date.now()) return cached.valid;
+	const timeout = new Promise((resolveTimeout) => globalThis.setTimeout(() => resolveTimeout(false), DNS_LOOKUP_TIMEOUT_MS));
+	const lookup = Promise.allSettled([resolveMx(domain), resolve4(domain), resolve6(domain)]).then((results) => results.some((result) => result.status === 'fulfilled' && Array.isArray(result.value) && result.value.length > 0));
+	const valid = await Promise.race([lookup, timeout]);
+	mailDomainCache.set(domain, { valid, expiresAt: Date.now() + MAIL_DOMAIN_CACHE_MS });
+	return valid;
+}
+
 async function verifyTurnstile(token, ip) {
 	if (config.turnstileBypassLocal && (!token || token === 'localhost-turnstile-token')) return true;
 	if (!config.turnstileSecret || !token) return false;
@@ -96,6 +122,42 @@ async function verifyTurnstile(token, ip) {
 
 async function gotrue(path, body, authorization = config.anonKey) {
 	const response = await fetch(`${config.baasUrl}${path}`, {
+		method: 'POST',
+		headers: { apikey: config.anonKey, Authorization: `Bearer ${authorization}`, Accept: 'application/json', 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+	});
+	const text = await response.text();
+	let payload = {};
+	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
+	return { response, payload };
+}
+
+async function gotrueAdmin(path, body) {
+	const response = await fetch(`${config.baasUrl}${path}`, {
+		method: 'POST',
+		headers: { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}`, Accept: 'application/json', 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+	});
+	const text = await response.text();
+	let payload = {};
+	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
+	return { response, payload };
+}
+
+async function gotrueAdminPatch(path, body) {
+	const response = await fetch(`${config.baasUrl}${path}`, {
+		method: 'PATCH',
+		headers: { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}`, Accept: 'application/json', 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+	});
+	const text = await response.text();
+	let payload = {};
+	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
+	return { response, payload };
+}
+
+async function restRpc(name, body, authorization = config.anonKey) {
+	const response = await fetch(`${config.baasUrl}/rest/v1/rpc/${name}`, {
 		method: 'POST',
 		headers: { apikey: config.anonKey, Authorization: `Bearer ${authorization}`, Accept: 'application/json', 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
@@ -127,33 +189,130 @@ function humanAuthMessage(payload, fallback) {
 	return message ? message.trim().slice(0, 240) : fallback;
 }
 
-function cleanText(value, maxLength) {
-	return String(value ?? '').trim().slice(0, maxLength);
+function escapeHtml(value) {
+	return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
-function cleanOptionalUrl(value) {
-	const url = cleanText(value, 255);
-	if (!url) return '';
-	try {
-		const parsed = new URL(url);
-		return parsed.protocol === 'https:' ? parsed.toString() : '';
-	} catch {
-		return '';
+function smtpBody({ to, subject, html }) {
+	const fromName = config.smtpFromName.replaceAll('\r', ' ').replaceAll('\n', ' ').trim();
+	const fromAddress = config.smtpFromAddress.replaceAll('\r', '').replaceAll('\n', '').trim();
+	return [
+		`From: ${fromName} <${fromAddress}>`,
+		`To: ${to}`,
+		`Subject: ${subject}`,
+		'MIME-Version: 1.0',
+		'Content-Type: text/html; charset=UTF-8',
+		'',
+		html,
+	].join('\r\n');
+}
+
+function hasSmtpConfig() {
+	return Boolean(config.smtpHost && config.smtpFromAddress);
+}
+
+function createSmtpClient() {
+	const socket = tls.connect({ host: config.smtpHost, port: config.smtpPort, servername: config.smtpHost, rejectUnauthorized: true });
+	socket.setEncoding('utf8');
+	let buffer = '';
+	const lines = [];
+	const waiters = [];
+
+	function flushWaiters() {
+		while (lines.length > 0 && waiters.length > 0) {
+			waiters.shift().resolve(lines.shift());
+		}
 	}
+
+	socket.on('data', (chunk) => {
+		buffer += chunk;
+		let index = buffer.indexOf('\n');
+		while (index >= 0) {
+			lines.push(buffer.slice(0, index).replace(/\r$/, ''));
+			buffer = buffer.slice(index + 1);
+			index = buffer.indexOf('\n');
+		}
+		flushWaiters();
+	});
+
+	const readLine = (timeoutMs = 10000) => new Promise((resolveLine, rejectLine) => {
+		if (lines.length > 0) {
+			resolveLine(lines.shift());
+			return;
+		}
+		const timer = setTimeout(() => rejectLine(new Error('SMTP read timed out.')), timeoutMs);
+		waiters.push({
+			resolve: (line) => {
+				clearTimeout(timer);
+				resolveLine(line);
+			},
+		});
+	});
+
+	async function readResponse() {
+		const responseLines = [];
+		let code = '';
+		for (;;) {
+			const line = String(await readLine());
+			responseLines.push(line);
+			code ||= line.slice(0, 3);
+			if (/^\d{3} /.test(line)) {
+				return { code: Number(code), text: responseLines.join('\n') };
+			}
+		}
+	}
+
+	async function send(line, expectedCodes) {
+		socket.write(`${line}\r\n`);
+		const response = await readResponse();
+		if (!expectedCodes.includes(response.code)) {
+			throw new Error(`SMTP command failed with ${response.code}.`);
+		}
+		return response;
+	}
+
+	return { socket, readResponse, send };
+}
+
+async function sendSmtpMail(message) {
+	if (!config.smtpHost || !config.smtpUsername || !config.smtpPassword || !config.smtpFromAddress) {
+		throw Object.assign(new Error('SMTP is not configured.'), { status: 503 });
+	}
+	const client = createSmtpClient();
+	try {
+		await new Promise((resolveConnect, rejectConnect) => {
+			client.socket.once('secureConnect', resolveConnect);
+			client.socket.once('error', rejectConnect);
+		});
+		const greeting = await client.readResponse();
+		if (greeting.code !== 220) throw new Error('SMTP greeting failed.');
+		await client.send('EHLO prismatica.local', [250]);
+		await client.send('AUTH LOGIN', [334]);
+		await client.send(Buffer.from(config.smtpUsername, 'utf8').toString('base64'), [334]);
+		await client.send(Buffer.from(config.smtpPassword, 'utf8').toString('base64'), [235]);
+		await client.send(`MAIL FROM:<${config.smtpFromAddress}>`, [250]);
+		await client.send(`RCPT TO:<${message.to}>`, [250, 251]);
+		await client.send('DATA', [354]);
+		await client.send(`${smtpBody(message)}\r\n.`, [250]);
+		await client.send('QUIT', [221]).catch(() => undefined);
+		client.socket.end();
+	} catch (error) {
+		client.socket.destroy();
+		throw error;
+	}
+}
+
+function cleanText(value, maxLength) {
+	return String(value ?? '').trim().slice(0, maxLength);
 }
 
 function registrationProfile(payload) {
 	const rawProfile = typeof payload.profile === 'object' && payload.profile !== null ? payload.profile : {};
 	return {
 		username: cleanText(rawProfile.username, 32),
-		confirmEmail: cleanText(rawProfile.confirmEmail, 255).toLowerCase(),
 		confirmPassword: String(rawProfile.confirmPassword ?? ''),
-		first_name: cleanText(rawProfile.firstName, 80),
-		last_name: cleanText(rawProfile.lastName, 80),
-		avatar_url: cleanOptionalUrl(rawProfile.avatarUrl),
-		bio: cleanText(rawProfile.bio, 280),
-		theme: THEME_VALUES.has(String(rawProfile.theme)) ? String(rawProfile.theme) : 'light',
-		notifications_enabled: rawProfile.notificationsEnabled !== false,
+		email_verification_consent: rawProfile.emailVerificationConsent !== false,
+		notifications_enabled: true,
 	};
 }
 
@@ -174,27 +333,101 @@ async function protectedAction(request, response, action, handler) {
 	await handler(payload, ip);
 }
 
+function registrationContext(payload) {
+	const email = String(payload.email ?? '').trim().toLowerCase();
+	const password = String(payload.password ?? '');
+	const profile = registrationProfile(payload);
+	const userMetadata = {
+		username: profile.username,
+		theme: 'light',
+		notifications_enabled: profile.notifications_enabled,
+	};
+	return { email, password, profile, userMetadata };
+}
+
+function isValidRegistrationContext({ email, password, profile }) {
+	return EMAIL_REGEX.test(email)
+		&& PASSWORD_REGEX.test(password)
+		&& USERNAME_REGEX.test(profile.username)
+		&& profile.confirmPassword === password
+		&& (!config.requireEmailVerification || profile.email_verification_consent);
+}
+
+async function createDevConfirmedAccount({ email, password, userMetadata }) {
+	const result = await gotrueAdmin('/auth/v1/admin/users', {
+		email,
+		password,
+		email_confirm: true,
+		user_metadata: userMetadata,
+	});
+	if (result.response.status !== 405) return result;
+	const signup = await gotrue('/auth/v1/signup', { email, password, data: userMetadata });
+	const userId = signup.payload?.user?.id ?? signup.payload?.id;
+	if (signup.response.ok && typeof userId === 'string') {
+		await gotrueAdminPatch(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, { email_confirm: true }).catch(() => undefined);
+	}
+	return signup;
+}
+
+async function handleDevConfirmedRegistration(request, response, context) {
+	const result = await createDevConfirmedAccount(context);
+	if (!result.response.ok) {
+		await audit('register_dev_failed', request, { email: context.email, status: result.response.status });
+		json(response, result.response.status, { message: humanAuthMessage(result.payload, 'Development registration failed.') });
+		return;
+	}
+	await audit('register_dev_confirmed', request, { email: context.email });
+	json(response, 200, { message: 'Development account created and confirmed. You can sign in now.' });
+}
+
+async function handleEmailVerifiedRegistration(request, response, context) {
+	const result = await gotrueAdmin('/auth/v1/admin/generate_link', {
+		type: 'signup',
+		email: context.email,
+		password: context.password,
+		data: context.userMetadata,
+		redirect_to: `${config.siteUrl.replace(/\/$/, '')}/auth/confirm`,
+	});
+	await audit(result.response.ok ? 'register_requested' : 'register_failed', request, { email: context.email, status: result.response.status });
+	if (!result.response.ok) {
+		json(response, result.response.status, { message: humanAuthMessage(result.payload, 'Registration failed.') });
+		return;
+	}
+	const token = typeof result.payload.hashed_token === 'string' ? result.payload.hashed_token : '';
+	const actionLink = typeof result.payload.action_link === 'string' ? result.payload.action_link : '';
+	const confirmUrl = token ? `${config.siteUrl.replace(/\/$/, '')}/auth/confirm/?token=${encodeURIComponent(token)}` : actionLink;
+	if (!confirmUrl) {
+		json(response, 502, { message: 'Could not create the email verification link.' });
+		return;
+	}
+	await sendSmtpMail({
+		to: context.email,
+		subject: 'Confirm your Prismatica account',
+		html: `<p>Hello,</p><p>Confirm your Prismatica account before signing in:</p><p><a href="${escapeHtml(confirmUrl)}">Confirm account</a></p><p>If you did not request this account, you can ignore this email.</p><p>Prismatica</p>`,
+	});
+	json(response, 200, { message: 'Check your email to confirm the account before signing in.' });
+}
+
 async function handleRegister(request, response) {
 	await protectedAction(request, response, 'register', async (payload) => {
-		const email = String(payload.email ?? '').trim().toLowerCase();
-		const password = String(payload.password ?? '');
-		const profile = registrationProfile(payload);
-		if (!EMAIL_REGEX.test(email) || !PASSWORD_REGEX.test(password) || !USERNAME_REGEX.test(profile.username) || profile.confirmEmail !== email || profile.confirmPassword !== password) {
+		const context = registrationContext(payload);
+		if (!isValidRegistrationContext(context)) {
 			json(response, 422, { message: 'Invalid email or password policy.' });
 			return;
 		}
-		const userMetadata = {
-			username: profile.username,
-			first_name: profile.first_name || undefined,
-			last_name: profile.last_name || undefined,
-			avatar_url: profile.avatar_url || undefined,
-			bio: profile.bio || undefined,
-			theme: profile.theme,
-			notifications_enabled: profile.notifications_enabled,
-		};
-		const result = await gotrue('/auth/v1/signup', { email, password, data: userMetadata, email_redirect_to: `${config.siteUrl}/auth/confirm` });
-		await audit(result.response.ok ? 'register_requested' : 'register_failed', request, { email, status: result.response.status });
-		json(response, result.response.ok ? 200 : result.response.status, result.response.ok ? { message: 'Check your email to confirm the account before signing in.' } : { message: humanAuthMessage(result.payload, 'Registration failed.') });
+		if (!await hasDeliverableEmailDomain(context.email)) {
+			json(response, 422, { message: 'Use an email domain that can receive mail.' });
+			return;
+		}
+		if (!config.serviceKey || (config.requireEmailVerification && !hasSmtpConfig())) {
+			json(response, 503, { message: 'Email verification is not configured.' });
+			return;
+		}
+		if (!config.requireEmailVerification || !context.profile.email_verification_consent) {
+			await handleDevConfirmedRegistration(request, response, context);
+			return;
+		}
+		await handleEmailVerifiedRegistration(request, response, context);
 	});
 }
 
@@ -221,12 +454,45 @@ async function handleLogin(request, response) {
 async function handleRecover(request, response) {
 	await protectedAction(request, response, 'recover', async (payload) => {
 		const email = String(payload.email ?? '').trim().toLowerCase();
-		if (EMAIL_REGEX.test(email)) {
+		if (EMAIL_REGEX.test(email) && await hasDeliverableEmailDomain(email)) {
 			await gotrue('/auth/v1/recover', { email });
 			await audit('password_recovery_requested', request, { email });
 		}
 		json(response, 200, { message: 'If an account exists for that email, a reset link has been sent.' });
 	});
+}
+
+async function handleNewsletterSubscribe(request, response) {
+	const ip = clientIp(request);
+	const retryAfter = rateLimit(ip, 'newsletter');
+	if (retryAfter) {
+		json(response, 429, { message: 'Too many attempts. Please retry later.' }, { 'retry-after': String(retryAfter) });
+		return;
+	}
+	const payload = await readJson(request);
+	const email = String(payload.email ?? '').trim().toLowerCase();
+	if (!EMAIL_REGEX.test(email)) {
+		json(response, 422, { message: 'Use a valid email address.' });
+		return;
+	}
+	if (!await hasDeliverableEmailDomain(email)) {
+		json(response, 422, { message: 'Use an email domain that can receive mail.' });
+		return;
+	}
+	const token = randomBytes(32).toString('hex');
+	const result = await restRpc('gdpr_request_newsletter_optin', { email, token });
+	if (!result.response.ok) {
+		json(response, result.response.status, { message: humanAuthMessage(result.payload, 'Could not start the newsletter confirmation.') });
+		return;
+	}
+	const confirmUrl = `${config.siteUrl.replace(/\/$/, '')}/newsletter/confirm/?token=${encodeURIComponent(token)}`;
+	await sendSmtpMail({
+		to: email,
+		subject: 'Confirm your Prismatica newsletter subscription',
+		html: `<p>Hello,</p><p>Please confirm your Prismatica newsletter subscription:</p><p><a href="${confirmUrl}">Confirm subscription</a></p><p>If you did not request this, you can ignore this email.</p><p>Prismatica</p>`,
+	});
+	await audit('newsletter_optin_requested', request, { email });
+	json(response, 200, { message: `Check ${escapeHtml(email)} to confirm your subscription.` });
 }
 
 async function handleRefresh(request, response) {
@@ -260,6 +526,7 @@ const routes = new Map([
 	['POST /api/auth/recover', handleRecover],
 	['POST /api/auth/refresh', handleRefresh],
 	['POST /api/auth/logout', handleLogout],
+	['POST /api/newsletter/subscribe', handleNewsletterSubscribe],
 ]);
 
 createServer(async (request, response) => {
@@ -285,5 +552,5 @@ createServer(async (request, response) => {
 		json(response, status, { message: status >= 500 ? 'Authentication gateway error.' : String(error?.message ?? 'Request error.') });
 	}
 }).listen(config.port, () => {
-	console.log(`Auth gateway listening on http://localhost:${config.port}/api/auth`);
+	console.log(`Auth gateway listening on http://localhost:${config.port}/api/auth and /api/newsletter`);
 });

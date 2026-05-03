@@ -1,16 +1,16 @@
 -- Insert Seed Data into `users` table
 INSERT INTO users (username, email, password_hash, first_name, last_name, avatar_url, bio, theme, notifications_enabled, is_email_verified, created_at, updated_at)
 VALUES 
-    ('johndoe', 'john.doe@example.com', '$2b$12$Erh8T1G1v...hash...', 'John', 'Doe', 'https://example.com/avatars/john.png', 'Software engineer passionate about building SaaS products.', 'light', TRUE, TRUE, '2026-01-10 10:00:00', '2026-01-10 10:00:00'),
-    ('janedoe', 'jane.doe@example.com', '$2b$12$Erh8T1G2v...hash...', 'Jane', 'Doe', 'https://example.com/avatars/jane.png', 'Product designer and illustrator.', 'dark', TRUE, TRUE, '2026-01-11 11:30:00', '2026-01-12 09:15:00'),
-    ('alice_w', 'alice@example.com', '$2b$12$Erh8T1G3v...hash...', 'Alice', 'Williams', 'https://example.com/avatars/alice.png', 'Content marketer and strategist.', 'light', FALSE, TRUE, '2026-01-15 14:00:00', '2026-01-15 14:00:00'),
-    ('bob_dev', 'bob@example.com', '$2b$12$Erh8T1G4v...hash...', 'Bob', 'Smith', 'https://example.com/avatars/bob.png', 'Backend developer in love with Rust and Go.', 'dark', TRUE, FALSE, '2026-02-01 08:00:00', '2026-02-01 08:00:00'),
-    ('charlie_c', 'charlie@example.com', '$2b$12$Erh8T1G5v...hash...', 'Charlie', 'Chaplin', NULL, NULL, 'light', TRUE, TRUE, '2026-02-10 16:20:00', '2026-02-15 10:45:00'),
-    ('diana_p', 'diana@example.com', '$2b$12$Erh8T1G6v...hash...', 'Diana', 'Prince', 'https://example.com/avatars/diana.png', 'Data enthusiast and analyst.', 'dark', FALSE, TRUE, '2026-02-14 09:00:00', '2026-02-14 09:00:00'),
-    ('evan_r', 'evan@example.com', '$2b$12$Erh8T1G7v...hash...', 'Evan', 'Wright', NULL, 'Freelance writer.', 'light', TRUE, TRUE, '2026-02-20 17:10:00', '2026-02-20 17:10:00'),
-    ('fiona_g', 'fiona@example.com', '$2b$12$Erh8T1G8v...hash...', 'Fiona', 'Gallagher', 'https://example.com/avatars/fiona.png', 'Digital nomad, writing code from anywhere.', 'dark', TRUE, FALSE, '2026-03-01 12:00:00', '2026-03-02 14:30:00'),
-    ('george_h', 'george@example.com', '$2b$12$Erh8T1G9v...hash...', 'George', 'Harrison', 'https://example.com/avatars/george.png', 'Musician and developer.', 'light', TRUE, TRUE, '2026-03-05 13:15:00', '2026-03-05 13:15:00'),
-    ('hannah_b', 'hannah@example.com', '$2b$12$Erh8T1G0v...hash...', 'Hannah', 'Baker', NULL, 'Customer success representative.', 'light', TRUE, TRUE, '2026-03-10 15:40:00', '2026-03-10 15:40:00');
+    ('johndoe', 'john.doe@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'John', 'Doe', 'https://example.com/avatars/john.png', 'Software engineer passionate about building SaaS products.', 'light', TRUE, TRUE, '2026-01-10 10:00:00', '2026-01-10 10:00:00'),
+    ('janedoe', 'jane.doe@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Jane', 'Doe', 'https://example.com/avatars/jane.png', 'Product designer and illustrator.', 'dark', TRUE, TRUE, '2026-01-11 11:30:00', '2026-01-12 09:15:00'),
+    ('alice_w', 'alice@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Alice', 'Williams', 'https://example.com/avatars/alice.png', 'Content marketer and strategist.', 'light', FALSE, TRUE, '2026-01-15 14:00:00', '2026-01-15 14:00:00'),
+    ('bob_dev', 'bob@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Bob', 'Smith', 'https://example.com/avatars/bob.png', 'Backend developer in love with Rust and Go.', 'dark', TRUE, FALSE, '2026-02-01 08:00:00', '2026-02-01 08:00:00'),
+    ('charlie_c', 'charlie@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Charlie', 'Chaplin', NULL, NULL, 'light', TRUE, TRUE, '2026-02-10 16:20:00', '2026-02-15 10:45:00'),
+    ('diana_p', 'diana@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Diana', 'Prince', 'https://example.com/avatars/diana.png', 'Data enthusiast and analyst.', 'dark', FALSE, TRUE, '2026-02-14 09:00:00', '2026-02-14 09:00:00'),
+    ('evan_r', 'evan@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Evan', 'Wright', NULL, 'Freelance writer.', 'light', TRUE, TRUE, '2026-02-20 17:10:00', '2026-02-20 17:10:00'),
+    ('fiona_g', 'fiona@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Fiona', 'Gallagher', 'https://example.com/avatars/fiona.png', 'Digital nomad, writing code from anywhere.', 'dark', TRUE, FALSE, '2026-03-01 12:00:00', '2026-03-02 14:30:00'),
+    ('george_h', 'george@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'George', 'Harrison', 'https://example.com/avatars/george.png', 'Musician and developer.', 'light', TRUE, TRUE, '2026-03-05 13:15:00', '2026-03-05 13:15:00'),
+    ('hannah_b', 'hannah@example.com', '$2b$12$Y6jhLOeIm2SNmZZDqt9LsOZbtu2I2GQBMN23w0gcfVjHV3MWtKHhG', 'Hannah', 'Baker', NULL, 'Customer success representative.', 'light', TRUE, TRUE, '2026-03-10 15:40:00', '2026-03-10 15:40:00');
 
 -- Insert Seed Data into `user_tokens` table
 INSERT INTO user_tokens (user_id, token, token_type, expires_at, created_at)

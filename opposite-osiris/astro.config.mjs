@@ -23,8 +23,24 @@ function localHttpsConfig() {
 	};
 }
 
+function devContentSecurityPolicy() {
+	return [
+		"default-src 'self'",
+		"base-uri 'self'",
+		"object-src 'none'",
+		"frame-ancestors 'self'",
+		"form-action 'self'",
+		"img-src 'self' data: blob:",
+		"font-src 'self' https://fonts.gstatic.com",
+		"style-src 'self' https://fonts.googleapis.com",
+		"script-src 'self' 'unsafe-eval' https://challenges.cloudflare.com",
+		"connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*",
+	].join('; ');
+}
+
 // https://astro.build/config
 export default defineConfig({
+	devToolbar: { enabled: false },
 	server: {
 		host: env.ASTRO_DEV_HOST ?? 'localhost',
 		port: Number(env.ASTRO_DEV_PORT ?? 4322),
@@ -34,8 +50,17 @@ export default defineConfig({
 			host: env.ASTRO_DEV_HOST ?? 'localhost',
 			port: Number(env.ASTRO_DEV_PORT ?? 4322),
 			https: localHttpsConfig(),
+			headers: {
+				'Content-Security-Policy': devContentSecurityPolicy(),
+				'X-Prismatica-CSP-Mode': 'development',
+			},
 			proxy: {
 				'/api/auth': {
+					target: 'http://localhost:8787',
+					changeOrigin: true,
+					secure: false,
+				},
+				'/api/newsletter': {
 					target: 'http://localhost:8787',
 					changeOrigin: true,
 					secure: false,

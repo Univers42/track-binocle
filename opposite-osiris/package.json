@@ -21,6 +21,7 @@
     "test:templates": "node scripts/verify-templates.mjs",
     "test:newsletter": "node scripts/verify-newsletter-flow.mjs",
     "test:delivery": "node scripts/verify-smtp-delivery.mjs",
+    "verify:csp": "node scripts/verify-csp.mjs",
     "test:ux": "node scripts/verify-notifications.mjs",
     "baas:verify": "npm run baas:verify:connection && npm run baas:verify:schema && npm run baas:verify:seeds && npm run baas:verify:auth",
     "baas:verify:cors": "node scripts/verify-cors.mjs",

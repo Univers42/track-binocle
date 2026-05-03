@@ -1,5 +1,10 @@
 ---
+import { Image } from 'astro:assets';
 import { assetIcons } from '../../data/site';
+import workspaceConcept from '../../assets/ChatGPT Image May 1, 2026, 09_43_58 PM.png';
+import designSurface from '../../assets/design.png.png';
+import kanbanView from '../../assets/kanban.png.png';
+import designIcon from '../../assets/design-v2.png.png';
 
 const assetPath = (fileName: string): string => `${import.meta.env.BASE_URL}assets/${fileName}`;
 
@@ -8,7 +13,7 @@ const mediaFeatures = [
 		title: 'Workspace concept',
 		description: 'A broad overview of the all-in-one workspace story.',
 		alt: 'Wide concept view of a creative Prismatica workspace with notebook-style surfaces and connected planning areas.',
-		image: assetPath('ChatGPT%20Image%20May%201,%202026,%2009_43_58%20PM.png'),
+		image: workspaceConcept,
 		width: 1536,
 		height: 1024,
 		wide: true,
@@ -25,7 +30,7 @@ const mediaFeatures = [
 		title: 'Design surface',
 		description: 'Creative work remains close to the operating data.',
 		alt: 'Design workspace screenshot with visual planning blocks and a hand-drawn interface style.',
-		image: assetPath('design.png.png'),
+		image: designSurface,
 		width: 1022,
 		height: 639,
 	},
@@ -33,7 +38,7 @@ const mediaFeatures = [
 		title: 'Kanban view',
 		description: 'Tasks can move through reliable team workflows.',
 		alt: 'Kanban board screenshot with organized cards for tracking work across stages.',
-		image: assetPath('kanban.png.png'),
+		image: kanbanView,
 		width: 954,
 		height: 597,
 	},
@@ -44,7 +49,7 @@ const icons = [
 	assetPath('marketing.png.svg'),
 	assetPath('operations.png.svg'),
 	assetPath('hr-v2.png.svg'),
-	assetPath('design-v2.png.png'),
+	'',
 	assetPath('span.svg'),
 	assetPath('span%20%281%29.svg'),
 ];
@@ -59,7 +64,9 @@ const icons = [
 	<div class="media-showcase" aria-label="Product preview screenshots">
 		{mediaFeatures.map((feature) => (
 			<figure class:list={["media-feature", feature.wide && "media-feature--wide"]}>
-				<img src={feature.image} width={feature.width} height={feature.height} loading="lazy" decoding="async" alt={feature.alt} />
+				{typeof feature.image === 'string'
+					? <img src={feature.image} width={feature.width} height={feature.height} loading="lazy" decoding="async" alt={feature.alt} />
+					: <Image src={feature.image} width={feature.width} height={feature.height} loading="lazy" decoding="async" alt={feature.alt} />}
 				<figcaption>
 					<strong>{feature.title}</strong>
 					<span>{feature.description}</span>
@@ -70,7 +77,11 @@ const icons = [
 	<ul class="asset-icon-grid" aria-label="Team and department icons">
 		{assetIcons.map((icon, index) => (
 			<li>
-				<div class="icon-wrap"><img src={icons[index]} width="70" height="70" loading="lazy" decoding="async" alt={icon.alt} /></div>
+				<div class="icon-wrap">
+					{index === 4
+						? <Image src={designIcon} width={70} height={70} loading="lazy" decoding="async" alt={icon.alt} />
+						: <img src={icons[index]} width="70" height="70" loading="lazy" decoding="async" alt={icon.alt} />}
+				</div>
 				<span>{icon.label}</span>
 			</li>
 		))}

@@ -1,6 +1,7 @@
 ---
 import '../styles/main.scss';
 import favicon from '../assets/brand/favicon.svg';
+import { authConfig } from '../lib/auth-config';
 
 type Props = {
 	title?: string;
@@ -12,7 +13,31 @@ const {
 	description = 'Prismatica is the workspace that grows from one note to a full operating system: notes, dashboards, databases, apps, drawing and collaboration in one place.',
 } = Astro.props;
 
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
+const turnstileSiteKey = authConfig.turnstileSiteKey;
+const productionCsp = [
+	"default-src 'self'",
+	"base-uri 'self'",
+	"object-src 'none'",
+	"form-action 'self'",
+	"img-src 'self' data: blob:",
+	"font-src 'self' https://fonts.gstatic.com",
+	"style-src 'self' https://fonts.googleapis.com",
+	"script-src 'self' https://challenges.cloudflare.com",
+	"connect-src 'self' https:",
+].join('; ');
+const developmentCsp = [
+	"default-src 'self'",
+	"base-uri 'self'",
+	"object-src 'none'",
+	"form-action 'self'",
+	"img-src 'self' data: blob:",
+	"font-src 'self' https://fonts.gstatic.com",
+	"style-src 'self' https://fonts.googleapis.com",
+	"script-src 'self' 'unsafe-eval' https://challenges.cloudflare.com",
+	"connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*",
+].join('; ');
+const cspMode = import.meta.env.DEV ? 'development' : 'production';
+const activeCsp = import.meta.env.DEV ? developmentCsp : productionCsp;
 ---
 
 <!doctype html>
@@ -22,6 +47,8 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="color-scheme" content="light dark" />
 		<meta name="description" content={description} />
+		<meta name="prismatica-csp-mode" content={cspMode} />
+		<meta http-equiv="Content-Security-Policy" content={activeCsp} />
 		<link rel="icon" type="image/svg+xml" href={favicon.src} />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

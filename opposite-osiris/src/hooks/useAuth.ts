@@ -16,13 +16,8 @@ export type AuthRequest = {
 
 export type RegisterProfile = {
 	username: string;
-	confirmEmail: string;
 	confirmPassword: string;
-	firstName?: string;
-	lastName?: string;
-	avatarUrl?: string;
-	bio?: string;
-	theme?: 'light' | 'dark';
+	emailVerificationConsent?: boolean;
 	notificationsEnabled?: boolean;
 };
 
@@ -84,11 +79,11 @@ function registrationValidationMessage(request: RegisterRequest): string | null 
 	if (!/^\w[\w.-]{2,31}$/.test(request.profile.username.trim())) {
 		return 'Choose a username with 3–32 letters, numbers, dots, underscores, or hyphens.';
 	}
-	if (request.email.trim().toLowerCase() !== request.profile.confirmEmail.trim().toLowerCase()) {
-		return 'Email confirmation must match.';
-	}
 	if (request.password !== request.profile.confirmPassword) {
 		return 'Password confirmation must match.';
+	}
+	if (authConfig.requireEmailVerification && request.profile.emailVerificationConsent === false) {
+		return 'Email verification must stay enabled for account security.';
 	}
 	return null;
 }

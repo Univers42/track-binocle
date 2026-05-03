@@ -66,7 +66,7 @@ type AuthModeControls = {
 	termsConsent: Element | null;
 	email: Element | null;
 	username: Element | null;
-	confirmEmail: Element | null;
+	emailVerificationConsent: Element | null;
 	password: Element | null;
 	confirmPassword: Element | null;
 };
@@ -80,6 +80,21 @@ const MOTION_KEY = 'prismatica-motion-paused';
 const AUTH_TOKEN_KEY = 'prismatica-auth-token-v1';
 const THEMES: ThemeName[] = ['light', 'dark', 'night'];
 const authClient = useAuth();
+const COMMON_EMAIL_DOMAINS = ['gmail.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'yahoo.com', 'proton.me', 'protonmail.com', 'live.com'];
+const EMAIL_DOMAIN_ALIASES: Record<string, string> = {
+	'gmail.con': 'gmail.com',
+	'gmail.co': 'gmail.com',
+	'gamil.com': 'gmail.com',
+	'gmial.com': 'gmail.com',
+	'gnail.com': 'gmail.com',
+	'hotmai.com': 'hotmail.com',
+	'hotmail.con': 'hotmail.com',
+	'outlok.com': 'outlook.com',
+	'outlook.con': 'outlook.com',
+	'icloud.con': 'icloud.com',
+	'yaho.com': 'yahoo.com',
+	'yahoo.con': 'yahoo.com',
+};
 let trustedHtmlPolicy: TrustedHtmlPolicy | null | undefined;
 const mascotState: MascotState = {
 	targetX: 0,
@@ -879,6 +894,10 @@ function mountMascot(): void {
 /** Creates the portal document fragment. */
 function createPortalMarkup(mode: PortalMode): string {
 	const quick = mode === 'connect';
+	const requiresEmailVerification = authConfig.requireEmailVerification;
+	const registerNote = requiresEmailVerification
+		? 'Username and email stay on one line; password security and verification stay below.'
+		: 'Development mode can create a confirmed local account without sending a verification email.';
 	return `
 		<div id="portal" class="portal portal--${quick ? 'quick' : 'start'}" role="dialog" aria-modal="true" aria-labelledby="portal-title">
 			<h2 id="portal-title" class="visually-hidden">Prismatica workspace portal</h2>
@@ -886,43 +905,26 @@ function createPortalMarkup(mode: PortalMode): string {
 			<div class="portal__stage" aria-hidden="true"><span></span><span></span><span></span></div>
 			<section class="portal__panel portal__panel--login" aria-label="Secure connection panel">
 				<div class="portal-login-area">
-					<p class="portal-kicker">${quick ? 'Verified sign in' : 'Secure account onboarding'}</p>
+					<div class="portal-brand portal-brand--auth" aria-hidden="true"><span class="portal-brand__mark">✦</span><span>Prismatica</span></div>
+					<p class="portal-kicker">${quick ? 'Verified sign in' : 'Secure account'}</p>
 					<h2 aria-hidden="true" data-auth-title>${quick ? 'Open your workspace' : 'Create your workspace'}</h2>
-					<p class="portal-note" data-auth-note>${quick ? 'Sign in through the protected gateway with anti-abuse checks and rotated refresh cookies.' : 'Create a verified profile that matches the local users schema and activates only after email confirmation.'}</p>
-					<div class="portal-trust-row" aria-hidden="true"><span>Turnstile</span><span>HttpOnly refresh</span><span>Email verification</span></div>
+					<p class="portal-note" data-auth-note>${quick ? 'Sign in with your verified email and password.' : registerNote}</p>
+					<div class="portal-trust-row" aria-hidden="true"><span>HTTPS</span><span>Rate limited</span><span>Email verified</span></div>
 					<div class="portal-auth-switch" role="group" aria-label="Authentication mode">
 						<button class="portal-auth-switch__button" type="button" data-auth-switch="register" aria-pressed="${quick ? 'false' : 'true'}">Create account</button>
 						<button class="portal-auth-switch__button" type="button" data-auth-switch="login" aria-pressed="${quick ? 'true' : 'false'}">Sign in</button>
 					</div>
 					<form class="portal-login" novalidate>
-						<div class="portal-register-only portal-field-grid">
-							<div class="field">
+						<div class="field-row portal-register-identity">
+							<div class="field field--half portal-register-only">
 								<label for="portal-username">Username <span aria-hidden="true">*</span></label>
-								<input id="portal-username" name="username" type="text" autocomplete="username" placeholder="prism-user" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_][a-zA-Z0-9_.-]{2,31}" required />
+								<input id="portal-username" name="username" type="text" autocomplete="username" placeholder="prism-user" minlength="3" maxlength="32" required />
 							</div>
-							<div class="field">
-								<label for="portal-first-name">First name <span class="optional">optional</span></label>
-								<input id="portal-first-name" name="first_name" type="text" autocomplete="given-name" placeholder="Ada" maxlength="80" />
+							<div class="field field--half">
+								<label for="portal-email">Email <span aria-hidden="true">*</span></label>
+								<input id="portal-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required />
+								<p id="portal-email-inline-error" class="field-validation-message" data-validation-state="idle" aria-live="polite">We verify the email format before sending it.</p>
 							</div>
-							<div class="field">
-								<label for="portal-last-name">Last name <span class="optional">optional</span></label>
-								<input id="portal-last-name" name="last_name" type="text" autocomplete="family-name" placeholder="Lovelace" maxlength="80" />
-							</div>
-							<div class="field">
-								<label for="portal-theme">Theme</label>
-								<select id="portal-theme" name="theme">
-									<option value="light">Light</option>
-									<option value="dark">Dark</option>
-								</select>
-							</div>
-						</div>
-						<div class="field">
-							<label for="portal-email">Email <span aria-hidden="true">*</span></label>
-							<input id="portal-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
-						</div>
-						<div class="field portal-register-only">
-							<label for="portal-email-confirm">Confirm email <span aria-hidden="true">*</span></label>
-							<input id="portal-email-confirm" name="email_confirm" type="email" autocomplete="email" placeholder="you@example.com" required />
 						</div>
 						<div class="field" data-password-field>
 							<label for="portal-password">Password <span aria-hidden="true">*</span></label>
@@ -945,29 +947,19 @@ function createPortalMarkup(mode: PortalMode): string {
 							<input id="portal-password-confirm" name="password_confirm" type="password" autocomplete="new-password" placeholder="Repeat your password" required />
 							<p id="portal-password-match" class="password-match" data-password-match aria-live="polite">Repeat the same password.</p>
 						</div>
-						<div class="portal-register-only portal-field-grid portal-field-grid--optional">
-							<div class="field">
-								<label for="portal-avatar-url">Avatar URL <span class="optional">optional HTTPS</span></label>
-								<input id="portal-avatar-url" name="avatar_url" type="url" inputmode="url" placeholder="https://example.com/avatar.png" maxlength="255" />
-							</div>
-							<div class="field field--textarea">
-								<label for="portal-bio">Bio <span class="optional">optional</span></label>
-								<textarea id="portal-bio" name="bio" rows="3" maxlength="280" placeholder="Tell your team what you are building."></textarea>
-							</div>
-						</div>
 						<label class="consent-toggle portal-consent" for="portal-terms-consent">
 							<input id="portal-terms-consent" name="terms_consent" type="checkbox" required />
 							<span>I have read and accept the <a href="/legal/terms/" target="_blank" rel="noreferrer">Terms of Service</a> and <a href="/legal/privacy-policy/" target="_blank" rel="noreferrer">Privacy Policy</a>.</span>
+						</label>
+						<label class="consent-toggle portal-consent" for="portal-email-verification-consent">
+							<input id="portal-email-verification-consent" name="email_verification_consent" type="checkbox" ${requiresEmailVerification ? 'checked required' : ''} />
+							<span>${requiresEmailVerification ? 'Send the email verification link required to activate this account.' : 'Development option: send a verification email instead of auto-confirming this local account.'}</span>
 						</label>
 						<label class="consent-toggle portal-consent" for="portal-newsletter-consent">
 							<input id="portal-newsletter-consent" name="newsletter_consent" type="checkbox" />
 							<span>I agree to receive the Prismatica newsletter. This is optional and has no effect on account access.</span>
 						</label>
-						<label class="consent-toggle portal-consent" for="portal-notifications-enabled">
-							<input id="portal-notifications-enabled" name="notifications_enabled" type="checkbox" checked />
-							<span>Enable security and workspace notifications by default.</span>
-						</label>
-						<p class="portal-verification-note portal-register-only">After submission, open the confirmation email to activate the account before your first sign-in.</p>
+						<p class="portal-verification-note portal-register-only">Security and workspace notifications are enabled automatically. You can change preferences later in your workspace.</p>
 						<div class="turnstile-box" data-turnstile-widget aria-label="Anti-abuse verification"></div>
 						<input type="hidden" name="turnstile_token" data-turnstile-token />
 						<button class="portal-cta" type="submit" data-login-submit>${quick ? 'Sign in securely →' : 'Create protected account →'}</button>
@@ -981,21 +973,18 @@ function createPortalMarkup(mode: PortalMode): string {
 					</form>
 				</div>
 			</section>
-			<section class="portal__panel portal__panel--preview" aria-label="Future workspace preview">
+			<section class="portal__panel portal__panel--preview" aria-label="Workspace security preview">
 				<div class="portal-demo-area">
-					<div class="portal-brand"><span class="portal-brand__mark">✦</span><span>Prismatica</span></div>
-					<p class="portal-kicker portal-kicker--future">Future workspace</p>
+					<p class="portal-kicker portal-kicker--future">Workspace readiness</p>
 					<div class="portal-dashboard" aria-hidden="true">
 						<div class="portal-dashboard__top"><span></span><span></span><span></span></div>
 						<div class="portal-dashboard__grid"><span></span><span></span><span></span><span></span></div>
 					</div>
-					<div class="portal-cards">
-						<article class="portal-card"><span>01</span><h3>Rules</h3><p>Permissions, views and automations become visible cards.</p></article>
-						<article class="portal-card"><span>02</span><h3>Team</h3><p>Collaborators work on notes, dashboards and databases together.</p></article>
-						<article class="portal-card"><span>03</span><h3>Universe</h3><p>Every block connects to a broader operating canvas.</p></article>
+					<div class="portal-cards" aria-label="Security assurances">
+						<article class="portal-card"><span>01</span><h3>Private by design</h3><p>Same-origin API routing keeps browser calls under the HTTPS frontend.</p></article>
+						<article class="portal-card"><span>02</span><h3>Verified identity</h3><p>${requiresEmailVerification ? 'New accounts activate after email confirmation.' : 'Local development can auto-confirm accounts without changing production.'}</p></article>
+						<article class="portal-card"><span>03</span><h3>Ready feedback</h3><p>Inline validation, notices and password checks explain every step.</p></article>
 					</div>
-					<p class="portal-quote">One workspace that grows with the way you think.</p>
-					<a class="portal-discover" href="#powers">Discover the powers</a>
 				</div>
 			</section>
 		</div>`;
@@ -1033,16 +1022,10 @@ function trapFocus(portal: HTMLElement): () => void {
 type PortalFormElements = {
 	error: HTMLOutputElement;
 	email: HTMLInputElement;
-	confirmEmail: HTMLInputElement | null;
 	password: HTMLInputElement;
 	confirmPassword: HTMLInputElement | null;
 	username: HTMLInputElement | null;
-	firstName: HTMLInputElement | null;
-	lastName: HTMLInputElement | null;
-	avatarUrl: HTMLInputElement | null;
-	bio: HTMLTextAreaElement | null;
-	theme: HTMLSelectElement | null;
-	notificationsEnabled: HTMLInputElement | null;
+	emailVerificationConsent: HTMLInputElement | null;
 	termsConsent: HTMLInputElement | null;
 	newsletterConsent: HTMLInputElement | null;
 	submitButton: HTMLButtonElement | null;
@@ -1052,16 +1035,10 @@ type PortalFormElements = {
 function portalFormElements(portal: HTMLElement): PortalFormElements | null {
 	const error = portal.querySelector('.portal-error');
 	const email = portal.querySelector('#portal-email');
-	const confirmEmail = portal.querySelector('#portal-email-confirm');
 	const password = portal.querySelector('#portal-password');
 	const confirmPassword = portal.querySelector('#portal-password-confirm');
 	const username = portal.querySelector('#portal-username');
-	const firstName = portal.querySelector('#portal-first-name');
-	const lastName = portal.querySelector('#portal-last-name');
-	const avatarUrl = portal.querySelector('#portal-avatar-url');
-	const bio = portal.querySelector('#portal-bio');
-	const theme = portal.querySelector('#portal-theme');
-	const notificationsEnabled = portal.querySelector('#portal-notifications-enabled');
+	const emailVerificationConsent = portal.querySelector('#portal-email-verification-consent');
 	const termsConsent = portal.querySelector('#portal-terms-consent');
 	const newsletterConsent = portal.querySelector('#portal-newsletter-consent');
 	const submitButton = portal.querySelector('[data-login-submit]');
@@ -1071,16 +1048,10 @@ function portalFormElements(portal: HTMLElement): PortalFormElements | null {
 	return {
 		error,
 		email,
-		confirmEmail: confirmEmail instanceof HTMLInputElement ? confirmEmail : null,
 		password,
 		confirmPassword: confirmPassword instanceof HTMLInputElement ? confirmPassword : null,
 		username: username instanceof HTMLInputElement ? username : null,
-		firstName: firstName instanceof HTMLInputElement ? firstName : null,
-		lastName: lastName instanceof HTMLInputElement ? lastName : null,
-		avatarUrl: avatarUrl instanceof HTMLInputElement ? avatarUrl : null,
-		bio: bio instanceof HTMLTextAreaElement ? bio : null,
-		theme: theme instanceof HTMLSelectElement ? theme : null,
-		notificationsEnabled: notificationsEnabled instanceof HTMLInputElement ? notificationsEnabled : null,
+		emailVerificationConsent: emailVerificationConsent instanceof HTMLInputElement ? emailVerificationConsent : null,
 		termsConsent: termsConsent instanceof HTMLInputElement ? termsConsent : null,
 		newsletterConsent: newsletterConsent instanceof HTMLInputElement ? newsletterConsent : null,
 		submitButton: submitButton instanceof HTMLButtonElement ? submitButton : null,
@@ -1103,42 +1074,25 @@ function showPortalFieldError(error: HTMLOutputElement, field: HTMLInputElement,
 	field.focus();
 }
 
-/** Validates the optional HTTPS avatar URL field. */
-function hasValidOptionalHttpsUrl(field: HTMLInputElement | null): boolean {
-	if (!field || field.value.trim().length === 0) {
-		return true;
-	}
-	try {
-		return new URL(field.value).protocol === 'https:';
-	} catch {
-		return false;
-	}
-}
-
 /** Builds the schema-aligned registration profile payload. */
 function portalRegistrationProfile(elements: PortalFormElements): RegisterProfile {
 	return {
 		username: elements.username?.value.trim() ?? '',
-		confirmEmail: elements.confirmEmail?.value.trim() ?? '',
 		confirmPassword: elements.confirmPassword?.value ?? '',
-		firstName: elements.firstName?.value.trim() || undefined,
-		lastName: elements.lastName?.value.trim() || undefined,
-		avatarUrl: elements.avatarUrl?.value.trim() || undefined,
-		bio: elements.bio?.value.trim() || undefined,
-		theme: elements.theme?.value === 'dark' ? 'dark' : 'light',
-		notificationsEnabled: elements.notificationsEnabled?.checked ?? true,
+		emailVerificationConsent: authConfig.requireEmailVerification ? (elements.emailVerificationConsent?.checked ?? true) : Boolean(elements.emailVerificationConsent?.checked),
+		notificationsEnabled: true,
 	};
 }
 
 /** Clears invalid states across the dynamic portal auth controls. */
 function clearPortalAuthErrors(elements: PortalFormElements): void {
-	const optionalFields = [elements.confirmEmail, elements.confirmPassword, elements.username, elements.avatarUrl].filter((field): field is HTMLInputElement => field instanceof HTMLInputElement);
+	const optionalFields = [elements.confirmPassword, elements.username, elements.emailVerificationConsent].filter((field): field is HTMLInputElement => field instanceof HTMLInputElement);
 	clearPortalFieldErrors(elements.email, elements.password, ...optionalFields);
 }
 
 /** Validates registration-only identity fields. */
 function validateRegistrationIdentity(elements: PortalFormElements, isRegister: boolean): boolean {
-	const { confirmEmail, email, error, username } = elements;
+	const { email, error, username } = elements;
 	const usernamePattern = /^\w[\w.-]{2,31}$/;
 	if (isRegister && username && !usernamePattern.test(username.value.trim())) {
 		showPortalFieldError(error, username, 'Error: Choose a username with 3–32 letters, numbers, dots, underscores, or hyphens.');
@@ -1146,10 +1100,6 @@ function validateRegistrationIdentity(elements: PortalFormElements, isRegister: 
 	}
 	if (!validateEmailField(email, 'Please enter your email address')) {
 		showPortalFieldError(error, email, 'Please enter a valid email address (e.g. you@example.com)');
-		return false;
-	}
-	if (isRegister && confirmEmail && email.value.trim().toLowerCase() !== confirmEmail.value.trim().toLowerCase()) {
-		showPortalFieldError(error, confirmEmail, 'Error: Confirm the same email address so the activation link reaches the right inbox.');
 		return false;
 	}
 	return true;
@@ -1187,13 +1137,13 @@ function validatePortalPasswordFields(elements: PortalFormElements, isRegister: 
 
 /** Validates profile-only fields that mirror optional users schema columns. */
 function validatePortalProfileFields(elements: PortalFormElements, isRegister: boolean): boolean {
-	const { avatarUrl, error, termsConsent } = elements;
-	if (isRegister && avatarUrl && !hasValidOptionalHttpsUrl(avatarUrl)) {
-		showPortalFieldError(error, avatarUrl, 'Error: Avatar URL must start with https:// or stay empty.');
-		return false;
-	}
+	const { emailVerificationConsent, error, termsConsent } = elements;
 	if (isRegister && termsConsent && !termsConsent.checked) {
 		showPortalFieldError(error, termsConsent, 'Error: Accept the Terms of Service and Privacy Policy to create an account.');
+		return false;
+	}
+	if (authConfig.requireEmailVerification && isRegister && emailVerificationConsent && !emailVerificationConsent.checked) {
+		showPortalFieldError(error, emailVerificationConsent, 'Error: Email verification must stay enabled for account security.');
 		return false;
 	}
 	return true;
@@ -1246,9 +1196,56 @@ function messageMentions(message: string, ...needles: string[]): boolean {
 }
 
 /** Validates email beyond native type=email checks for common mistakes. */
-function hasValidEmailFormat(field: HTMLInputElement): boolean {
+type EmailValidationResult = {
+	valid: boolean;
+	state: 'idle' | 'error' | 'warning' | 'success';
+	message: string;
+};
+
+function editDistance(left: string, right: string): number {
+	const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+	for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+		const current = [leftIndex];
+		for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+			const substitutionCost = left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1;
+			current[rightIndex] = Math.min(
+				(current[rightIndex - 1] ?? 0) + 1,
+				(previous[rightIndex] ?? 0) + 1,
+				(previous[rightIndex - 1] ?? 0) + substitutionCost,
+			);
+		}
+		previous.splice(0, previous.length, ...current);
+	}
+	return previous[right.length] ?? Number.POSITIVE_INFINITY;
+}
+
+function suggestedEmailDomain(domain: string): string {
+	const normalized = domain.toLowerCase();
+	if (EMAIL_DOMAIN_ALIASES[normalized]) {
+		return EMAIL_DOMAIN_ALIASES[normalized];
+	}
+	const closeMatch = COMMON_EMAIL_DOMAINS.find((candidate) => editDistance(normalized, candidate) === 1);
+	return closeMatch ?? '';
+}
+
+function emailValidationResult(field: HTMLInputElement): EmailValidationResult {
 	const email = field.value.trim();
-	return field.validity.valid && validateEmail(email) && !email.includes('..');
+	if (!email) {
+		return { valid: !field.required, state: 'idle', message: field.required ? 'Enter your email address.' : '' };
+	}
+	if (!field.validity.valid || !validateEmail(email) || email.includes('..')) {
+		return { valid: false, state: 'error', message: 'Please enter a valid email address (e.g. you@example.com).' };
+	}
+	const domain = email.split('@').pop() ?? '';
+	const suggestion = suggestedEmailDomain(domain);
+	if (suggestion && suggestion !== domain.toLowerCase()) {
+		return { valid: true, state: 'warning', message: `Did you mean ${email.slice(0, email.lastIndexOf('@') + 1)}${suggestion}?` };
+	}
+	return { valid: true, state: 'success', message: 'Email format looks correct.' };
+}
+
+function hasValidEmailFormat(field: HTMLInputElement): boolean {
+	return emailValidationResult(field).valid && field.value.trim().length > 0;
 }
 
 function describedByValues(field: HTMLInputElement): Set<string> {
@@ -1261,26 +1258,36 @@ function ensureInlineFieldMessage(field: HTMLInputElement): HTMLElement {
 	if (!(message instanceof HTMLElement)) {
 		message = document.createElement('p');
 		message.id = id;
-		message.className = 'field-error-message';
 		message.setAttribute('role', 'alert');
 		field.after(message);
 	}
+	message.className = 'field-validation-message';
 	return message;
 }
 
-function showInlineFieldError(field: HTMLInputElement, message: string): void {
+function showInlineFieldMessage(field: HTMLInputElement, message: string, state: EmailValidationResult['state']): void {
 	const messageElement = ensureInlineFieldMessage(field);
 	messageElement.textContent = message;
-	field.setAttribute('aria-invalid', 'true');
+	messageElement.dataset.validationState = state;
+	if (state === 'error') {
+		field.setAttribute('aria-invalid', 'true');
+	} else {
+		field.removeAttribute('aria-invalid');
+	}
 	const describedBy = describedByValues(field);
 	describedBy.add(messageElement.id);
 	field.setAttribute('aria-describedby', Array.from(describedBy).join(' '));
+}
+
+function showInlineFieldError(field: HTMLInputElement, message: string): void {
+	showInlineFieldMessage(field, message, 'error');
 }
 
 function clearInlineFieldError(field: HTMLInputElement): void {
 	const messageElement = document.getElementById(`${field.id || field.name || 'field'}-inline-error`);
 	if (messageElement instanceof HTMLElement) {
 		messageElement.textContent = '';
+		messageElement.dataset.validationState = 'idle';
 	}
 	const describedBy = describedByValues(field);
 	describedBy.delete(`${field.id || field.name || 'field'}-inline-error`);
@@ -1293,6 +1300,7 @@ function clearInlineFieldError(field: HTMLInputElement): void {
 }
 
 function validateEmailField(field: HTMLInputElement, emptyMessage?: string): boolean {
+	const result = emailValidationResult(field);
 	if (field.value.trim().length === 0) {
 		if (emptyMessage) {
 			showInlineFieldError(field, emptyMessage);
@@ -1301,12 +1309,21 @@ function validateEmailField(field: HTMLInputElement, emptyMessage?: string): boo
 		clearInlineFieldError(field);
 		return !field.required;
 	}
-	if (!hasValidEmailFormat(field)) {
-		showInlineFieldError(field, 'Please enter a valid email address (e.g. you@example.com)');
+	if (!result.valid) {
+		showInlineFieldError(field, result.message);
 		return false;
 	}
-	clearInlineFieldError(field);
+	showInlineFieldMessage(field, result.message, result.state);
 	return true;
+}
+
+function updateEmailFieldFeedback(field: HTMLInputElement): void {
+	const result = emailValidationResult(field);
+	if (result.state === 'idle') {
+		clearInlineFieldError(field);
+		return;
+	}
+	showInlineFieldMessage(field, result.message, result.state);
 }
 
 function bindEmailFieldValidation(scope: ParentNode = document): void {
@@ -1316,11 +1333,7 @@ function bindEmailFieldValidation(scope: ParentNode = document): void {
 		}
 		field.dataset.emailValidationBound = 'true';
 		field.addEventListener('blur', () => validateEmailField(field));
-		field.addEventListener('input', () => {
-			if (field.getAttribute('aria-invalid') === 'true' && hasValidEmailFormat(field)) {
-				clearInlineFieldError(field);
-			}
-		});
+		field.addEventListener('input', () => updateEmailFieldFeedback(field));
 	});
 }
 
@@ -1385,12 +1398,14 @@ function updatePortalSubmitAvailability(portal: HTMLElement, elements: PortalFor
 		return;
 	}
 	if (portal.dataset.authMode !== 'register') {
-		elements.submitButton.disabled = false;
+		elements.submitButton.disabled = !hasValidEmailFormat(elements.email);
 		return;
 	}
 	const passwordReady = syncPortalPasswordFeedback(portal, elements);
 	const termsReady = !(elements.termsConsent instanceof HTMLInputElement) || elements.termsConsent.checked;
-	elements.submitButton.disabled = !(passwordReady && termsReady);
+	const verificationReady = !authConfig.requireEmailVerification || !(elements.emailVerificationConsent instanceof HTMLInputElement) || elements.emailVerificationConsent.checked;
+	const usernameReady = !(elements.username instanceof HTMLInputElement) || /^\w[\w.-]{2,31}$/.test(elements.username.value.trim());
+	elements.submitButton.disabled = !(passwordReady && termsReady && verificationReady && usernameReady && hasValidEmailFormat(elements.email));
 }
 
 /** Handles the password recovery variant of the portal form. */
@@ -1475,11 +1490,11 @@ async function processPortalRegistration(elements: PortalFormElements, turnstile
 		notifyWithMascot({
 			kind: 'success',
 			title: 'Account created',
-			message: 'Check your email to confirm your address before signing in.',
+			message: authConfig.requireEmailVerification ? 'Check your email to confirm your address before signing in.' : 'Development account created. You can sign in now.',
 			duration: 0,
 		});
 		setMountedMascotMood('excited', 2000);
-		announce('Account created. Check your email before signing in.');
+		announce(authConfig.requireEmailVerification ? 'Account created. Check your email before signing in.' : 'Development account created. You can sign in now.');
 		return;
 	}
 	if (result.status === 429) {
@@ -1597,13 +1612,14 @@ async function submitPortalLogin(portal: HTMLElement, elements: PortalFormElemen
 /** Updates portal heading and call-to-action copy for the selected auth mode. */
 function syncAuthModeCopy(controls: AuthModeControls, authMode: 'login' | 'register'): void {
 	const isLogin = authMode === 'login';
+	const registerNote = authConfig.requireEmailVerification
+		? 'Username and email stay inline; password security and email verification stay below.'
+		: 'Development mode can create a confirmed local account without sending a verification email.';
 	if (controls.authTitle instanceof HTMLElement) {
 		controls.authTitle.textContent = isLogin ? 'Open your workspace' : 'Create your workspace';
 	}
 	if (controls.authNote instanceof HTMLElement) {
-		controls.authNote.textContent = isLogin
-			? 'Sign in through the protected gateway with anti-abuse checks and rotated refresh cookies.'
-			: 'Create a verified profile that matches the local users schema and activates only after email confirmation.';
+		controls.authNote.textContent = isLogin ? 'Sign in with your verified email and password.' : registerNote;
 	}
 	if (controls.submitButton instanceof HTMLButtonElement) {
 		controls.submitButton.textContent = isLogin ? 'Sign in securely →' : 'Create protected account →';
@@ -1636,11 +1652,14 @@ function syncAuthModeInputs(controls: AuthModeControls, authMode: 'login' | 'reg
 	if (controls.email instanceof HTMLInputElement) {
 		controls.email.placeholder = isLogin ? 'you@example.com' : 'you@company.com';
 	}
-	[controls.username, controls.confirmEmail, controls.confirmPassword, controls.termsConsent].forEach((field) => {
+	[controls.username, controls.confirmPassword, controls.termsConsent].forEach((field) => {
 		if (field instanceof HTMLInputElement) {
 			field.required = !isLogin;
 		}
 	});
+	if (controls.emailVerificationConsent instanceof HTMLInputElement) {
+		controls.emailVerificationConsent.required = !isLogin && authConfig.requireEmailVerification;
+	}
 	if (controls.password instanceof HTMLInputElement) {
 		controls.password.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
 		controls.password.placeholder = isLogin ? 'Your password' : '8+ chars, A–z, 0–9, symbol';
@@ -1688,7 +1707,7 @@ function openPortal(mode: PortalMode): void {
 		termsConsent: initialTermsConsent,
 		email: portal.querySelector('#portal-email'),
 		username: portal.querySelector('#portal-username'),
-		confirmEmail: portal.querySelector('#portal-email-confirm'),
+		emailVerificationConsent: portal.querySelector('#portal-email-verification-consent'),
 		password: portal.querySelector('#portal-password'),
 		confirmPassword: portal.querySelector('#portal-password-confirm'),
 	};
@@ -1782,10 +1801,15 @@ function openPortal(mode: PortalMode): void {
 	});
 	portal.querySelectorAll('input').forEach((field) => {
 		field.addEventListener('input', () => {
+			if (field instanceof HTMLInputElement && field.type === 'email') {
+				refreshPortalValidation();
+				return;
+			}
 			if (field instanceof HTMLInputElement && field.validity.valid) {
 				field.removeAttribute('aria-invalid');
 				field.removeAttribute('aria-describedby');
 			}
+			refreshPortalValidation();
 		});
 	});
 	refreshPortalValidation();
@@ -1881,7 +1905,11 @@ function bindNewsletterSignup(): void {
 			status.textContent = 'Sending your newsletter request…';
 			setMountedMascotMood('listening', 1600);
 			try {
-				const response = await callGdprRpc('gdpr_set_newsletter', { email: email.value.trim(), granted: true });
+				const response = await fetch('/api/newsletter/subscribe', {
+					method: 'POST',
+					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email: email.value.trim() }),
+				});
 				const responseText = await response.clone().text().catch(() => '');
 				const alreadySubscribed = response.status === 409 || messageMentions(responseText, 'already subscribed', 'already on the newsletter');
 				if (response.ok) {
@@ -1963,10 +1991,49 @@ function bindDataRightsForm(): void {
 	});
 }
 
+/** Moves keyboard focus to meaningful content when the skip link is used. */
+function removeTemporaryTabindex(element: HTMLElement, shouldRemove: boolean): void {
+	if (shouldRemove) {
+		element.removeAttribute('tabindex');
+	}
+}
+
+function focusSkipTarget(focusTarget: HTMLElement, removeTabindexOnBlur: boolean): void {
+	focusTarget.focus({ preventScroll: true });
+	focusTarget.addEventListener('blur', () => removeTemporaryTabindex(focusTarget, removeTabindexOnBlur), { once: true });
+}
+
+function handleSkipLinkClick(event: Event): void {
+	const link = event.currentTarget;
+	if (!(link instanceof HTMLAnchorElement)) {
+		return;
+	}
+	const target = document.getElementById(link.hash.slice(1));
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+	const focusTarget = target.querySelector('h1, h2, [tabindex], a[href], button, input, select, textarea') ?? target;
+	if (!(focusTarget instanceof HTMLElement)) {
+		return;
+	}
+	const hadTabindex = focusTarget.hasAttribute('tabindex');
+	if (!hadTabindex) {
+		focusTarget.setAttribute('tabindex', '-1');
+	}
+	requestAnimationFrame(() => focusSkipTarget(focusTarget, !hadTabindex));
+}
+
+function bindSkipLinkFocus(): void {
+	queryElements('.skip-link[href^="#"]', (element): element is HTMLAnchorElement => element instanceof HTMLAnchorElement).forEach((link) => {
+		link.addEventListener('click', handleSkipLinkClick);
+	});
+}
+
 /** Installs document-level interaction handlers. */
 function bindInteractions(): void {
 	queryElement('#theme-toggle', isButton)?.addEventListener('click', cycleTheme);
 	queryElement('#pause-animations', isButton)?.addEventListener('click', () => applyMotionPreference(!document.documentElement.classList.contains('motion-paused')));
+	bindSkipLinkFocus();
 	bindEmailFieldValidation(document);
 	bindConsentBanner();
 	bindNewsletterSignup();

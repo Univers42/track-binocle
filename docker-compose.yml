@@ -1,0 +1,58 @@
+services:
+  baas:
+    image: dlesieur/mini-baas-infra:latest
+    env_file:
+      - ./opposite-osiris/.env.local
+      - ./infrastructure/baas/mini-baas-infra/.env
+    environment:
+      MINI_BAAS_CONFIG_FILE: /etc/mini-baas/mini-baas-infra.conf
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_ENCRYPTION: ${SMTP_ENCRYPTION}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
+      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USERNAME}
+      GOTRUE_SMTP_PASS: ${SMTP_PASSWORD}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_FROM_ADDRESS}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_FROM_NAME}
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
+      GOTRUE_URI_ALLOW_LIST: ${GOTRUE_URI_ALLOW_LIST:-http://localhost:4322/**,https://localhost:4322/**,http://localhost:4321/**,https://localhost:4321/**,http://localhost:5173/**,https://localhost:5173/**}
+      SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
+      GOTRUE_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
+    volumes:
+      - ./infrastructure/baas/config/mini-baas-infra.conf:/etc/mini-baas/mini-baas-infra.conf:ro
+      - ./opposite-osiris/src/email-templates:/etc/gotrue/templates:ro
+    ports:
+      - "8000:8000"
+      - "9999:9999"
+    restart: unless-stopped
+
+  auth-gateway:
+    image: node:22-alpine
+    working_dir: /app/opposite-osiris
+    command: ["node", "scripts/auth-gateway.mjs"]
+    env_file:
+      - ./opposite-osiris/.env.local
+    environment:
+      AUTH_GATEWAY_PORT: 8787
+      PUBLIC_BAAS_URL: ${PUBLIC_BAAS_URL:-http://baas:8000}
+      PUBLIC_BAAS_ANON_KEY: ${PUBLIC_BAAS_ANON_KEY}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      TURNSTILE_BYPASS_LOCAL: ${TURNSTILE_BYPASS_LOCAL:-false}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY:-}
+      KONG_SERVICE_API_KEY: ${KONG_SERVICE_API_KEY:-}
+    volumes:
+      - ./:/app:ro
+    ports:
+      - "8787:8787"
+    depends_on:
+      - baas
+    restart: unless-stopped
