@@ -32,8 +32,8 @@ const EMAIL_ATEXT = "A-Za-z0-9!#$%&'*+/=?^_`{|}~-";
 const EMAIL_LOCAL_PART = String.raw`(?:[${EMAIL_ATEXT}]+(?:\.[${EMAIL_ATEXT}]+)*|"[^"\r\n]+")`;
 const EMAIL_DOMAIN_LABEL = '(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)';
 const EMAIL_REGEX = new RegExp(String.raw`^${EMAIL_LOCAL_PART}@(?:${EMAIL_DOMAIN_LABEL}\.)+[A-Za-z]{2,63}$`);
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
-const USERNAME_REGEX = /^[a-zA-Z0-9_][a-zA-Z0-9_.-]{2,31}$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const USERNAME_REGEX = /^\w[\w.-]{2,31}$/;
 const THEME_VALUES = new Set(['light', 'dark']);
 
 function clientIp(request) {
@@ -121,6 +121,12 @@ function sanitizeAuthPayload(payload) {
 	return safePayload;
 }
 
+function humanAuthMessage(payload, fallback) {
+	const candidates = [payload?.error_description, payload?.msg, payload?.message, payload?.error];
+	const message = candidates.find((value) => typeof value === 'string' && value.trim().length > 0);
+	return message ? message.trim().slice(0, 240) : fallback;
+}
+
 function cleanText(value, maxLength) {
 	return String(value ?? '').trim().slice(0, maxLength);
 }
@@ -188,7 +194,7 @@ async function handleRegister(request, response) {
 		};
 		const result = await gotrue('/auth/v1/signup', { email, password, data: userMetadata, email_redirect_to: `${config.siteUrl}/auth/confirm` });
 		await audit(result.response.ok ? 'register_requested' : 'register_failed', request, { email, status: result.response.status });
-		json(response, result.response.ok ? 200 : result.response.status, result.response.ok ? { message: 'Check your email to confirm the account before signing in.' } : { message: 'Registration failed.' });
+		json(response, result.response.ok ? 200 : result.response.status, result.response.ok ? { message: 'Check your email to confirm the account before signing in.' } : { message: humanAuthMessage(result.payload, 'Registration failed.') });
 	});
 }
 
@@ -203,7 +209,7 @@ async function handleLogin(request, response) {
 		const result = await gotrue('/auth/v1/token?grant_type=password', { email, password });
 		await audit(result.response.ok ? 'login_success' : 'login_failed', request, { email, status: result.response.status });
 		if (!result.response.ok) {
-			json(response, result.response.status, { message: 'Invalid credentials.' });
+			json(response, result.response.status, { message: humanAuthMessage(result.payload, 'Invalid credentials.') });
 			return;
 		}
 		const refreshToken = typeof result.payload.refresh_token === 'string' ? result.payload.refresh_token : '';

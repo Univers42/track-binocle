@@ -1,5 +1,6 @@
 ---
 import ConsentBanner from '../gdpr/ConsentBanner.astro';
+import Notification from '../ui/Notification.astro';
 import SiteFooter from './SiteFooter.astro';
 import SiteHeader from './SiteHeader.astro';
 import SketchBackground from './SketchBackground.astro';
@@ -8,6 +9,7 @@ import SvgDefs from './SvgDefs.astro';
 
 <a href="#main-content" class="skip-link">Skip to main content</a>
 <div aria-live="polite" aria-atomic="true" class="visually-hidden" id="global-announcer"></div>
+<Notification />
 <canvas id="paper-grain"></canvas>
 <SvgDefs />
 <SketchBackground />

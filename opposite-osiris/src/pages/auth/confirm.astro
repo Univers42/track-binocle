@@ -10,21 +10,44 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 		<section class="auth-card" aria-labelledby="confirm-title">
 			<p class="eyebrow">Email verification</p>
 			<h1 id="confirm-title">Confirming your Prismatica account…</h1>
+			<div class="auth-loading" data-auth-loading aria-hidden="true"><span></span><span></span><span></span></div>
 			<p data-auth-status role="status" aria-live="polite">Checking the verification link.</p>
-			<p class="auth-card__hint">You will be redirected to the home page after a successful confirmation.</p>
+			<p class="auth-card__hint">This page will keep the result visible so you can choose the next step.</p>
+			<a class="button button--primary" data-confirm-home href="/" hidden>Go to homepage</a>
+			<button class="button button--ghost" type="button" data-confirm-request data-open-connect hidden>Request new link</button>
 			<a class="text-link" href="/">Return home</a>
 		</section>
 	</main>
-	<script is:inline>
-		const root = document.querySelector('[data-auth-confirm]');
+	<script>
+		import { notify } from '../../scripts/notifications';
+
+		const root = document.querySelector('[data-auth-confirm]') as HTMLElement | null;
 		const status = root?.querySelector('[data-auth-status]');
+		const loading = root?.querySelector('[data-auth-loading]');
+		const home = root?.querySelector('[data-confirm-home]');
+		const request = root?.querySelector('[data-confirm-request]');
 		const token = new URLSearchParams(window.location.search).get('token');
 		const baasUrl = root?.dataset.baasUrl?.replace(/\/$/, '') ?? '';
 		const anonKey = root?.dataset.anonKey ?? '';
-		const setStatus = (message, isError = false) => {
+		const setStatus = (message: string, isError = false) => {
 			if (!status) return;
 			status.textContent = message;
 			status.classList.toggle('is-error', isError);
+		};
+		const finishLoading = () => {
+			if (loading instanceof HTMLElement) loading.hidden = true;
+		};
+		const showSuccess = () => {
+			finishLoading();
+			setStatus('Your email is confirmed. Your account is ready.');
+			if (home instanceof HTMLElement) home.hidden = false;
+			notify({ kind: 'success', title: 'Email confirmed', message: 'Your account is ready. You can now sign in.', duration: 0 });
+		};
+		const showExpired = () => {
+			finishLoading();
+			setStatus('This confirmation link has expired. Request a new one from the login page.', true);
+			if (request instanceof HTMLElement) request.hidden = false;
+			notify({ kind: 'error', title: 'Link expired', message: 'This confirmation link has expired. Request a new one from the login page.', duration: 0 });
 		};
 		const headers = {
 			apikey: anonKey,
@@ -34,11 +57,13 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 		};
 		async function confirmEmail() {
 			if (!token) {
-				setStatus('This verification link is missing its token.', true);
+				showExpired();
 				return;
 			}
 			if (!baasUrl || !anonKey) {
+				finishLoading();
 				setStatus('Email verification is not configured for this environment.', true);
+				notify({ kind: 'error', title: 'Confirmation unavailable', message: 'Email verification is not configured for this environment.', duration: 0 });
 				return;
 			}
 			const endpoint = `${baasUrl}/auth/v1/verify`;
@@ -47,14 +72,18 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 			for (const body of attempts) {
 				const response = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
 				if (response.ok) {
-					setStatus('Your email is confirmed. Redirecting…');
-					window.setTimeout(() => window.location.assign('/'), 3000);
+					showSuccess();
 					return;
 				}
 				lastMessage = await response.text().catch(() => '');
 			}
-			setStatus(`The verification link is invalid or expired.${lastMessage ? ' Please request a new link.' : ''}`, true);
+			void lastMessage;
+			showExpired();
 		}
-		void confirmEmail().catch(() => setStatus('Could not confirm the email right now. Please try again later.', true));
+		void confirmEmail().catch(() => {
+			finishLoading();
+			setStatus('Could not confirm the email right now. Please try again later.', true);
+			notify({ kind: 'error', title: 'Confirmation failed', message: 'Could not confirm the email right now. Please try again later.', duration: 0 });
+		});
 	</script>
 </Layout>

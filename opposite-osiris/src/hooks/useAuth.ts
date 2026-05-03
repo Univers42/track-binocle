@@ -4,7 +4,7 @@ const EMAIL_ATEXT = "A-Za-z0-9!#$%&'*+/=?^_`{|}~-";
 const EMAIL_LOCAL_PART = String.raw`(?:[${EMAIL_ATEXT}]+(?:\.[${EMAIL_ATEXT}]+)*|"[^"\r\n]+")`;
 const EMAIL_DOMAIN_LABEL = '(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)';
 export const RFC_5322_EMAIL_REGEX = new RegExp(String.raw`^${EMAIL_LOCAL_PART}@(?:${EMAIL_DOMAIN_LABEL}\.)+[A-Za-z]{2,63}$`);
-export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
+export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 export type AuthMode = 'login' | 'register';
 
@@ -65,7 +65,7 @@ function validationMessage(request: AuthRequest, mode: AuthMode): string | null 
 		return 'Use a valid email address.';
 	}
 	if (mode === 'register' && !validatePassword(request.password)) {
-		return 'Password must be at least 12 characters and include uppercase, lowercase, number, and symbol.';
+		return 'Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.';
 	}
 	if (mode === 'login' && request.password.length === 0) {
 		return 'Enter your password.';
@@ -100,8 +100,14 @@ async function delay(ms: number): Promise<void> {
 async function parseAuthResponse(response: Response): Promise<AuthResult> {
 	const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
 	let message = 'Request failed.';
-	if (typeof payload.message === 'string') {
+	if (typeof payload.error_description === 'string') {
+		message = payload.error_description;
+	} else if (typeof payload.msg === 'string') {
+		message = payload.msg;
+	} else if (typeof payload.message === 'string') {
 		message = payload.message;
+	} else if (typeof payload.error === 'string') {
+		message = payload.error;
 	} else if (response.ok) {
 		message = 'Request completed.';
 	}

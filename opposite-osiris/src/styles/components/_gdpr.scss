@@ -115,9 +115,84 @@
 	gap: 1rem;
 }
 
+.auth-form .field input {
+	width: 100%;
+	padding: 0.88rem 1rem;
+	border: 1.5px solid var(--surface-line);
+	border-radius: 18px;
+	background: var(--surface);
+	color: var(--ink);
+	font: inherit;
+}
+
+.auth-card .password-strength {
+	border-color: var(--surface-line-soft);
+	background: var(--surface-muted);
+	color: var(--ink-mid);
+}
+
+.auth-card .password-strength__label {
+	color: var(--ink);
+}
+
+.auth-card .password-match {
+	color: var(--ink-mid);
+}
+
+.auth-loading {
+	display: flex;
+	gap: 0.35rem;
+	align-items: center;
+	min-height: 2rem;
+}
+
+.auth-loading[hidden] {
+	display: none;
+}
+
+.auth-loading span {
+	width: 0.72rem;
+	height: 0.72rem;
+	border: 1.5px solid var(--ink);
+	border-radius: 999px;
+	background: var(--hl-yellow);
+	animation: auth-loading-bounce 900ms ease-in-out infinite alternate;
+}
+
+.auth-loading span:nth-child(2) {
+	animation-delay: 120ms;
+	background: var(--hl-blue);
+}
+
+.auth-loading span:nth-child(3) {
+	animation-delay: 240ms;
+	background: var(--hl-green);
+}
+
+@keyframes auth-loading-bounce {
+	from { transform: translateY(0); }
+	to { transform: translateY(-0.35rem); }
+}
+
 .auth-card [role='status'].is-error,
 .auth-form output.is-error {
 	color: var(--danger, #9d1f1f);
+}
+
+.field-error-message {
+	margin: 0;
+	font-family: var(--font-mono-sketch);
+	font-size: 0.76rem;
+	line-height: 1.35;
+	color: var(--danger, #9d1f1f);
+}
+
+.field-error-message:empty {
+	display: none;
+}
+
+.field input[aria-invalid='true'] {
+	border-color: var(--danger, #9d1f1f);
 }
 
 .legal-page section {

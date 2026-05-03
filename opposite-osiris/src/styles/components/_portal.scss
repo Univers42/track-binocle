@@ -323,6 +323,91 @@
 	line-height: 1.45;
 }
 
+.password-strength {
+	--strength-color: var(--surface-line-soft);
+	display: grid;
+	gap: 0.45rem;
+	padding: 0.7rem 0.8rem;
+	border: 1px solid var(--portal-shell-line);
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.08);
+	font-family: var(--font-mono-sketch);
+	font-size: 0.72rem;
+	color: var(--portal-left-muted);
+}
+
+.password-strength[data-strength-level='weak'] { --strength-color: var(--strength-weak, #e87a7a); }
+.password-strength[data-strength-level='fair'] { --strength-color: var(--strength-fair, #f0a45d); }
+.password-strength[data-strength-level='good'] { --strength-color: var(--strength-good, #f5d84a); }
+.password-strength[data-strength-level='strong'] { --strength-color: var(--strength-strong, #82c98a); }
+
+.password-strength__meter {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 0.28rem;
+}
+
+.password-strength__segment {
+	height: 0.5rem;
+	border: 1px solid rgba(255, 255, 255, 0.28);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.password-strength__segment.is-filled {
+	background: var(--strength-color);
+	border-color: var(--strength-color);
+}
+
+.password-strength__label {
+	font-weight: 700;
+	color: #fffdf8;
+}
+
+.password-strength__rules {
+	display: grid;
+	gap: 0.18rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.password-strength__rule {
+	display: flex;
+	align-items: center;
+	gap: 0.38rem;
+}
+
+.password-strength__rule::before,
+.password-match::before {
+	display: inline-grid;
+	place-items: center;
+	width: 1rem;
+	font-weight: 700;
+}
+
+.password-strength__rule.is-met::before,
+.password-match.is-match::before {
+	content: '✓';
+	color: #82c98a;
+}
+
+.password-strength__rule.is-unmet::before,
+.password-match.is-mismatch::before {
+	content: '✗';
+	color: #e87a7a;
+}
+
+.password-match {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	margin: 0;
+	font-family: var(--font-mono-sketch);
+	font-size: 0.72rem;
+	color: var(--portal-left-muted);
+}
+
 .portal-verification-note {
 	padding: 0.7rem 0.85rem;
 	border: 1px solid color-mix(in srgb, var(--hl-yellow) 55%, transparent);
@@ -371,6 +456,16 @@
 
 .portal-cta:active {
 	transform: translateY(2px) scale(0.99);
+}
+
+.portal-cta:disabled,
+.portal-secondary:disabled,
+.newsletter-signup button:disabled,
+.auth-form button:disabled {
+	cursor: not-allowed;
+	filter: grayscale(1);
+	opacity: 0.58;
+	transform: none;
 }
 
 .portal-secondary {

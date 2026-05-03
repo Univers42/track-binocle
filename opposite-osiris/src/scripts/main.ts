@@ -1,8 +1,10 @@
 import { fetchSeededUsers } from '../lib/baas-client';
 import { baasConfig } from '../lib/baas-config';
 import { authConfig } from '../lib/auth-config';
-import { type RegisterProfile, useAuth, validatePassword } from '../hooks/useAuth';
+import { type AuthResult, type RegisterProfile, useAuth, validateEmail, validatePassword } from '../hooks/useAuth';
 import { CONSENT_STORAGE_KEY, CSRF_STORAGE_KEY, NEWSLETTER_INTENT_KEY, POLICY_VERSION } from '../data/legal';
+import { type NotificationKind, type NotificationOptions, dismissAll, notify } from './notifications';
+import { checkPasswordStrength, passwordRuleResults } from './password-strength';
 
 type ThemeName = 'light' | 'dark' | 'night';
 
@@ -34,13 +36,6 @@ type MascotState = {
 	frame: number | undefined;
 	previousFocus: HTMLElement | null;
 	releaseFocusTrap: (() => void) | null;
-};
-
-type PortalNoticeTone = 'success' | 'error';
-
-type AuthTokenResponse = {
-	access_token?: string;
-	expires_in?: number;
 };
 
 type ConsentPreferences = {
@@ -372,19 +367,18 @@ async function callGdprRpc(name: string, body: Record<string, unknown>, token = 
 }
 
 /** Authenticates a portal login through the public BaaS gateway. */
-async function authenticatePortalLogin(email: string, password: string, turnstileToken: string): Promise<AuthTokenResponse | null> {
+async function authenticatePortalLogin(email: string, password: string, turnstileToken: string): Promise<AuthResult> {
 	const payload = await authClient.signIn({ email, password, turnstileToken });
 	if (payload.ok && typeof payload.accessToken === 'string' && payload.accessToken.length > 0) {
 		writeStorage(AUTH_TOKEN_KEY, payload.accessToken);
-		return { access_token: payload.accessToken, expires_in: payload.expiresIn };
 	}
-	return null;
+	return payload;
 }
 
 /** Registers a portal account through the Turnstile-protected auth gateway. */
-async function registerPortalAccount(email: string, password: string, turnstileToken: string, profile: RegisterProfile): Promise<boolean> {
+async function registerPortalAccount(email: string, password: string, turnstileToken: string, profile: RegisterProfile): Promise<AuthResult> {
 	const payload = await authClient.register({ email, password, turnstileToken, profile });
-	return payload.ok;
+	return payload;
 }
 
 /** Requests a password recovery email without revealing whether the account exists. */
@@ -430,42 +424,6 @@ async function syncStoredConsents(token: string, email?: string): Promise<void> 
 	if (newsletterIntent && email) {
 		await callGdprRpc('gdpr_request_newsletter_optin', { email }, token).catch(() => undefined);
 		localStorage.removeItem(NEWSLETTER_INTENT_KEY);
-	}
-}
-
-/** Clears any existing portal connection notification. */
-function clearPortalNotification(portal: HTMLElement): void {
-	portal.querySelector('.portal-notification')?.remove();
-}
-
-/** Shows an accessible portal connection notification above the login form. */
-function showPortalNotification(portal: HTMLElement, tone: PortalNoticeTone, message: string, autoDismiss = false): void {
-	clearPortalNotification(portal);
-	const form = portal.querySelector('.portal-login');
-	if (!(form instanceof HTMLFormElement)) {
-		return;
-	}
-
-	const notification = document.createElement('div');
-	notification.className = `portal-notification portal-notification--${tone}`;
-	notification.setAttribute('role', 'status');
-	notification.setAttribute('aria-live', 'polite');
-	notification.setAttribute('aria-atomic', 'true');
-	notification.tabIndex = -1;
-	const iconPath = tone === 'success'
-		? '<path d="M4 13.5 9.1 18 20 6" />'
-		: '<path d="M12 4 21 20H3L12 4Z" /><path d="M12 9v4" /><path d="M12 16h.01" />';
-	setTrustedInnerHTML(notification, `
-		<svg class="portal-notification__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${iconPath}</svg>
-		<span>${message}</span>
-		<button class="portal-notification__dismiss" type="button" aria-label="Dismiss message">×</button>
-	`);
-	form.before(notification);
-	notification.querySelector('.portal-notification__dismiss')?.addEventListener('click', () => notification.remove());
-	notification.focus({ preventScroll: true });
-
-	if (autoDismiss) {
-		globalThis.setTimeout(() => notification.remove(), 4000);
 	}
 }
 
@@ -968,13 +926,24 @@ function createPortalMarkup(mode: PortalMode): string {
 						</div>
 						<div class="field" data-password-field>
 							<label for="portal-password">Password <span aria-hidden="true">*</span></label>
-							<input id="portal-password" name="password" type="password" autocomplete="current-password" placeholder="12+ chars, A–z, 0–9, symbol" required />
-							<p class="portal-password-hint portal-register-only">Minimum 12 characters with uppercase, lowercase, number and symbol.</p>
+							<input id="portal-password" name="password" type="password" autocomplete="current-password" placeholder="8+ chars, A–z, 0–9, symbol" required />
+							<p class="portal-password-hint portal-register-only">Minimum 8 characters with uppercase, lowercase, number and symbol.</p>
+							<div class="password-strength portal-register-only" data-password-strength data-strength-level="empty" aria-live="polite">
+								<div class="password-strength__meter" aria-hidden="true">
+									<span class="password-strength__segment" data-password-segment></span>
+									<span class="password-strength__segment" data-password-segment></span>
+									<span class="password-strength__segment" data-password-segment></span>
+									<span class="password-strength__segment" data-password-segment></span>
+								</div>
+								<span class="password-strength__label" data-password-strength-label>Enter a password</span>
+								<ul class="password-strength__rules" data-password-rules></ul>
+							</div>
 							<button class="portal-link portal-link--button portal-login-only" type="button" data-forgot-password>Forgot your password?</button>
 						</div>
 						<div class="field portal-register-only">
 							<label for="portal-password-confirm">Repeat password <span aria-hidden="true">*</span></label>
 							<input id="portal-password-confirm" name="password_confirm" type="password" autocomplete="new-password" placeholder="Repeat your password" required />
+							<p id="portal-password-match" class="password-match" data-password-match aria-live="polite">Repeat the same password.</p>
 						</div>
 						<div class="portal-register-only portal-field-grid portal-field-grid--optional">
 							<div class="field">
@@ -1175,8 +1144,8 @@ function validateRegistrationIdentity(elements: PortalFormElements, isRegister: 
 		showPortalFieldError(error, username, 'Error: Choose a username with 3–32 letters, numbers, dots, underscores, or hyphens.');
 		return false;
 	}
-	if (!email.validity.valid) {
-		showPortalFieldError(error, email, 'Error: Write a valid email address, for example you@example.com.');
+	if (!validateEmailField(email, 'Please enter your email address')) {
+		showPortalFieldError(error, email, 'Please enter a valid email address (e.g. you@example.com)');
 		return false;
 	}
 	if (isRegister && confirmEmail && email.value.trim().toLowerCase() !== confirmEmail.value.trim().toLowerCase()) {
@@ -1189,12 +1158,24 @@ function validateRegistrationIdentity(elements: PortalFormElements, isRegister: 
 /** Validates login and registration password fields. */
 function validatePortalPasswordFields(elements: PortalFormElements, isRegister: boolean): boolean {
 	const { confirmPassword, error, password } = elements;
-	if (isRegister && !validatePassword(password.value)) {
-		showPortalFieldError(error, password, 'Error: Use at least 12 characters with uppercase, lowercase, number and symbol.');
+	if (isRegister && (!validatePassword(password.value) || !checkPasswordStrength(password.value).passed)) {
+		showPortalFieldError(error, password, 'Error: Your password does not meet the security requirements.');
+		notifyWithMascot({
+			kind: 'warning',
+			title: 'Password too weak',
+			message: 'Your password does not meet the security requirements.',
+			duration: 5000,
+		});
 		return false;
 	}
 	if (isRegister && confirmPassword && password.value !== confirmPassword.value) {
 		showPortalFieldError(error, confirmPassword, 'Error: Repeat the same password.');
+		notifyWithMascot({
+			kind: 'warning',
+			title: 'Passwords do not match',
+			message: 'Make sure both fields are identical.',
+			duration: 5000,
+		});
 		return false;
 	}
 	if (!isRegister && password.value.length === 0) {
@@ -1226,13 +1207,199 @@ function setMountedMascotMood(mood: MascotMood, duration: number): void {
 	}
 }
 
+/** Shows a global notification and mirrors it through the mascot when present. */
+function notifyWithMascot(options: NotificationOptions, mascot: HTMLButtonElement | null = queryElement('.binocle', isButton)): void {
+	notify(options);
+	if (!mascot) {
+		return;
+	}
+	const moodMap: Record<NotificationKind, MascotMood> = {
+		success: 'happy',
+		error: 'scared',
+		warning: 'surprised',
+		info: 'curious',
+	};
+	setMascotMood(mascot, moodMap[options.kind], 2000, true);
+}
+
+/** Returns a readable API error without exposing raw JSON or status details. */
+function humanAuthMessage(message: string): string {
+	const trimmed = message.trim();
+	if (!trimmed) {
+		return 'Please check the form and try again.';
+	}
+	if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+		try {
+			const payload = JSON.parse(trimmed) as Record<string, unknown>;
+			const candidate = [payload.error_description, payload.msg, payload.message, payload.error].find((value) => typeof value === 'string' && value.trim().length > 0);
+			return typeof candidate === 'string' ? candidate : 'Please check the form and try again.';
+		} catch {
+			return 'Please check the form and try again.';
+		}
+	}
+	return trimmed.replace(/^error:\s*/i, '').slice(0, 220);
+}
+
+function messageMentions(message: string, ...needles: string[]): boolean {
+	const normalized = message.toLowerCase();
+	return needles.some((needle) => normalized.includes(needle.toLowerCase()));
+}
+
+/** Validates email beyond native type=email checks for common mistakes. */
+function hasValidEmailFormat(field: HTMLInputElement): boolean {
+	const email = field.value.trim();
+	return field.validity.valid && validateEmail(email) && !email.includes('..');
+}
+
+function describedByValues(field: HTMLInputElement): Set<string> {
+	return new Set((field.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean));
+}
+
+function ensureInlineFieldMessage(field: HTMLInputElement): HTMLElement {
+	const id = `${field.id || field.name || 'field'}-inline-error`;
+	let message = document.getElementById(id);
+	if (!(message instanceof HTMLElement)) {
+		message = document.createElement('p');
+		message.id = id;
+		message.className = 'field-error-message';
+		message.setAttribute('role', 'alert');
+		field.after(message);
+	}
+	return message;
+}
+
+function showInlineFieldError(field: HTMLInputElement, message: string): void {
+	const messageElement = ensureInlineFieldMessage(field);
+	messageElement.textContent = message;
+	field.setAttribute('aria-invalid', 'true');
+	const describedBy = describedByValues(field);
+	describedBy.add(messageElement.id);
+	field.setAttribute('aria-describedby', Array.from(describedBy).join(' '));
+}
+
+function clearInlineFieldError(field: HTMLInputElement): void {
+	const messageElement = document.getElementById(`${field.id || field.name || 'field'}-inline-error`);
+	if (messageElement instanceof HTMLElement) {
+		messageElement.textContent = '';
+	}
+	const describedBy = describedByValues(field);
+	describedBy.delete(`${field.id || field.name || 'field'}-inline-error`);
+	if (describedBy.size > 0) {
+		field.setAttribute('aria-describedby', Array.from(describedBy).join(' '));
+	} else {
+		field.removeAttribute('aria-describedby');
+	}
+	field.removeAttribute('aria-invalid');
+}
+
+function validateEmailField(field: HTMLInputElement, emptyMessage?: string): boolean {
+	if (field.value.trim().length === 0) {
+		if (emptyMessage) {
+			showInlineFieldError(field, emptyMessage);
+			return false;
+		}
+		clearInlineFieldError(field);
+		return !field.required;
+	}
+	if (!hasValidEmailFormat(field)) {
+		showInlineFieldError(field, 'Please enter a valid email address (e.g. you@example.com)');
+		return false;
+	}
+	clearInlineFieldError(field);
+	return true;
+}
+
+function bindEmailFieldValidation(scope: ParentNode = document): void {
+	queryElements('input[type="email"]', (element): element is HTMLInputElement => element instanceof HTMLInputElement).forEach((field) => {
+		if ((scope instanceof Node && !scope.contains(field)) || field.dataset.emailValidationBound === 'true') {
+			return;
+		}
+		field.dataset.emailValidationBound = 'true';
+		field.addEventListener('blur', () => validateEmailField(field));
+		field.addEventListener('input', () => {
+			if (field.getAttribute('aria-invalid') === 'true' && hasValidEmailFormat(field)) {
+				clearInlineFieldError(field);
+			}
+		});
+	});
+}
+
+function renderPasswordStrength(root: HTMLElement, password: string): void {
+	const result = checkPasswordStrength(password);
+	root.dataset.strengthLevel = result.level;
+	root.querySelectorAll('[data-password-segment]').forEach((segment, index) => {
+		segment.classList.toggle('is-filled', index < result.score);
+	});
+	const label = root.querySelector('[data-password-strength-label]');
+	if (label instanceof HTMLElement) {
+		label.textContent = result.level === 'empty' ? 'Enter a password' : `${result.level[0].toUpperCase()}${result.level.slice(1)} password`;
+	}
+	const rules = root.querySelector('[data-password-rules]');
+	if (rules instanceof HTMLUListElement) {
+		rules.replaceChildren(...passwordRuleResults(password).map((rule) => {
+			const item = document.createElement('li');
+			item.className = `password-strength__rule ${rule.passed ? 'is-met' : 'is-unmet'}`;
+			item.textContent = rule.label;
+			return item;
+		}));
+	}
+}
+
+function syncPasswordMatchStatus(match: HTMLElement | null, password: HTMLInputElement, confirmPassword: HTMLInputElement): boolean {
+	if (!match) {
+		return password.value === confirmPassword.value;
+	}
+	const hasConfirmation = confirmPassword.value.length > 0;
+	const matches = hasConfirmation && password.value === confirmPassword.value;
+	match.classList.toggle('is-match', matches);
+	match.classList.toggle('is-mismatch', hasConfirmation && !matches);
+	let message = 'Repeat the same password.';
+	if (matches) {
+		message = 'Passwords match.';
+	} else if (hasConfirmation) {
+		message = 'Passwords do not match.';
+	}
+	match.textContent = message;
+	return matches;
+}
+
+function syncPortalPasswordFeedback(portal: HTMLElement, elements: PortalFormElements): boolean {
+	const strengthRoot = portal.querySelector('[data-password-strength]');
+	if (strengthRoot instanceof HTMLElement) {
+		renderPasswordStrength(strengthRoot, elements.password.value);
+	}
+	const match = portal.querySelector('[data-password-match]');
+	let matchElement: HTMLElement | null = null;
+	if (match instanceof HTMLElement) {
+		matchElement = match;
+	}
+	let passwordsMatch = true;
+	if (elements.confirmPassword) {
+		passwordsMatch = syncPasswordMatchStatus(matchElement, elements.password, elements.confirmPassword);
+	}
+	return checkPasswordStrength(elements.password.value).passed && passwordsMatch;
+}
+
+function updatePortalSubmitAvailability(portal: HTMLElement, elements: PortalFormElements): void {
+	if (!(elements.submitButton instanceof HTMLButtonElement) || elements.submitButton.dataset.busy === 'true' || portal.dataset.portalMode === 'recovery') {
+		return;
+	}
+	if (portal.dataset.authMode !== 'register') {
+		elements.submitButton.disabled = false;
+		return;
+	}
+	const passwordReady = syncPortalPasswordFeedback(portal, elements);
+	const termsReady = !(elements.termsConsent instanceof HTMLInputElement) || elements.termsConsent.checked;
+	elements.submitButton.disabled = !(passwordReady && termsReady);
+}
+
 /** Handles the password recovery variant of the portal form. */
 async function submitPortalRecovery(portal: HTMLElement, elements: PortalFormElements): Promise<void> {
 	const { email, error } = elements;
 	const turnstileToken = readTurnstileToken(portal);
 	clearPortalFieldErrors(email);
-	if (!email.validity.valid) {
-		showPortalFieldError(error, email, 'Error: Write a valid email address, for example you@example.com.');
+	if (!validateEmailField(email, 'Please enter your email address')) {
+		showPortalFieldError(error, email, email.value.trim().length === 0 ? 'Please enter your email address' : 'Please enter a valid email address (e.g. you@example.com)');
 		return;
 	}
 	if (!turnstileToken) {
@@ -1247,13 +1414,22 @@ async function submitPortalRecovery(portal: HTMLElement, elements: PortalFormEle
 	}
 	try {
 		await requestPasswordRecovery(email.value, turnstileToken);
-		showPortalNotification(portal, 'success', 'If an account exists for that email, a reset link has been sent.');
+		notifyWithMascot({
+			kind: 'success',
+			title: 'Reset link sent',
+			message: 'If an account exists for that email, a reset link has been sent.',
+			duration: 6000,
+		});
 		announce('If an account exists for that email, a reset link has been sent.');
-		setMountedMascotMood('happy', 1800);
 	} catch {
-		showPortalNotification(portal, 'error', 'Network error — please try again later.');
-		announce('Network error — please try again later.');
+		notifyWithMascot({
+			kind: 'error',
+			title: 'Connection failed',
+			message: 'Could not reach the server. Check your connection and try again.',
+			duration: 0,
+		});
 		setMountedMascotMood('scared', 1200);
+		announce('Network error — please try again later.');
 	} finally {
 		if (recoverySubmit instanceof HTMLButtonElement) {
 			recoverySubmit.disabled = false;
@@ -1282,6 +1458,7 @@ function setPortalSubmitBusy(button: HTMLButtonElement | null, busy: boolean, is
 	if (!button) {
 		return;
 	}
+	button.dataset.busy = String(busy);
 	button.disabled = busy;
 	if (busy) {
 		button.textContent = isRegister ? 'Creating…' : 'Connecting…';
@@ -1291,35 +1468,102 @@ function setPortalSubmitBusy(button: HTMLButtonElement | null, busy: boolean, is
 }
 
 /** Handles a validated registration request. */
-async function processPortalRegistration(portal: HTMLElement, elements: PortalFormElements, turnstileToken: string): Promise<void> {
-	const registered = await registerPortalAccount(elements.email.value, elements.password.value, turnstileToken, portalRegistrationProfile(elements));
-	if (registered) {
-		showPortalNotification(portal, 'success', 'Account created. Check your email before signing in.', true);
+async function processPortalRegistration(elements: PortalFormElements, turnstileToken: string): Promise<void> {
+	const result = await registerPortalAccount(elements.email.value, elements.password.value, turnstileToken, portalRegistrationProfile(elements));
+	const message = humanAuthMessage(result.message);
+	if (result.ok) {
+		notifyWithMascot({
+			kind: 'success',
+			title: 'Account created',
+			message: 'Check your email to confirm your address before signing in.',
+			duration: 0,
+		});
+		setMountedMascotMood('excited', 2000);
 		announce('Account created. Check your email before signing in.');
-		setMountedMascotMood('happy', 1800);
 		return;
 	}
-	showPortalNotification(portal, 'error', 'Registration failed. Check the form and try again.');
+	if (result.status === 429) {
+		notifyWithMascot({
+			kind: 'warning',
+			title: 'Too many attempts',
+			message: 'You have been temporarily blocked. Please wait a few minutes.',
+			duration: 0,
+		});
+		return;
+	}
+	if (result.status === 422 && messageMentions(message, 'user already registered', 'already registered', 'already exists')) {
+		notifyWithMascot({
+			kind: 'info',
+			title: 'Account already exists',
+			message: 'An account with this email already exists. Try signing in instead.',
+			duration: 6000,
+		});
+		return;
+	}
+	notifyWithMascot({
+		kind: 'error',
+		title: 'Registration failed',
+		message,
+		duration: 0,
+	});
 	announce('Registration failed. Check the form and try again.');
-	setMountedMascotMood('scared', 1200);
 }
 
 /** Handles a validated login request. */
-async function processPortalLogin(portal: HTMLElement, elements: PortalFormElements, turnstileToken: string): Promise<void> {
+async function processPortalLogin(elements: PortalFormElements, turnstileToken: string): Promise<void> {
 	const authenticated = await authenticatePortalLogin(elements.email.value, elements.password.value, turnstileToken);
-	if (!authenticated) {
-		showPortalNotification(portal, 'error', 'Connection failed — please check your credentials.');
-		announce('Connection failed — please check your credentials.');
-		setMountedMascotMood('scared', 1200);
+	const message = humanAuthMessage(authenticated.message);
+	if (!authenticated.ok) {
+		if (authenticated.status === 429) {
+			notifyWithMascot({
+				kind: 'warning',
+				title: 'Too many attempts',
+				message: 'You have been temporarily blocked. Please wait a few minutes.',
+				duration: 0,
+			});
+			return;
+		}
+		if (messageMentions(message, 'email not confirmed', 'not confirmed', 'confirm your email')) {
+			notifyWithMascot({
+				kind: 'warning',
+				title: 'Email not confirmed',
+				message: 'Please check your inbox and click the confirmation link first.',
+				duration: 0,
+			});
+			return;
+		}
+		if (authenticated.status === 422 || authenticated.status === 400 || authenticated.status === 401) {
+			notifyWithMascot({
+				kind: 'error',
+				title: 'Incorrect email or password',
+				message: 'Double-check your credentials and try again.',
+				duration: 0,
+			});
+			setMountedMascotMood('scared', 1200);
+			announce('Incorrect email or password.');
+			return;
+		}
+		notifyWithMascot({
+			kind: 'error',
+			title: 'Connection failed',
+			message,
+			duration: 0,
+		});
 		return;
 	}
-	await syncStoredConsents(authenticated.access_token ?? '', elements.email.value);
+	await syncStoredConsents(authenticated.accessToken ?? '', elements.email.value);
 	if (elements.newsletterConsent?.checked) {
-		await callGdprRpc('gdpr_request_newsletter_optin', { email: elements.email.value }, authenticated.access_token).catch(() => undefined);
+		await callGdprRpc('gdpr_request_newsletter_optin', { email: elements.email.value }, authenticated.accessToken).catch(() => undefined);
 	}
-	showPortalNotification(portal, 'success', 'Successfully connected — welcome back.', true);
-	announce('Successfully connected — welcome back.');
+	notifyWithMascot({
+		kind: 'success',
+		title: 'Welcome back',
+		message: `Signed in as ${elements.email.value}`,
+		duration: 4000,
+	});
 	setMountedMascotMood('happy', 1800);
+	announce('Successfully connected — welcome back.');
+	globalThis.setTimeout(() => closePortal(), 1200);
 }
 
 /** Handles the standard login variant of the portal form. */
@@ -1332,14 +1576,19 @@ async function submitPortalLogin(portal: HTMLElement, elements: PortalFormElemen
 	setPortalSubmitBusy(elements.submitButton, true, isRegister);
 	try {
 		if (isRegister) {
-			await processPortalRegistration(portal, elements, turnstileToken);
+			await processPortalRegistration(elements, turnstileToken);
 			return;
 		}
-		await processPortalLogin(portal, elements, turnstileToken);
+		await processPortalLogin(elements, turnstileToken);
 	} catch {
-		showPortalNotification(portal, 'error', 'Connection failed — please check your credentials.');
-		announce('Connection failed — please check your credentials.');
+		notifyWithMascot({
+			kind: 'error',
+			title: 'Connection failed',
+			message: 'Could not reach the server. Check your connection and try again.',
+			duration: 0,
+		});
 		setMountedMascotMood('scared', 1200);
+		announce('Connection failed — please check your credentials.');
 	} finally {
 		setPortalSubmitBusy(elements.submitButton, false, portal.dataset.authMode === 'register');
 	}
@@ -1358,7 +1607,6 @@ function syncAuthModeCopy(controls: AuthModeControls, authMode: 'login' | 'regis
 	}
 	if (controls.submitButton instanceof HTMLButtonElement) {
 		controls.submitButton.textContent = isLogin ? 'Sign in securely →' : 'Create protected account →';
-		controls.submitButton.disabled = !isLogin && controls.termsConsent instanceof HTMLInputElement && !controls.termsConsent.checked;
 	}
 }
 
@@ -1395,7 +1643,7 @@ function syncAuthModeInputs(controls: AuthModeControls, authMode: 'login' | 'reg
 	});
 	if (controls.password instanceof HTMLInputElement) {
 		controls.password.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
-		controls.password.placeholder = isLogin ? 'Your password' : '12+ chars, A–z, 0–9, symbol';
+		controls.password.placeholder = isLogin ? 'Your password' : '8+ chars, A–z, 0–9, symbol';
 	}
 }
 
@@ -1444,17 +1692,22 @@ function openPortal(mode: PortalMode): void {
 		password: portal.querySelector('#portal-password'),
 		confirmPassword: portal.querySelector('#portal-password-confirm'),
 	};
+	const refreshPortalValidation = (): void => {
+		const elements = portalFormElements(portal);
+		if (elements) {
+			updatePortalSubmitAvailability(portal, elements);
+		}
+	};
 	const setAuthMode = (authMode: 'login' | 'register'): void => {
 		portal.dataset.authMode = authMode;
 		syncAuthModeCopy(authModeControls, authMode);
 		syncAuthModeVisibility(portal, authMode);
 		syncAuthModeInputs(authModeControls, authMode);
+		refreshPortalValidation();
 	};
 	if (initialTermsConsent instanceof HTMLInputElement) {
 		initialTermsConsent.addEventListener('change', () => {
-			if (initialSubmitButton instanceof HTMLButtonElement && portal.dataset.authMode === 'register') {
-				initialSubmitButton.disabled = !initialTermsConsent.checked;
-			}
+			refreshPortalValidation();
 			initialTermsConsent.removeAttribute('aria-invalid');
 			initialTermsConsent.removeAttribute('aria-describedby');
 		});
@@ -1464,6 +1717,7 @@ function openPortal(mode: PortalMode): void {
 			button.addEventListener('click', () => setAuthMode(button.dataset.authSwitch === 'login' ? 'login' : 'register'));
 		}
 	});
+	bindEmailFieldValidation(portal);
 	setAuthMode(mode === 'connect' ? 'login' : 'register');
 	mountTurnstile(portal);
 	const passwordField = portal.querySelector('[data-password-field]');
@@ -1472,6 +1726,11 @@ function openPortal(mode: PortalMode): void {
 	const recoveryActions = portal.querySelector('[data-recovery-actions]');
 	const cancelRecovery = portal.querySelector('[data-cancel-recovery]');
 	const closePortalButton = portal.querySelector('[data-close-portal]');
+	[passwordInput, portal.querySelector('#portal-password-confirm')].forEach((field) => {
+		if (field instanceof HTMLInputElement) {
+			field.addEventListener('input', refreshPortalValidation);
+		}
+	});
 	const setRecoveryMode = (enabled: boolean): void => {
 		portal.dataset.portalMode = enabled ? 'recovery' : 'login';
 		if (passwordField instanceof HTMLElement) {
@@ -1500,12 +1759,12 @@ function openPortal(mode: PortalMode): void {
 				element.hidden = enabled || portal.dataset.authMode === 'register';
 			}
 		});
-		clearPortalNotification(portal);
 		const error = portal.querySelector('.portal-error');
 		if (error instanceof HTMLOutputElement) {
 			error.textContent = '';
 		}
 		queryElement('#portal-email', isInput)?.focus();
+		refreshPortalValidation();
 	};
 	if (forgotPassword instanceof HTMLButtonElement) {
 		forgotPassword.addEventListener('click', () => setRecoveryMode(true));
@@ -1519,7 +1778,6 @@ function openPortal(mode: PortalMode): void {
 		if (!elements) {
 			return;
 		}
-		clearPortalNotification(portal);
 		void (portal.dataset.portalMode === 'recovery' ? submitPortalRecovery(portal, elements) : submitPortalLogin(portal, elements));
 	});
 	portal.querySelectorAll('input').forEach((field) => {
@@ -1530,6 +1788,7 @@ function openPortal(mode: PortalMode): void {
 			}
 		});
 	});
+	refreshPortalValidation();
 	queryElement('#portal-email', isInput)?.focus();
 }
 
@@ -1590,30 +1849,74 @@ function bindNewsletterSignup(): void {
 		if (!(form instanceof HTMLFormElement)) {
 			return;
 		}
+		bindEmailFieldValidation(form);
 		form.addEventListener('submit', async (event) => {
 			event.preventDefault();
 			const email = form.elements.namedItem('email');
 			const checkbox = form.elements.namedItem('newsletter_consent');
 			const status = form.querySelector('[data-newsletter-status]');
-			if (!(email instanceof HTMLInputElement) || !(checkbox instanceof HTMLInputElement) || !(status instanceof HTMLOutputElement)) {
+			const button = form.querySelector('button[type="submit"]');
+			if (!(email instanceof HTMLInputElement) || !(checkbox instanceof HTMLInputElement) || !(status instanceof HTMLOutputElement) || !(button instanceof HTMLButtonElement)) {
 				return;
 			}
-			if (!email.validity.valid) {
-				status.textContent = 'Enter a valid email address.';
+			if (!validateEmailField(email, 'Please enter your email address')) {
+				status.textContent = 'Please enter a valid email address (e.g. you@example.com)';
 				email.focus();
 				return;
 			}
 			if (!checkbox.checked) {
 				status.textContent = 'Please tick the newsletter consent box to subscribe.';
+				notifyWithMascot({
+					kind: 'warning',
+					title: 'Consent required',
+					message: 'Please tick the newsletter consent box to subscribe.',
+					duration: 5000,
+				});
 				checkbox.focus();
 				return;
 			}
-			const response = await callGdprRpc('gdpr_request_newsletter_optin', { email: email.value }).catch(() => null);
-			if (response?.ok) {
-				writeStorage(NEWSLETTER_INTENT_KEY, JSON.stringify({ email: email.value, pendingDoubleOptIn: true, policyVersion: POLICY_VERSION, savedAt: new Date().toISOString() }));
-				status.textContent = 'Check your inbox to confirm the newsletter subscription.';
-			} else {
-				status.textContent = 'Could not start the double opt-in request yet; please try again later.';
+			button.disabled = true;
+			const previousText = button.textContent ?? 'Subscribe';
+			button.textContent = 'Sending…';
+			status.textContent = 'Sending your newsletter request…';
+			setMountedMascotMood('listening', 1600);
+			try {
+				const response = await callGdprRpc('gdpr_set_newsletter', { email: email.value.trim(), granted: true });
+				const responseText = await response.clone().text().catch(() => '');
+				const alreadySubscribed = response.status === 409 || messageMentions(responseText, 'already subscribed', 'already on the newsletter');
+				if (response.ok) {
+					writeStorage(NEWSLETTER_INTENT_KEY, JSON.stringify({ email: email.value.trim(), pendingDoubleOptIn: true, policyVersion: POLICY_VERSION, savedAt: new Date().toISOString() }));
+					status.textContent = 'Check your inbox to confirm your subscription.';
+					notifyWithMascot({
+						kind: alreadySubscribed ? 'info' : 'success',
+						title: alreadySubscribed ? 'Already subscribed' : 'Almost there!',
+						message: alreadySubscribed ? 'You are already on the newsletter list.' : 'Check your inbox to confirm your subscription.',
+						duration: alreadySubscribed ? 5000 : 0,
+					});
+					return;
+				}
+				if (alreadySubscribed) {
+					status.textContent = 'You are already on the newsletter list.';
+					notifyWithMascot({
+						kind: 'info',
+						title: 'Already subscribed',
+						message: 'You are already on the newsletter list.',
+						duration: 5000,
+					});
+					return;
+				}
+				throw new Error('newsletter_failed');
+			} catch {
+				status.textContent = 'Could not send. Please try again or contact us directly.';
+				notifyWithMascot({
+					kind: 'error',
+					title: 'Could not send',
+					message: 'Please try again or contact us directly.',
+					duration: 0,
+				});
+			} finally {
+				button.disabled = false;
+				button.textContent = previousText;
 			}
 		});
 	});
@@ -1664,6 +1967,7 @@ function bindDataRightsForm(): void {
 function bindInteractions(): void {
 	queryElement('#theme-toggle', isButton)?.addEventListener('click', cycleTheme);
 	queryElement('#pause-animations', isButton)?.addEventListener('click', () => applyMotionPreference(!document.documentElement.classList.contains('motion-paused')));
+	bindEmailFieldValidation(document);
 	bindConsentBanner();
 	bindNewsletterSignup();
 	bindDataRightsForm();
@@ -1712,6 +2016,7 @@ async function mountBaasStatus(): Promise<void> {
 
 /** Starts all client-side page behavior. */
 function init(): void {
+	dismissAll();
 	applyTheme(initialTheme());
 	applyMotionPreference(readStorage(MOTION_KEY) === 'true');
 	renderPaperGrain();
