@@ -4,6 +4,7 @@ node_modules/
 .env.*
 !.env.example
 audit/
+vendor/sdk/
 *.secret
 docker-compose.override.yml
 infrastructure/baas/mini-baas-infra/certs/*
