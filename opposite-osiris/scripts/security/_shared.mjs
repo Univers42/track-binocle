@@ -102,8 +102,20 @@ export function isJwtLike(value) {
 }
 
 export function noInternalLeak(body) {
-	const leakPattern = /(stack trace|traceback|\bat\s+.+:\d+:\d+|\/app\/|\/usr\/|postgres|sqlstate|psql|database error|syntax error at or near)/i;
-	return !leakPattern.test(body ?? '');
+	const content = String(body ?? '').toLowerCase();
+	const blockedFragments = [
+		'stack trace',
+		'traceback',
+		'/app/',
+		'/usr/',
+		'postgres',
+		'sqlstate',
+		'psql',
+		'database error',
+		'syntax error at or near',
+	];
+	const stackFramePattern = /\bat\s+\S+:\d+:\d+/i;
+	return !blockedFragments.some((fragment) => content.includes(fragment)) && !stackFramePattern.test(body ?? '');
 }
 
 export function safePublicColumns(row) {

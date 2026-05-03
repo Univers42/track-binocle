@@ -7,16 +7,48 @@ if (allowLocalTls) {
 	process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
 
+function metaTags(html) {
+	const tags = [];
+	let searchFrom = 0;
+	for (;;) {
+		const start = html.toLowerCase().indexOf('<meta', searchFrom);
+		if (start < 0) return tags;
+		const end = html.indexOf('>', start + 5);
+		if (end < 0) return tags;
+		tags.push(html.slice(start, end + 1));
+		searchFrom = end + 1;
+	}
+}
+
+function metaAttributes(tag) {
+	const attributes = new Map();
+	const attributePattern = /([A-Za-z-]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+	for (const match of tag.matchAll(attributePattern)) {
+		attributes.set(match[1].toLowerCase(), match[3] ?? match[4] ?? '');
+	}
+	return attributes;
+}
+
+function decodeHtmlAttribute(value) {
+	return value.replaceAll('&quot;', '"').replaceAll('&#39;', "'");
+}
+
+function extractMetaContent(html, expectedAttribute, expectedValue) {
+	for (const tag of metaTags(html)) {
+		const attributes = metaAttributes(tag);
+		if (attributes.get(expectedAttribute) === expectedValue) {
+			return decodeHtmlAttribute(attributes.get('content') ?? '');
+		}
+	}
+	return '';
+}
+
 function extractMetaCsp(html) {
-	const match = html.match(/<meta\s+[^>]*http-equiv=["']Content-Security-Policy["'][^>]*content=(["'])(.*?)\1[^>]*>/i)
-		?? html.match(/<meta\s+[^>]*content=(["'])(.*?)\1[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i);
-	return match?.[2]?.replaceAll('&quot;', '"').replaceAll('&#39;', "'") ?? '';
+	return extractMetaContent(html, 'http-equiv', 'Content-Security-Policy');
 }
 
 function extractMetaMode(html) {
-	const match = html.match(/<meta\s+[^>]*name=["']prismatica-csp-mode["'][^>]*content=(["'])(.*?)\1[^>]*>/i)
-		?? html.match(/<meta\s+[^>]*content=(["'])(.*?)\1[^>]*name=["']prismatica-csp-mode["'][^>]*>/i);
-	return match?.[2] ?? '';
+	return extractMetaContent(html, 'name', 'prismatica-csp-mode');
 }
 
 function fail(message) {
@@ -38,12 +70,15 @@ if (csp) {
 }
 
 for (const directive of ['default-src', 'script-src', 'connect-src', 'object-src', 'base-uri']) {
-	if (!new RegExp(String.raw`(^|;)\s*${directive}\b`).test(csp)) {
+	const directives = csp.split(';').map((part) => part.trim().split(/\s+/, 1)[0]);
+	if (!directives.includes(directive)) {
 		fail(`Missing ${directive} directive.`);
 	}
 }
 
-if (/script-src[^;]*'unsafe-eval'/.test(csp)) {
+
+const scriptDirective = csp.split(';').find((part) => part.trim().startsWith('script-src')) ?? '';
+if (scriptDirective.includes("'unsafe-eval'")) {
 	if (mode === 'development') {
 		console.log('PASS unsafe-eval is limited to the development Vite/HMR CSP header.');
 	} else {
@@ -53,7 +88,7 @@ if (/script-src[^;]*'unsafe-eval'/.test(csp)) {
 	console.log('PASS CSP does not allow unsafe-eval.');
 }
 
-if (/eval\(|new Function\(|set(?:Timeout|Interval)\(\s*['"`]/.test(html)) {
+if (html.includes('eval(') || html.includes('new Function(') || html.includes('setTimeout("') || html.includes("setTimeout('") || html.includes('setInterval("') || html.includes("setInterval('")) {
 	fail('Served HTML contains eval-like script text.');
 } else {
 	console.log('PASS served HTML has no eval-like script text.');

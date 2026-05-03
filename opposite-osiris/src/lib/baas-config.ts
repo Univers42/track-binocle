@@ -1,9 +1,9 @@
 export const baasConfig = {
         get url() {
                 const envUrl = import.meta.env.PUBLIC_BAAS_URL ?? '/api';
-                const normalized = envUrl.replace(/\/$/, '');
-                if (typeof window === 'undefined') return normalized;
-                if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
+                                const normalized = envUrl.replaceAll(/\/$/g, '');
+                                if (globalThis.window === undefined) return normalized;
+                if ((globalThis.location.hostname === 'localhost' || globalThis.location.hostname === '127.0.0.1') &&
                     (normalized === 'http://localhost:8000' || normalized === 'http://127.0.0.1:8000')) {
                         return '/api';
                 }

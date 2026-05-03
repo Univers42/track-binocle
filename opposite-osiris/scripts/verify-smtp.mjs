@@ -103,7 +103,7 @@ function mailBody() {
 	].join('\r\n');
 }
 
-async function main() {
+try {
 	requireConfig();
 	console.log(`Connecting to ${config.host}:${config.port} (${config.encryption}) as ${config.username}; password=[REDACTED]`);
 	const client = createSmtpClient();
@@ -129,9 +129,7 @@ async function main() {
 		client.socket.destroy();
 		throw error;
 	}
-}
-
-main().catch((error) => {
+} catch (error) {
 	console.error(error instanceof Error ? error.message : String(error));
 	process.exitCode = 1;
-});
+}

@@ -1,5 +1,9 @@
 ---
-const id = `newsletter-${Math.random().toString(36).slice(2)}`;
+interface Props {
+	id?: string;
+}
+
+const { id = 'newsletter-signup' } = Astro.props;
 ---
 
 <form class="newsletter-signup" data-newsletter-signup novalidate>

@@ -78,6 +78,20 @@ declare global {
 const THEME_KEY = 'prismatica-theme';
 const MOTION_KEY = 'prismatica-motion-paused';
 const AUTH_TOKEN_KEY = 'prismatica-auth-token-v1';
+
+function secureRandom(): number {
+	const values = new Uint32Array(1);
+	globalThis.crypto.getRandomValues(values);
+	return values[0] / 0x100000000;
+}
+
+function randomBetween(minimum: number, span: number): number {
+	return minimum + secureRandom() * span;
+}
+
+function randomIndex(length: number): number {
+	return Math.floor(secureRandom() * length);
+}
 const THEMES: ThemeName[] = ['light', 'dark', 'night'];
 const authClient = useAuth();
 const COMMON_EMAIL_DOMAINS = ['gmail.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'yahoo.com', 'proton.me', 'protonmail.com', 'live.com'];
@@ -339,9 +353,9 @@ function renderPaperGrain(): void {
 	context.setTransform(ratio, 0, 0, ratio, 0, 0);
 	context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 	for (let index = 0; index < 900; index += 1) {
-		const alpha = Math.random() * 0.05;
+		const alpha = secureRandom() * 0.05;
 		context.fillStyle = `rgba(28, 22, 18, ${alpha})`;
-		context.fillRect(Math.random() * window.innerWidth, Math.random() * window.innerHeight, Math.random() * 1.8 + 0.4, Math.random() * 1.8 + 0.4);
+		context.fillRect(secureRandom() * window.innerWidth, secureRandom() * window.innerHeight, randomBetween(0.4, 1.8), randomBetween(0.4, 1.8));
 	}
 }
 
@@ -549,9 +563,9 @@ function stopMascotEffects(mascot: HTMLButtonElement): void {
 function createHeart(mascot: HTMLButtonElement): void {
 	const heart = document.createElement('span');
 	heart.className = 'binocle__heart';
-	heart.textContent = ['♥', '♡', '✦'][Math.floor(Math.random() * 3)] ?? '♥';
-	heart.style.left = `${34 + Math.random() * 34}%`;
-	heart.style.setProperty('--heart-x', `${Math.random() * 56 - 28}px`);
+	heart.textContent = ['♥', '♡', '✦'][randomIndex(3)] ?? '♥';
+	heart.style.left = `${randomBetween(34, 34)}%`;
+	heart.style.setProperty('--heart-x', `${randomBetween(-28, 56)}px`);
 	mascot.append(heart);
 	heart.addEventListener('animationend', () => heart.remove(), { once: true });
 }
@@ -561,8 +575,8 @@ function createSleepZ(mascot: HTMLButtonElement): void {
 	const zed = document.createElement('span');
 	zed.className = 'binocle__z';
 	zed.textContent = 'Z';
-	zed.style.left = `${54 + Math.random() * 24}%`;
-	zed.style.setProperty('--z-x', `${Math.random() * 42 - 14}px`);
+	zed.style.left = `${randomBetween(54, 24)}%`;
+	zed.style.setProperty('--z-x', `${randomBetween(-14, 42)}px`);
 	mascot.append(zed);
 	zed.addEventListener('animationend', () => zed.remove(), { once: true });
 }
@@ -571,10 +585,10 @@ function createSleepZ(mascot: HTMLButtonElement): void {
 function createLaughParticle(mascot: HTMLButtonElement): void {
 	const laugh = document.createElement('span');
 	laugh.className = 'binocle__laugh-tear';
-	laugh.style.left = `${30 + Math.random() * 44}%`;
-	laugh.style.top = `${18 + Math.random() * 32}%`;
-	laugh.style.setProperty('--laugh-x', `${Math.random() * 60 - 30}px`);
-	laugh.style.setProperty('--laugh-rot', `${Math.random() * 34 - 17}deg`);
+	laugh.style.left = `${randomBetween(30, 44)}%`;
+	laugh.style.top = `${randomBetween(18, 32)}%`;
+	laugh.style.setProperty('--laugh-x', `${randomBetween(-30, 60)}px`);
+	laugh.style.setProperty('--laugh-rot', `${randomBetween(-17, 34)}deg`);
 	mascot.append(laugh);
 	laugh.addEventListener('animationend', () => laugh.remove(), { once: true });
 }
@@ -583,8 +597,8 @@ function createLaughParticle(mascot: HTMLButtonElement): void {
 function createPing(mascot: HTMLButtonElement): void {
 	const ping = document.createElement('span');
 	ping.className = 'binocle__ping';
-	ping.style.left = `${48 + Math.random() * 32}%`;
-	ping.style.top = `${30 + Math.random() * 30}%`;
+	ping.style.left = `${randomBetween(48, 32)}%`;
+	ping.style.top = `${randomBetween(30, 30)}%`;
 	mascot.append(ping);
 	ping.addEventListener('animationend', () => ping.remove(), { once: true });
 }
@@ -823,7 +837,7 @@ function animateMascot(mascot: HTMLButtonElement): void {
 	} else if (idle > 14000 && !mascotState.idleMoodShown && Date.now() > mascotState.lockedUntil) {
 		mascotState.idleMoodShown = true;
 		const idleMoods: MascotMood[] = ['thinking', 'shy', 'proud'];
-		setMascotMood(mascot, idleMoods[Math.floor(Math.random() * idleMoods.length)] ?? 'thinking', 2200, true);
+		setMascotMood(mascot, idleMoods[randomIndex(idleMoods.length)] ?? 'thinking', 2200, true);
 		liftMascotBrows(mascot);
 	}
 	mascotState.frame = requestAnimationFrame(() => animateMascot(mascot));
@@ -837,7 +851,7 @@ function startMascotBlink(mascot: HTMLButtonElement): void {
 		if (!sleeping) {
 			globalThis.setTimeout(() => mascot.style.setProperty('--blink', '1'), 110);
 		}
-		globalThis.setTimeout(blink, sleeping ? 1800 + Math.random() * 2400 : 2600 + Math.random() * 3200);
+		globalThis.setTimeout(blink, sleeping ? randomBetween(1800, 2400) : randomBetween(2600, 3200));
 	};
 	blink();
 }

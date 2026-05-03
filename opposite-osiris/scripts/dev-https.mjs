@@ -17,6 +17,8 @@ const port = Number(process.env.ASTRO_DEV_PORT ?? 4322);
 const authGatewayPort = Number(process.env.AUTH_GATEWAY_PORT ?? 8787);
 const authGatewayScript = resolve(projectDir, 'scripts/auth-gateway.mjs');
 const astroBin = resolve(projectDir, 'node_modules/.bin/astro');
+const shellPath = '/bin/sh';
+const socketStatsPath = '/usr/bin/ss';
 let authGatewayChild;
 
 function fail(message) {
@@ -42,7 +44,7 @@ function ensureCertificates() {
 	}
 
 	console.log('Local HTTPS certificates are missing; generating them from mini-baas-infra.');
-	const result = spawnSync('sh', [certScript], {
+	const result = spawnSync(shellPath, [certScript], {
 		cwd: projectDir,
 		stdio: 'inherit',
 	});
@@ -83,10 +85,15 @@ async function assertPortAvailable() {
 		return;
 	}
 
-	const listenerInfo = spawnSync('sh', ['-c', `ss -ltnp 2>/dev/null | grep ':${port}' || true`], {
+	const listenerInfo = spawnSync(socketStatsPath, ['-ltnp'], {
 		encoding: 'utf8',
 	});
-	const details = listenerInfo.stdout.trim() ? `\n\nCurrent listener:\n${listenerInfo.stdout.trim()}` : '';
+	const listenerLines = listenerInfo.stdout
+		.split('\n')
+		.filter((line) => line.includes(`:${port}`))
+		.join('\n')
+		.trim();
+	const details = listenerLines ? `\n\nCurrent listener:\n${listenerLines}` : '';
 	fail(`Port ${port} is already in use. Stop the existing dev server first, then run npm run dev:https again. If that server is plain HTTP, browsers show ERR_SSL_PROTOCOL_ERROR for https://localhost:${port}.${details}`);
 }
 

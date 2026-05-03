@@ -3,6 +3,16 @@ import { resolve } from 'node:path';
 
 const envFiles = ['.env.local', '.env'];
 
+function stripWrappingQuotes(value) {
+	const first = value.at(0);
+	const last = value.at(-1);
+	return (first === last && (first === '"' || first === "'")) ? value.slice(1, -1) : value;
+}
+
+function safeLogMessage(message) {
+	return String(message).replaceAll(/[\r\n\t]/g, ' ').slice(0, 240);
+}
+
 for (const file of envFiles) {
 	const path = resolve(process.cwd(), file);
 	if (!existsSync(path)) {
@@ -16,7 +26,7 @@ for (const file of envFiles) {
 			continue;
 		}
 		const [key, ...valueParts] = line.split('=');
-		const value = valueParts.join('=').trim().replace(/^['"]|['"]$/g, '');
+		const value = stripWrappingQuotes(valueParts.join('=').trim());
 		if (key && process.env[key] === undefined) {
 			process.env[key] = value;
 		}
@@ -24,7 +34,7 @@ for (const file of envFiles) {
 }
 
 export const baasConfig = {
-	url: (process.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000').replace(/\/$/, ''),
+	url: (process.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000').replaceAll(/\/$/g, ''),
 	anonKey: process.env.PUBLIC_BAAS_ANON_KEY ?? '',
 };
 
@@ -46,12 +56,12 @@ export function baasHeaders(extra = {}) {
 }
 
 export function pass(message) {
-	console.log(`PASS ${message}`);
+	console.log(`PASS ${safeLogMessage(message)}`);
 	process.exit(0);
 }
 
 export function fail(message, error) {
 	const detail = error instanceof Error ? ` ${error.message}` : '';
-	console.error(`FAIL ${message}${detail}`);
+	console.error(`FAIL ${safeLogMessage(message)}${safeLogMessage(detail)}`);
 	process.exit(1);
 }

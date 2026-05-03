@@ -92,6 +92,12 @@ async function delay(ms: number): Promise<void> {
 	await new Promise((resolve) => globalThis.setTimeout(resolve, ms));
 }
 
+function randomJitter(maxExclusive: number): number {
+	const values = new Uint32Array(1);
+	globalThis.crypto.getRandomValues(values);
+	return (values[0] / 0x100000000) * maxExclusive;
+}
+
 async function parseAuthResponse(response: Response): Promise<AuthResult> {
 	const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
 	let message = 'Request failed.';
@@ -124,7 +130,7 @@ async function fetchWithBackoff(url: string, init: RequestInit, maxRetries: numb
 		}
 		const retryAfter = Number(response.headers.get('retry-after'));
 		const baseDelay = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 400 * 2 ** attempt;
-		await delay(Math.min(baseDelay + Math.random() * 150, 5000));
+		await delay(Math.min(baseDelay + randomJitter(150), 5000));
 		attempt += 1;
 	}
 }
