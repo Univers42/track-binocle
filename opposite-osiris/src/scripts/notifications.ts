@@ -16,7 +16,7 @@ type NotificationRecord = {
 
 const DEFAULT_DURATIONS: Record<NotificationKind, number> = {
 	success: 4000,
-	error: 0,
+	error: 8000,
 	warning: 6000,
 	info: 5000,
 };
@@ -85,6 +85,25 @@ function createTextElement(tagName: 'p' | 'strong' | 'span', className: string, 
 	return element;
 }
 
+function createDismissProgress(duration: number): SVGSVGElement {
+	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	svg.classList.add('notification-card__dismiss-progress');
+	svg.setAttribute('viewBox', '0 0 36 36');
+	svg.setAttribute('aria-hidden', 'true');
+	svg.style.setProperty('--notification-duration', `${duration}ms`);
+	const track = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	track.classList.add('notification-card__dismiss-progress-track');
+	const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	ring.classList.add('notification-card__dismiss-progress-ring');
+	[track, ring].forEach((circle) => {
+		circle.setAttribute('cx', '18');
+		circle.setAttribute('cy', '18');
+		circle.setAttribute('r', '15.5');
+	});
+	svg.append(track, ring);
+	return svg;
+}
+
 function removeRecord(id: string): void {
 	const record = records.get(id);
 	if (!record) {
@@ -141,17 +160,16 @@ export function notify(options: NotificationOptions): void {
 	dismiss.className = 'notification-card__dismiss';
 	dismiss.type = 'button';
 	dismiss.setAttribute('aria-label', `Dismiss ${options.title}`);
-	dismiss.textContent = '×';
 	dismiss.addEventListener('click', () => dismissNotification(id));
+	const dismissLabel = createTextElement('span', 'notification-card__dismiss-label', '×');
+	if (duration > 0) {
+		dismiss.classList.add('notification-card__dismiss--timed');
+		dismiss.append(createDismissProgress(duration), dismissLabel);
+	} else {
+		dismiss.append(dismissLabel);
+	}
 
 	card.append(icon, body, dismiss);
-	if (duration > 0) {
-		const progress = document.createElement('span');
-		progress.className = 'notification-card__progress';
-		progress.style.setProperty('--notification-duration', `${duration}ms`);
-		progress.setAttribute('aria-hidden', 'true');
-		card.append(progress);
-	}
 
 	root.append(card);
 	const timer = duration > 0 ? globalThis.setTimeout(() => dismissNotification(id), duration) : undefined;

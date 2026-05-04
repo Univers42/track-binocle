@@ -1,7 +1,7 @@
 import { fetchSeededUsers } from '../lib/baas-client';
 import { baasConfig } from '../lib/baas-config';
 import { authConfig } from '../lib/auth-config';
-import { type AuthResult, type RegisterProfile, useAuth, validateEmail, validatePassword } from '../hooks/useAuth';
+import { type AuthResult, type AvailabilityFieldResult, type RegisterProfile, useAuth, validateEmail, validatePassword } from '../hooks/useAuth';
 import { CONSENT_STORAGE_KEY, CSRF_STORAGE_KEY, NEWSLETTER_INTENT_KEY, POLICY_VERSION } from '../data/legal';
 import { type NotificationKind, type NotificationOptions, dismissAll, notify } from './notifications';
 import { checkPasswordStrength, passwordRuleResults } from './password-strength';
@@ -933,6 +933,7 @@ function createPortalMarkup(mode: PortalMode): string {
 							<div class="field field--half portal-register-only">
 								<label for="portal-username">Username <span aria-hidden="true">*</span></label>
 								<input id="portal-username" name="username" type="text" autocomplete="username" placeholder="prism-user" minlength="3" maxlength="32" required />
+								<p id="portal-username-inline-error" class="field-validation-message" data-validation-state="idle" aria-live="polite">Choose a unique username.</p>
 							</div>
 							<div class="field field--half">
 								<label for="portal-email">Email <span aria-hidden="true">*</span></label>
@@ -1210,9 +1211,11 @@ function messageMentions(message: string, ...needles: string[]): boolean {
 }
 
 /** Validates email beyond native type=email checks for common mistakes. */
+type FieldValidationState = 'idle' | 'error' | 'warning' | 'success';
+
 type EmailValidationResult = {
 	valid: boolean;
-	state: 'idle' | 'error' | 'warning' | 'success';
+	state: FieldValidationState;
 	message: string;
 };
 
@@ -1279,7 +1282,7 @@ function ensureInlineFieldMessage(field: HTMLInputElement): HTMLElement {
 	return message;
 }
 
-function showInlineFieldMessage(field: HTMLInputElement, message: string, state: EmailValidationResult['state']): void {
+function showInlineFieldMessage(field: HTMLInputElement, message: string, state: FieldValidationState): void {
 	const messageElement = ensureInlineFieldMessage(field);
 	messageElement.textContent = message;
 	messageElement.dataset.validationState = state;
@@ -1338,6 +1341,38 @@ function updateEmailFieldFeedback(field: HTMLInputElement): void {
 		return;
 	}
 	showInlineFieldMessage(field, result.message, result.state);
+}
+
+function usernameValidationState(field: HTMLInputElement): { valid: boolean; message: string; state: FieldValidationState } {
+	const username = field.value.trim();
+	if (!username) {
+		return { valid: false, message: 'Choose a unique username.', state: 'idle' };
+	}
+	if (!/^\w[\w.-]{2,31}$/.test(username)) {
+		return { valid: false, message: 'Use 3–32 letters, numbers, dots, underscores, or hyphens.', state: 'error' };
+	}
+	return { valid: true, message: 'Checking username availability…', state: 'warning' };
+}
+
+function setPortalAvailabilityState(portal: HTMLElement, field: 'email' | 'username', state: 'unknown' | 'checking' | 'available' | 'taken'): void {
+	portal.dataset[`${field}Available`] = state;
+}
+
+function showAvailabilityResult(field: HTMLInputElement, result: AvailabilityFieldResult): void {
+	if (result.available === false) {
+		showInlineFieldMessage(field, result.message, 'error');
+		field.setAttribute('aria-invalid', 'true');
+		return;
+	}
+	if (result.available === true) {
+		showInlineFieldMessage(field, result.message, 'success');
+		field.removeAttribute('aria-invalid');
+	}
+}
+
+function availabilityStateAllowsSubmit(portal: HTMLElement, field: 'email' | 'username'): boolean {
+	const state = portal.dataset[`${field}Available`];
+	return state !== 'checking' && state !== 'taken';
 }
 
 function bindEmailFieldValidation(scope: ParentNode = document): void {
@@ -1419,7 +1454,8 @@ function updatePortalSubmitAvailability(portal: HTMLElement, elements: PortalFor
 	const termsReady = !(elements.termsConsent instanceof HTMLInputElement) || elements.termsConsent.checked;
 	const verificationReady = !authConfig.requireEmailVerification || !(elements.emailVerificationConsent instanceof HTMLInputElement) || elements.emailVerificationConsent.checked;
 	const usernameReady = !(elements.username instanceof HTMLInputElement) || /^\w[\w.-]{2,31}$/.test(elements.username.value.trim());
-	elements.submitButton.disabled = !(passwordReady && termsReady && verificationReady && usernameReady && hasValidEmailFormat(elements.email));
+	const availabilityReady = availabilityStateAllowsSubmit(portal, 'email') && availabilityStateAllowsSubmit(portal, 'username');
+	elements.submitButton.disabled = !(passwordReady && termsReady && verificationReady && usernameReady && hasValidEmailFormat(elements.email) && availabilityReady);
 }
 
 /** Handles the password recovery variant of the portal form. */
@@ -1455,7 +1491,7 @@ async function submitPortalRecovery(portal: HTMLElement, elements: PortalFormEle
 			kind: 'error',
 			title: 'Connection failed',
 			message: 'Could not reach the server. Check your connection and try again.',
-			duration: 0,
+			duration: 8000,
 		});
 		setMountedMascotMood('scared', 1200);
 		announce('Network error — please try again later.');
@@ -1467,11 +1503,33 @@ async function submitPortalRecovery(portal: HTMLElement, elements: PortalFormEle
 	}
 }
 
+function validateRegistrationAvailability(portal: HTMLElement, elements: PortalFormElements, isRegister: boolean): boolean {
+	if (!isRegister) {
+		return true;
+	}
+	if (portal.dataset.usernameAvailable === 'checking' || portal.dataset.emailAvailable === 'checking') {
+		elements.error.textContent = 'Checking username and email availability…';
+		return false;
+	}
+	if (portal.dataset.usernameAvailable === 'taken' && elements.username) {
+		showPortalFieldError(elements.error, elements.username, 'Error: This username is already taken.');
+		return false;
+	}
+	if (portal.dataset.emailAvailable === 'taken') {
+		showPortalFieldError(elements.error, elements.email, 'Error: This email is already registered.');
+		return false;
+	}
+	return true;
+}
+
 /** Validates portal auth input and returns the Turnstile token when valid. */
 function validatePortalAuth(portal: HTMLElement, elements: PortalFormElements, isRegister: boolean): string | null {
 	const turnstileToken = readTurnstileToken(portal);
 	clearPortalAuthErrors(elements);
 	if (!validateRegistrationIdentity(elements, isRegister) || !validatePortalPasswordFields(elements, isRegister) || !validatePortalProfileFields(elements, isRegister)) {
+		return null;
+	}
+	if (!validateRegistrationAvailability(portal, elements, isRegister)) {
 		return null;
 	}
 	if (!turnstileToken) {
@@ -1505,7 +1563,7 @@ async function processPortalRegistration(elements: PortalFormElements, turnstile
 			kind: 'success',
 			title: 'Account created',
 			message: authConfig.requireEmailVerification ? 'Check your email to confirm your address before signing in.' : 'Development account created. You can sign in now.',
-			duration: 0,
+			duration: 7000,
 		});
 		setMountedMascotMood('excited', 2000);
 		announce(authConfig.requireEmailVerification ? 'Account created. Check your email before signing in.' : 'Development account created. You can sign in now.');
@@ -1516,7 +1574,7 @@ async function processPortalRegistration(elements: PortalFormElements, turnstile
 			kind: 'warning',
 			title: 'Too many attempts',
 			message: 'You have been temporarily blocked. Please wait a few minutes.',
-			duration: 0,
+			duration: 9000,
 		});
 		return;
 	}
@@ -1529,11 +1587,20 @@ async function processPortalRegistration(elements: PortalFormElements, turnstile
 		});
 		return;
 	}
+	if (result.status === 409 || messageMentions(message, 'already registered', 'already taken', 'unique')) {
+		notifyWithMascot({
+			kind: 'warning',
+			title: 'Choose another identity',
+			message,
+			duration: 7000,
+		});
+		return;
+	}
 	notifyWithMascot({
 		kind: 'error',
 		title: 'Registration failed',
 		message,
-		duration: 0,
+		duration: 8000,
 	});
 	announce('Registration failed. Check the form and try again.');
 }
@@ -1548,7 +1615,7 @@ async function processPortalLogin(elements: PortalFormElements, turnstileToken: 
 				kind: 'warning',
 				title: 'Too many attempts',
 				message: 'You have been temporarily blocked. Please wait a few minutes.',
-				duration: 0,
+				duration: 9000,
 			});
 			return;
 		}
@@ -1557,7 +1624,7 @@ async function processPortalLogin(elements: PortalFormElements, turnstileToken: 
 				kind: 'warning',
 				title: 'Email not confirmed',
 				message: 'Please check your inbox and click the confirmation link first.',
-				duration: 0,
+				duration: 9000,
 			});
 			return;
 		}
@@ -1566,7 +1633,7 @@ async function processPortalLogin(elements: PortalFormElements, turnstileToken: 
 				kind: 'error',
 				title: 'Incorrect email or password',
 				message: 'Double-check your credentials and try again.',
-				duration: 0,
+				duration: 8000,
 			});
 			setMountedMascotMood('scared', 1200);
 			announce('Incorrect email or password.');
@@ -1576,7 +1643,7 @@ async function processPortalLogin(elements: PortalFormElements, turnstileToken: 
 			kind: 'error',
 			title: 'Connection failed',
 			message,
-			duration: 0,
+			duration: 8000,
 		});
 		return;
 	}
@@ -1614,7 +1681,7 @@ async function submitPortalLogin(portal: HTMLElement, elements: PortalFormElemen
 			kind: 'error',
 			title: 'Connection failed',
 			message: 'Could not reach the server. Check your connection and try again.',
-			duration: 0,
+			duration: 8000,
 		});
 		setMountedMascotMood('scared', 1200);
 		announce('Connection failed — please check your credentials.');
@@ -1731,11 +1798,65 @@ function openPortal(mode: PortalMode): void {
 			updatePortalSubmitAvailability(portal, elements);
 		}
 	};
+	let availabilityTimer: number | undefined;
+	let availabilityRequest = 0;
+	const scheduleAvailabilityCheck = (): void => {
+		if (availabilityTimer !== undefined) {
+			globalThis.clearTimeout(availabilityTimer);
+		}
+		const elements = portalFormElements(portal);
+		if (!elements || portal.dataset.authMode !== 'register') {
+			setPortalAvailabilityState(portal, 'email', 'unknown');
+			setPortalAvailabilityState(portal, 'username', 'unknown');
+			refreshPortalValidation();
+			return;
+		}
+		const usernameState = elements.username ? usernameValidationState(elements.username) : { valid: true, message: '', state: 'idle' as FieldValidationState };
+		if (elements.username && usernameState.state !== 'idle') {
+			showInlineFieldMessage(elements.username, usernameState.message, usernameState.state);
+		}
+		if (!usernameState.valid || !hasValidEmailFormat(elements.email)) {
+			setPortalAvailabilityState(portal, 'username', usernameState.valid ? 'unknown' : 'taken');
+			setPortalAvailabilityState(portal, 'email', hasValidEmailFormat(elements.email) ? 'unknown' : 'taken');
+			refreshPortalValidation();
+			return;
+		}
+		setPortalAvailabilityState(portal, 'email', 'checking');
+		setPortalAvailabilityState(portal, 'username', 'checking');
+		showInlineFieldMessage(elements.email, 'Checking email availability…', 'warning');
+		if (elements.username) {
+			showInlineFieldMessage(elements.username, 'Checking username availability…', 'warning');
+		}
+		refreshPortalValidation();
+		const requestId = ++availabilityRequest;
+		availabilityTimer = globalThis.setTimeout(() => {
+			void authClient.availability(elements.email.value, elements.username?.value ?? '').then((availability) => {
+				if (requestId !== availabilityRequest || portal.dataset.authMode !== 'register') {
+					return;
+				}
+				setPortalAvailabilityState(portal, 'email', availability.email.available === false ? 'taken' : 'available');
+				setPortalAvailabilityState(portal, 'username', availability.username.available === false ? 'taken' : 'available');
+				showAvailabilityResult(elements.email, availability.email);
+				if (elements.username) {
+					showAvailabilityResult(elements.username, availability.username);
+				}
+				refreshPortalValidation();
+			}).catch(() => {
+				if (requestId !== availabilityRequest) {
+					return;
+				}
+				setPortalAvailabilityState(portal, 'email', 'unknown');
+				setPortalAvailabilityState(portal, 'username', 'unknown');
+				refreshPortalValidation();
+			});
+		}, 350);
+	};
 	const setAuthMode = (authMode: 'login' | 'register'): void => {
 		portal.dataset.authMode = authMode;
 		syncAuthModeCopy(authModeControls, authMode);
 		syncAuthModeVisibility(portal, authMode);
 		syncAuthModeInputs(authModeControls, authMode);
+		scheduleAvailabilityCheck();
 		refreshPortalValidation();
 	};
 	if (initialTermsConsent instanceof HTMLInputElement) {
@@ -1816,8 +1937,12 @@ function openPortal(mode: PortalMode): void {
 	portal.querySelectorAll('input').forEach((field) => {
 		field.addEventListener('input', () => {
 			if (field instanceof HTMLInputElement && field.type === 'email') {
+				scheduleAvailabilityCheck();
 				refreshPortalValidation();
 				return;
+			}
+			if (field instanceof HTMLInputElement && field.id === 'portal-username') {
+				scheduleAvailabilityCheck();
 			}
 			if (field instanceof HTMLInputElement && field.validity.valid) {
 				field.removeAttribute('aria-invalid');
@@ -1954,7 +2079,7 @@ function bindNewsletterSignup(): void {
 					kind: 'error',
 					title: 'Could not send',
 					message: 'Please try again or contact us directly.',
-					duration: 0,
+					duration: 8000,
 				});
 			} finally {
 				button.disabled = false;

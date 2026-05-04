@@ -74,6 +74,7 @@
 }
 
 .notification-card__dismiss {
+	position: relative;
 	display: grid;
 	place-items: center;
 	width: 2rem;
@@ -88,18 +89,41 @@
 	cursor: pointer;
 }
 
+.notification-card__dismiss-label {
+	position: relative;
+	z-index: 1;
+}
+
+.notification-card__dismiss-progress {
+	position: absolute;
+	inset: -0.34rem;
+	width: calc(100% + 0.68rem);
+	height: calc(100% + 0.68rem);
+	transform: rotate(-90deg);
+	pointer-events: none;
+}
+
+.notification-card__dismiss-progress-track,
+.notification-card__dismiss-progress-ring {
+	fill: none;
+	stroke-width: 3;
+}
+
+.notification-card__dismiss-progress-track {
+	stroke: color-mix(in srgb, var(--surface-line-soft) 60%, transparent);
+}
+
+.notification-card__dismiss-progress-ring {
+	stroke: var(--notification-accent);
+	stroke-linecap: round;
+	stroke-dasharray: 98;
+	stroke-dashoffset: 0;
+	animation: notification-dismiss-progress var(--notification-duration) linear forwards;
+}
+
 .notification-card__dismiss:focus-visible {
 	outline: var(--stroke-focus) solid var(--hl-yellow);
 	outline-offset: 2px;
-}
-
-.notification-card__progress {
-	position: absolute;
-	inset: auto 0 0;
-	height: 3px;
-	background: var(--notification-accent);
-	transform-origin: left center;
-	animation: notification-progress var(--notification-duration) linear forwards;
 }
 
 @keyframes notification-enter {
@@ -112,9 +136,9 @@
 	to { opacity: 0; transform: translateY(-0.9rem); }
 }
 
-@keyframes notification-progress {
-	from { transform: scaleX(1); }
-	to { transform: scaleX(0); }
+@keyframes notification-dismiss-progress {
+	from { stroke-dashoffset: 0; }
+	to { stroke-dashoffset: 98; }
 }
 
 @media (max-width: 640px) {
@@ -128,7 +152,7 @@
 @media (prefers-reduced-motion: reduce) {
 	.notification-card,
 	.notification-card--leaving,
-	.notification-card__progress {
+	.notification-card__dismiss-progress-ring {
 		animation: none;
 	}
 }

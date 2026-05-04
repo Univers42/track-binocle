@@ -23,7 +23,7 @@ const config = {
 	port: Number(process.env.AUTH_GATEWAY_PORT ?? 8787),
 	baasUrl: (process.env.PUBLIC_BAAS_URL?.startsWith('/api') ? 'http://localhost:8000' : (process.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000')).replace(/\/$/, ''),
 	anonKey: process.env.PUBLIC_BAAS_ANON_KEY ?? process.env.KONG_PUBLIC_API_KEY ?? '',
-	serviceKey: process.env.SERVICE_ROLE_KEY ?? process.env.KONG_SERVICE_API_KEY ?? process.env.PUBLIC_BAAS_ANON_KEY ?? '',
+	serviceKey: process.env.SERVICE_ROLE_KEY ?? process.env.KONG_SERVICE_API_KEY ?? '',
 	turnstileSecret: process.env.TURNSTILE_SECRET_KEY ?? '',
 	turnstileBypassLocal: process.env.TURNSTILE_BYPASS_LOCAL === 'true',
 	siteUrl: process.env.PUBLIC_SITE_URL ?? 'http://localhost:4322',
@@ -46,6 +46,7 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
 const USERNAME_REGEX = /^\w[\w.-]{2,31}$/;
 const MAIL_DOMAIN_CACHE_MS = 10 * 60 * 1000;
 const DNS_LOOKUP_TIMEOUT_MS = 3500;
+const MANAGED_PROFILE_PASSWORD_HASH = 'managed-by-gotrue';
 
 function clientIp(request) {
 	return (request.headers['cf-connecting-ip'] ?? request.headers['x-forwarded-for'] ?? request.socket.remoteAddress ?? 'unknown').toString().split(',')[0].trim();
@@ -154,6 +155,51 @@ async function gotrueAdminPatch(path, body) {
 	let payload = {};
 	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
 	return { response, payload };
+}
+
+async function restRequest(path, { method = 'GET', body } = {}) {
+	const headers = { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}`, Accept: 'application/json' };
+	if (body !== undefined) {
+		headers['Content-Type'] = 'application/json';
+		headers.Prefer = 'return=representation';
+	}
+	const response = await fetch(`${config.baasUrl}${path}`, {
+		method,
+		headers,
+		body: body === undefined ? undefined : JSON.stringify(body),
+	});
+	const text = await response.text();
+	let payload = {};
+	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
+	return { response, payload };
+}
+
+async function localProfileExists(column, value) {
+	if (!value || !config.serviceKey) return false;
+	const path = `/rest/v1/users?select=id&${column}=eq.${encodeURIComponent(value)}&limit=1`;
+	const result = await restRequest(path);
+	return result.response.ok && Array.isArray(result.payload) && result.payload.length > 0;
+}
+
+async function identityAvailability({ email = '', username = '' }) {
+	const normalizedEmail = String(email).trim().toLowerCase();
+	const normalizedUsername = cleanText(username, 32);
+	const emailValid = EMAIL_REGEX.test(normalizedEmail);
+	const usernameValid = USERNAME_REGEX.test(normalizedUsername);
+	const emailTaken = emailValid ? await localProfileExists('email', normalizedEmail) : false;
+	const usernameTaken = usernameValid ? await localProfileExists('username', normalizedUsername) : false;
+	return {
+		email: {
+			checked: emailValid,
+			available: emailValid ? !emailTaken : null,
+			message: emailValid ? (emailTaken ? 'This email is already registered.' : 'Email is available.') : 'Enter a valid email first.',
+		},
+		username: {
+			checked: usernameValid,
+			available: usernameValid ? !usernameTaken : null,
+			message: usernameValid ? (usernameTaken ? 'This username is already taken.' : 'Username is available.') : 'Use 3–32 letters, numbers, dots, underscores, or hyphens.',
+		},
+	};
 }
 
 async function restRpc(name, body, authorization = config.anonKey) {
@@ -369,11 +415,37 @@ async function createDevConfirmedAccount({ email, password, userMetadata }) {
 	return signup;
 }
 
+async function createLocalUserProfile({ email, profile }, isEmailVerified) {
+	return restRequest('/rest/v1/users', {
+		method: 'POST',
+		body: {
+			username: profile.username,
+			email,
+			password_hash: MANAGED_PROFILE_PASSWORD_HASH,
+			theme: 'light',
+			notifications_enabled: profile.notifications_enabled,
+			is_email_verified: isEmailVerified,
+		},
+	});
+}
+
+async function ensureLocalUserProfile(request, response, context, isEmailVerified) {
+	const profile = await createLocalUserProfile(context, isEmailVerified);
+	if (profile.response.ok) return true;
+	await audit('register_failed', request, { email: context.email, status: profile.response.status, stage: 'local_profile' });
+	const message = humanAuthMessage(profile.payload, 'Account was created, but the local profile could not be created.');
+	json(response, profile.response.status === 409 ? 409 : 502, { message });
+	return false;
+}
+
 async function handleDevConfirmedRegistration(request, response, context) {
 	const result = await createDevConfirmedAccount(context);
 	if (!result.response.ok) {
 		await audit('register_dev_failed', request, { email: context.email, status: result.response.status });
 		json(response, result.response.status, { message: humanAuthMessage(result.payload, 'Development registration failed.') });
+		return;
+	}
+	if (!await ensureLocalUserProfile(request, response, context, true)) {
 		return;
 	}
 	await audit('register_dev_confirmed', request, { email: context.email });
@@ -405,6 +477,9 @@ async function handleEmailVerifiedRegistration(request, response, context) {
 		subject: 'Confirm your Prismatica account',
 		html: `<p>Hello,</p><p>Confirm your Prismatica account before signing in:</p><p><a href="${escapeHtml(confirmUrl)}">Confirm account</a></p><p>If you did not request this account, you can ignore this email.</p><p>Prismatica</p>`,
 	});
+	if (!await ensureLocalUserProfile(request, response, context, false)) {
+		return;
+	}
 	json(response, 200, { message: 'Check your email to confirm the account before signing in.' });
 }
 
@@ -423,12 +498,34 @@ async function handleRegister(request, response) {
 			json(response, 503, { message: 'Email verification is not configured.' });
 			return;
 		}
+		const availability = await identityAvailability({ email: context.email, username: context.profile.username });
+		if (availability.email.available === false || availability.username.available === false) {
+			json(response, 409, {
+				message: availability.email.available === false ? availability.email.message : availability.username.message,
+				email: availability.email,
+				username: availability.username,
+			});
+			return;
+		}
 		if (!config.requireEmailVerification || !context.profile.email_verification_consent) {
 			await handleDevConfirmedRegistration(request, response, context);
 			return;
 		}
 		await handleEmailVerifiedRegistration(request, response, context);
 	});
+}
+
+async function handleAvailability(request, response) {
+	if (!config.serviceKey) {
+		json(response, 503, { message: 'Registration availability is not configured.' });
+		return;
+	}
+	const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
+	const availability = await identityAvailability({
+		email: url.searchParams.get('email') ?? '',
+		username: url.searchParams.get('username') ?? '',
+	});
+	json(response, 200, availability);
 }
 
 async function handleLogin(request, response) {
@@ -521,6 +618,7 @@ function handleMfaHook(response) {
 }
 
 const routes = new Map([
+	['GET /api/auth/availability', handleAvailability],
 	['POST /api/auth/register', handleRegister],
 	['POST /api/auth/login', handleLogin],
 	['POST /api/auth/recover', handleRecover],
@@ -532,7 +630,7 @@ const routes = new Map([
 createServer(async (request, response) => {
 	try {
 		if (request.method === 'OPTIONS') {
-			response.writeHead(204, { 'access-control-allow-origin': config.siteUrl, 'access-control-allow-credentials': 'true', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'content-type' });
+			response.writeHead(204, { 'access-control-allow-origin': config.siteUrl, 'access-control-allow-credentials': 'true', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type' });
 			response.end();
 			return;
 		}

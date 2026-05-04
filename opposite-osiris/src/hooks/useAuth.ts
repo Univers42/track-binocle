@@ -38,6 +38,17 @@ export type AuthResult = {
 	expiresIn?: number;
 };
 
+export type AvailabilityFieldResult = {
+	checked: boolean;
+	available: boolean | null;
+	message: string;
+};
+
+export type AvailabilityResult = {
+	email: AvailabilityFieldResult;
+	username: AvailabilityFieldResult;
+};
+
 type AuthClientOptions = {
 	gatewayUrl?: string;
 	maxRetries?: number;
@@ -121,6 +132,14 @@ async function parseAuthResponse(response: Response): Promise<AuthResult> {
 	};
 }
 
+async function parseAvailabilityResponse(response: Response): Promise<AvailabilityResult> {
+	const payload = await response.json().catch(() => ({})) as Partial<AvailabilityResult>;
+	return {
+		email: payload.email ?? { checked: false, available: null, message: 'Email availability could not be checked.' },
+		username: payload.username ?? { checked: false, available: null, message: 'Username availability could not be checked.' },
+	};
+}
+
 async function fetchWithBackoff(url: string, init: RequestInit, maxRetries: number): Promise<Response> {
 	let attempt = 0;
 	for (;;) {
@@ -148,6 +167,20 @@ export function useAuth(options: AuthClientOptions = {}) {
 	return {
 		validateEmail,
 		validatePassword,
+		async availability(email: string, username: string): Promise<AvailabilityResult> {
+			const params = new URLSearchParams();
+			if (email.trim()) {
+				params.set('email', email.trim());
+			}
+			if (username.trim()) {
+				params.set('username', username.trim());
+			}
+			return parseAvailabilityResponse(await fetchWithBackoff(`${gatewayUrl}/availability?${params}`, {
+				method: 'GET',
+				headers: { Accept: 'application/json' },
+				credentials: 'include',
+			}, maxRetries));
+		},
 		async signIn(request: AuthRequest): Promise<AuthResult> {
 			const error = validationMessage(request, 'login');
 			if (error) {
