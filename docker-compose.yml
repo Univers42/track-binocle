@@ -1,37 +1,195 @@
+name: track-binocle
+
 services:
-  baas:
-    image: dlesieur/mini-baas-infra:latest
+  postgres:
+    image: ${BAAS_POSTGRES_IMAGE:-ghcr.io/univers42/mini-baas-infra/postgres:v2026-05-03}
     env_file:
-      - ./opposite-osiris/.env.local
-      - ./infrastructure/baas/mini-baas-infra/.env
+      - ./infrastructure/baas/.env.local
+    ports:
+      - "127.0.0.1:${PG_PORT:-5432}:5432"
     environment:
-      MINI_BAAS_CONFIG_FILE: /etc/mini-baas/mini-baas-infra.conf
-      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_ENCRYPTION: ${SMTP_ENCRYPTION}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
-      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
-      GOTRUE_SMTP_HOST: ${SMTP_HOST}
-      GOTRUE_SMTP_PORT: ${SMTP_PORT}
-      GOTRUE_SMTP_USER: ${SMTP_USERNAME}
-      GOTRUE_SMTP_PASS: ${SMTP_PASSWORD}
-      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_FROM_ADDRESS}
-      GOTRUE_SMTP_SENDER_NAME: ${SMTP_FROM_NAME}
-      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - track-binocle-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  db-bootstrap:
+    image: postgres:16-alpine
+    env_file:
+      - ./infrastructure/baas/.env.local
+    environment:
+      REALTIME_DB_NAME: ${REALTIME_DB_NAME:-realtime}
+    command: >
+      sh -ec '
+        export PGPASSWORD="$${POSTGRES_PASSWORD:-postgres}";
+        until pg_isready -h postgres -U "$${POSTGRES_USER:-postgres}" -d "$${POSTGRES_DB:-postgres}"; do sleep 1; done;
+        psql -h postgres -U "$${POSTGRES_USER:-postgres}" -d "$${POSTGRES_DB:-postgres}" -v ON_ERROR_STOP=1 -v pwd="$${POSTGRES_PASSWORD:-postgres}" -v realtime_db="$${REALTIME_DB_NAME:-realtime}" -f /bootstrap/db-bootstrap.sql;
+      '
+    volumes:
+      - ./infrastructure/baas/scripts/db-bootstrap.sql:/bootstrap/db-bootstrap.sql:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  project-db-init:
+    image: postgres:16-alpine
+    env_file:
+      - ./infrastructure/baas/.env.local
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    command: ["sh", "/bootstrap/apply-project-sql.sh"]
+    volumes:
+      - ./infrastructure/baas/scripts/apply-project-sql.sh:/bootstrap/apply-project-sql.sh:ro
+      - ./models/user.sql:/project-init/01-user.sql:ro
+      - ./models/gdpr-migration.sql:/project-init/02-gdpr.sql:ro
+      - ./models/auth-security-migration.sql:/project-init/03-auth-security.sql:ro
+      - ./models/seeds.sql:/project-init/04-seeds.sql:ro
+    depends_on:
+      db-bootstrap:
+        condition: service_completed_successfully
+    restart: "no"
+
+  redis:
+    image: ${BAAS_REDIS_IMAGE:-redis:7-alpine}
+    command: redis-server --appendonly yes
+    volumes:
+      - track-binocle-redis-data:/data
+    restart: unless-stopped
+
+  gotrue:
+    image: ${BAAS_GOTRUE_IMAGE:-supabase/gotrue:v2.188.1}
+    env_file:
+      - ./infrastructure/baas/.env.local
+      - ./opposite-osiris/.env.local
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:8000/auth/v1}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_MIGRATIONS_PATH: ${GOTRUE_DB_MIGRATIONS_PATH:-/usr/local/etc/auth/migrations}
+      GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${GOTRUE_EXTERNAL_EMAIL_ENABLED:-true}
+      GOTRUE_MAILER_AUTOCONFIRM: ${GOTRUE_MAILER_AUTOCONFIRM:-false}
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: /etc/gotrue/templates/email-verification.html
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: /etc/gotrue/templates/password-reset.html
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
-      GOTRUE_URI_ALLOW_LIST: ${GOTRUE_URI_ALLOW_LIST:-http://localhost:4322/**,https://localhost:4322/**,http://localhost:4321/**,https://localhost:4321/**,http://localhost:5173/**,https://localhost:5173/**}
-      SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
-      GOTRUE_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_ISSUER: ${API_EXTERNAL_URL:-http://localhost:8000/auth/v1}
     volumes:
-      - ./infrastructure/baas/config/mini-baas-infra.conf:/etc/mini-baas/mini-baas-infra.conf:ro
       - ./opposite-osiris/src/email-templates:/etc/gotrue/templates:ro
+    depends_on:
+      db-bootstrap:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9999/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      start_period: 15s
+      retries: 8
+
+  postgrest:
+    image: ${BAAS_POSTGREST_IMAGE:-postgrest/postgrest:v12.2.3}
+    env_file:
+      - ./infrastructure/baas/.env.local
+    environment:
+      PGRST_DB_SCHEMA: ${PGRST_DB_SCHEMA:-public}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:-public}
+      PGRST_DB_ANON_ROLE: ${PGRST_DB_ANON_ROLE:-anon}
+      PGRST_SERVER_PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      project-db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  pg-meta:
+    image: ${BAAS_PG_META_IMAGE:-supabase/postgres-meta:v0.91.0}
+    env_file:
+      - ./infrastructure/baas/.env.local
+    environment:
+      PG_META_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      project-db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  supavisor:
+    image: ${BAAS_SUPAVISOR_IMAGE:-supabase/supavisor:2.7.4}
+    env_file:
+      - ./infrastructure/baas/.env.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kong:
+    image: ${BAAS_KONG_IMAGE:-track-binocle/mini-baas-kong:local}
+    pull_policy: ${BAAS_KONG_PULL_POLICY:-missing}
+    build:
+      context: ./infrastructure/baas
+      dockerfile: Dockerfile
+    env_file:
+      - ./infrastructure/baas/.env.local
+      - ./opposite-osiris/.env.local
     ports:
-      - "8000:8000"
-      - "9999:9999"
+      - "127.0.0.1:${KONG_HTTP_PORT:-8000}:8000"
+      - "127.0.0.1:${KONG_ADMIN_PORT:-8001}:8001"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_NGINX_WORKER_PROCESSES: "1"
+      KONG_MEM_CACHE_SIZE: "64m"
+      KONG_UNTRUSTED_LUA_SANDBOX_REQUIRES: "cjson.safe"
+      GOTRUE_JWT_ISS: ${API_EXTERNAL_URL:-http://localhost:8000/auth/v1}
+    command:
+      - sh
+      - -ec
+      - |
+        sed \
+          -e "s|__KONG_PUBLIC_API_KEY__|$${KONG_PUBLIC_API_KEY}|g" \
+          -e "s|__KONG_SERVICE_API_KEY__|$${KONG_SERVICE_API_KEY}|g" \
+          -e "s|__KONG_CORS_ORIGIN_APP__|$${KONG_CORS_ORIGIN_APP:-http://localhost:3000}|g" \
+          -e "s|__KONG_CORS_ORIGIN_PLAYGROUND__|$${KONG_CORS_ORIGIN_PLAYGROUND:-http://localhost:3100}|g" \
+          -e "s|__KONG_CORS_ORIGIN_STUDIO__|$${KONG_CORS_ORIGIN_STUDIO:-http://localhost:3001}|g" \
+          -e "s|__KONG_CORS_ORIGIN_FRONTEND__|$${KONG_CORS_ORIGIN_FRONTEND:-http://localhost:4322}|g" \
+          -e "s|__JWT_SECRET__|$${JWT_SECRET}|g" \
+          -e "s|__GOTRUE_JWT_ISS__|$${GOTRUE_JWT_ISS}|g" \
+          -e "s|__KONG_ANON_UUID__|$${KONG_ANON_UUID:-cd4f782c-ac87-5081-b322-b54834d15651}|g" \
+          /etc/kong/kong.yml.tmpl > /tmp/kong.yml
+        exec /docker-entrypoint.sh kong docker-start
+    healthcheck:
+      test: ["CMD-SHELL", "kong health"]
+      interval: 5s
+      timeout: 3s
+      start_period: 20s
+      retries: 10
+    depends_on:
+      gotrue:
+        condition: service_healthy
+      postgrest:
+        condition: service_started
+      pg-meta:
+        condition: service_started
     restart: unless-stopped
 
   auth-gateway:
@@ -39,20 +197,22 @@ services:
     working_dir: /app/opposite-osiris
     command: ["node", "scripts/auth-gateway.mjs"]
     env_file:
+      - ./infrastructure/baas/.env.local
       - ./opposite-osiris/.env.local
     environment:
       AUTH_GATEWAY_PORT: 8787
-      PUBLIC_BAAS_URL: ${PUBLIC_BAAS_URL:-http://baas:8000}
-      PUBLIC_BAAS_ANON_KEY: ${PUBLIC_BAAS_ANON_KEY}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
-      TURNSTILE_BYPASS_LOCAL: ${TURNSTILE_BYPASS_LOCAL:-false}
-      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4322}
-      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY:-}
-      KONG_SERVICE_API_KEY: ${KONG_SERVICE_API_KEY:-}
+      PUBLIC_BAAS_URL: http://kong:8000
     volumes:
       - ./:/app:ro
     ports:
-      - "8787:8787"
+      - "${AUTH_GATEWAY_HOST_PORT:-8787}:8787"
     depends_on:
-      - baas
+      kong:
+        condition: service_healthy
+      project-db-init:
+        condition: service_completed_successfully
     restart: unless-stopped
+
+volumes:
+  track-binocle-postgres-data:
+  track-binocle-redis-data:

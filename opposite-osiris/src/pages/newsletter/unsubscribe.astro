@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 
 const configuredBaasUrl = import.meta.env.PUBLIC_BAAS_URL ?? '/api';
-const baasUrl = configuredBaasUrl === 'http://localhost:8000' || configuredBaasUrl === 'http://127.0.0.1:8000' ? '/api' : configuredBaasUrl;
+const baasUrl = configuredBaasUrl.replace(/\/$/, '');
 const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 ---
 
@@ -16,6 +16,8 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 		</section>
 	</main>
 	<script>
+		import { createClient } from '@mini-baas/js';
+
 		const root = document.querySelector('[data-newsletter-unsubscribe]') as HTMLElement | null;
 		const status = root?.querySelector('[data-newsletter-unsubscribe-status]');
 		const token = new URLSearchParams(window.location.search).get('token');
@@ -35,17 +37,9 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 				setStatus('Newsletter unsubscribe is not configured for this environment.', true);
 				return;
 			}
-			const response = await fetch(`${baasUrl}/rest/v1/rpc/gdpr_withdraw_consent`, {
-				method: 'POST',
-				headers: {
-					apikey: anonKey,
-					Authorization: `Bearer ${anonKey}`,
-					Accept: 'application/json',
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ consent_type: 'newsletter', token }),
-			});
-			if (!response.ok) {
+			try {
+				await createClient({ url: baasUrl, anonKey, persistSession: false }).rpc('gdpr_withdraw_consent', { consent_type: 'newsletter', token });
+			} catch {
 				setStatus('This unsubscribe link is invalid or has already been used.', true);
 				return;
 			}

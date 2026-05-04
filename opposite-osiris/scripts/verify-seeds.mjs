@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { assertBaasConfig, baasHeaders, fail, pass } from './baas-env.mjs';
+import { createBaasClient, fail, pass } from './baas-env.mjs';
 
 const expectedEmails = new Set([
 	'john.doe@example.com',
@@ -15,17 +15,7 @@ const expectedEmails = new Set([
 ]);
 
 try {
-	const { url } = assertBaasConfig();
-	const response = await fetch(`${url}/rest/v1/users?select=email&limit=10`, {
-		headers: baasHeaders(),
-	});
-
-	if (!response.ok) {
-		const body = await response.text();
-		throw new Error(`seed query failed with ${response.status} ${response.statusText}: ${body}`);
-	}
-
-	const rows = await response.json();
+	const rows = await createBaasClient().from('users').select({ columns: 'email', limit: 10 });
 	const actualEmails = new Set(Array.isArray(rows) ? rows.map((row) => row.email) : []);
 	const missing = [...expectedEmails].filter((email) => !actualEmails.has(email));
 

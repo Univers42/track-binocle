@@ -7,8 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(projectDir, '..');
-const certDir = resolve(repoRoot, 'infrastructure/baas/mini-baas-infra/certs');
-const certScript = resolve(repoRoot, 'infrastructure/baas/mini-baas-infra/scripts/generate-localhost-cert.sh');
+const certDir = resolve(repoRoot, 'infrastructure/baas/certs');
+const certScript = resolve(repoRoot, 'infrastructure/baas/scripts/generate-localhost-cert.sh');
+const trustScript = resolve(repoRoot, 'infrastructure/baas/scripts/trust-localhost-cert.sh');
 const caFile = resolve(certDir, 'track-binocle-local-ca.pem');
 const certFile = resolve(certDir, 'localhost.pem');
 const keyFile = resolve(certDir, 'localhost-key.pem');
@@ -43,7 +44,7 @@ function ensureCertificates() {
 		fail(`Local HTTPS certificates are missing and the generator was not found: ${certScript}`);
 	}
 
-	console.log('Local HTTPS certificates are missing; generating them from mini-baas-infra.');
+	console.log('Local HTTPS certificates are missing; generating them from the project-owned BaaS scripts.');
 	const result = spawnSync(shellPath, [certScript], {
 		cwd: projectDir,
 		stdio: 'inherit',
@@ -55,6 +56,19 @@ function ensureCertificates() {
 
 	assertReadable(certFile, 'Local HTTPS certificate');
 	assertReadable(keyFile, 'Local HTTPS private key');
+}
+
+function ensureCertificateTrust() {
+	if (!existsSync(trustScript)) {
+		fail(`Local HTTPS trust script is missing: ${trustScript}`);
+	}
+	const result = spawnSync(shellPath, [trustScript], {
+		cwd: projectDir,
+		stdio: 'inherit',
+	});
+	if (result.status !== 0) {
+		fail('Local HTTPS CA trust setup failed. Install libnss3-tools or run npm run cert:trust manually.');
+	}
 }
 
 function canConnect(address, targetPort = port) {
@@ -125,6 +139,7 @@ async function ensureAuthGateway() {
 }
 
 ensureCertificates();
+ensureCertificateTrust();
 await assertPortAvailable();
 await ensureAuthGateway();
 assertReadable(certFile, 'Local HTTPS certificate');

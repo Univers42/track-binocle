@@ -5,8 +5,9 @@ import { resolve } from 'node:path';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { resolve4, resolve6, resolveMx } from 'node:dns/promises';
 import tls from 'node:tls';
+import { createClient, MiniBaasError } from '@mini-baas/js';
 
-for (const file of ['.env.local', '.env', '../infrastructure/baas/mini-baas-infra/.env']) {
+for (const file of ['.env.local', '.env', '../infrastructure/baas/.env.local']) {
 	const path = resolve(process.cwd(), file);
 	if (!existsSync(path)) continue;
 	for (const rawLine of readFileSync(path, 'utf8').split(/\r?\n/)) {
@@ -46,7 +47,22 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
 const USERNAME_REGEX = /^\w[\w.-]{2,31}$/;
 const MAIL_DOMAIN_CACHE_MS = 10 * 60 * 1000;
 const DNS_LOOKUP_TIMEOUT_MS = 3500;
-const MANAGED_PROFILE_PASSWORD_HASH = 'managed-by-gotrue';
+const GOTRUE_MANAGED_PROFILE_MARKER = 'managed-by-gotrue';
+const publicBaas = createClient({ url: config.baasUrl, anonKey: config.anonKey, persistSession: false });
+const serviceBaas = config.serviceKey
+	? createClient({ url: config.baasUrl, anonKey: config.anonKey || config.serviceKey, serviceRoleKey: config.serviceKey, accessToken: config.serviceKey, persistSession: false })
+	: null;
+
+function sdkResult(payload, status = 200) {
+	return { response: { ok: status >= 200 && status < 300, status, statusText: '' }, payload: payload ?? {} };
+}
+
+function sdkErrorResult(error) {
+	if (error instanceof MiniBaasError) {
+		return { response: { ok: false, status: error.status, statusText: error.message }, payload: error.body ?? { message: error.message } };
+	}
+	return { response: { ok: false, status: 500, statusText: 'SDK request failed' }, payload: { message: error instanceof Error ? error.message : 'SDK request failed' } };
+}
 
 function clientIp(request) {
 	return (request.headers['cf-connecting-ip'] ?? request.headers['x-forwarded-for'] ?? request.socket.remoteAddress ?? 'unknown').toString().split(',')[0].trim();
@@ -121,64 +137,68 @@ async function verifyTurnstile(token, ip) {
 	return payload?.success === true;
 }
 
-async function gotrue(path, body, authorization = config.anonKey) {
-	const response = await fetch(`${config.baasUrl}${path}`, {
-		method: 'POST',
-		headers: { apikey: config.anonKey, Authorization: `Bearer ${authorization}`, Accept: 'application/json', 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	const text = await response.text();
-	let payload = {};
-	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
-	return { response, payload };
-}
-
-async function gotrueAdmin(path, body) {
-	const response = await fetch(`${config.baasUrl}${path}`, {
-		method: 'POST',
-		headers: { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}`, Accept: 'application/json', 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	const text = await response.text();
-	let payload = {};
-	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
-	return { response, payload };
-}
-
-async function gotrueAdminPatch(path, body) {
-	const response = await fetch(`${config.baasUrl}${path}`, {
-		method: 'PATCH',
-		headers: { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}`, Accept: 'application/json', 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	const text = await response.text();
-	let payload = {};
-	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
-	return { response, payload };
-}
-
-async function restRequest(path, { method = 'GET', body } = {}) {
-	const headers = { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}`, Accept: 'application/json' };
-	if (body !== undefined) {
-		headers['Content-Type'] = 'application/json';
-		headers.Prefer = 'return=representation';
+async function signInWithPassword(body) {
+	try {
+		return sdkResult(await publicBaas.auth.signInWithPassword(body));
+	} catch (error) {
+		return sdkErrorResult(error);
 	}
-	const response = await fetch(`${config.baasUrl}${path}`, {
-		method,
-		headers,
-		body: body === undefined ? undefined : JSON.stringify(body),
-	});
-	const text = await response.text();
-	let payload = {};
-	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
-	return { response, payload };
+}
+
+async function refreshAuthSession(refreshToken) {
+	try {
+		return sdkResult(await publicBaas.auth.refreshSession(refreshToken));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
+}
+
+async function signUpAccount(body) {
+	try {
+		return sdkResult(await publicBaas.auth.signUp(body));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
+}
+
+async function recoverAccount(body) {
+	try {
+		return sdkResult(await publicBaas.auth.recover(body));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
+}
+
+async function createAdminUser(body) {
+	try {
+		if (!serviceBaas) throw new Error('Missing service role key.');
+		return sdkResult(await serviceBaas.auth.admin.createUser(body));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
+}
+
+async function generateAdminLink(body) {
+	try {
+		if (!serviceBaas) throw new Error('Missing service role key.');
+		return sdkResult(await serviceBaas.auth.admin.generateLink(body));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
+}
+
+async function updateAdminUser(userId, body) {
+	try {
+		if (!serviceBaas) throw new Error('Missing service role key.');
+		return sdkResult(await serviceBaas.auth.admin.updateUser(userId, body));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
 }
 
 async function localProfileExists(column, value) {
-	if (!value || !config.serviceKey) return false;
-	const path = `/rest/v1/users?select=id&${column}=eq.${encodeURIComponent(value)}&limit=1`;
-	const result = await restRequest(path);
-	return result.response.ok && Array.isArray(result.payload) && result.payload.length > 0;
+	if (!value || !serviceBaas) return false;
+	return serviceBaas.from('users').exists({ filters: { [column]: value } });
 }
 
 async function identityAvailability({ email = '', username = '' }) {
@@ -188,39 +208,35 @@ async function identityAvailability({ email = '', username = '' }) {
 	const usernameValid = USERNAME_REGEX.test(normalizedUsername);
 	const emailTaken = emailValid ? await localProfileExists('email', normalizedEmail) : false;
 	const usernameTaken = usernameValid ? await localProfileExists('username', normalizedUsername) : false;
+	let emailMessage = 'Enter a valid email first.';
+	if (emailValid) emailMessage = emailTaken ? 'This email is already registered.' : 'Email is available.';
+	let usernameMessage = 'Use 3–32 letters, numbers, dots, underscores, or hyphens.';
+	if (usernameValid) usernameMessage = usernameTaken ? 'This username is already taken.' : 'Username is available.';
 	return {
 		email: {
 			checked: emailValid,
 			available: emailValid ? !emailTaken : null,
-			message: emailValid ? (emailTaken ? 'This email is already registered.' : 'Email is available.') : 'Enter a valid email first.',
+			message: emailMessage,
 		},
 		username: {
 			checked: usernameValid,
 			available: usernameValid ? !usernameTaken : null,
-			message: usernameValid ? (usernameTaken ? 'This username is already taken.' : 'Username is available.') : 'Use 3–32 letters, numbers, dots, underscores, or hyphens.',
+			message: usernameMessage,
 		},
 	};
 }
 
 async function restRpc(name, body, authorization = config.anonKey) {
-	const response = await fetch(`${config.baasUrl}/rest/v1/rpc/${name}`, {
-		method: 'POST',
-		headers: { apikey: config.anonKey, Authorization: `Bearer ${authorization}`, Accept: 'application/json', 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	const text = await response.text();
-	let payload = {};
-	try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
-	return { response, payload };
+	try {
+		return sdkResult(await publicBaas.rpc(name, body, { bearerToken: authorization }));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
 }
 
 async function audit(eventType, _request, details = {}) {
-	if (!config.serviceKey) return;
-	await fetch(`${config.baasUrl}/rest/v1/rpc/auth_record_audit_event`, {
-		method: 'POST',
-		headers: { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}`, Accept: 'application/json', 'Content-Type': 'application/json' },
-		body: JSON.stringify({ event_type: eventType, email: details.email ?? null, details: { ...details, request_id: randomUUID() } }),
-	}).catch(() => undefined);
+	if (!serviceBaas || !config.serviceKey) return;
+	await serviceBaas.rpc('auth_record_audit_event', { event_type: eventType, email: details.email ?? null, details: { ...details, request_id: randomUUID() } }, { apiKey: config.serviceKey, bearerToken: config.serviceKey }).catch(() => undefined);
 }
 
 function sanitizeAuthPayload(payload) {
@@ -400,33 +416,35 @@ function isValidRegistrationContext({ email, password, profile }) {
 }
 
 async function createDevConfirmedAccount({ email, password, userMetadata }) {
-	const result = await gotrueAdmin('/auth/v1/admin/users', {
+	const result = await createAdminUser({
 		email,
 		password,
 		email_confirm: true,
 		user_metadata: userMetadata,
 	});
 	if (result.response.status !== 405) return result;
-	const signup = await gotrue('/auth/v1/signup', { email, password, data: userMetadata });
+	const signup = await signUpAccount({ email, password, data: userMetadata });
 	const userId = signup.payload?.user?.id ?? signup.payload?.id;
 	if (signup.response.ok && typeof userId === 'string') {
-		await gotrueAdminPatch(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, { email_confirm: true }).catch(() => undefined);
+		await updateAdminUser(userId, { email_confirm: true }).catch(() => undefined);
 	}
 	return signup;
 }
 
 async function createLocalUserProfile({ email, profile }, isEmailVerified) {
-	return restRequest('/rest/v1/users', {
-		method: 'POST',
-		body: {
+	try {
+		if (!serviceBaas) throw new Error('Missing service role key.');
+		return sdkResult(await serviceBaas.from('users').insert({
 			username: profile.username,
 			email,
-			password_hash: MANAGED_PROFILE_PASSWORD_HASH,
+			password_hash: GOTRUE_MANAGED_PROFILE_MARKER,
 			theme: 'light',
 			notifications_enabled: profile.notifications_enabled,
 			is_email_verified: isEmailVerified,
-		},
-	});
+		}));
+	} catch (error) {
+		return sdkErrorResult(error);
+	}
 }
 
 async function ensureLocalUserProfile(request, response, context, isEmailVerified) {
@@ -453,7 +471,7 @@ async function handleDevConfirmedRegistration(request, response, context) {
 }
 
 async function handleEmailVerifiedRegistration(request, response, context) {
-	const result = await gotrueAdmin('/auth/v1/admin/generate_link', {
+	const result = await generateAdminLink({
 		type: 'signup',
 		email: context.email,
 		password: context.password,
@@ -536,7 +554,7 @@ async function handleLogin(request, response) {
 			json(response, 422, { message: 'Invalid credentials.' });
 			return;
 		}
-		const result = await gotrue('/auth/v1/token?grant_type=password', { email, password });
+		const result = await signInWithPassword({ email, password });
 		await audit(result.response.ok ? 'login_success' : 'login_failed', request, { email, status: result.response.status });
 		if (!result.response.ok) {
 			json(response, result.response.status, { message: humanAuthMessage(result.payload, 'Invalid credentials.') });
@@ -552,7 +570,7 @@ async function handleRecover(request, response) {
 	await protectedAction(request, response, 'recover', async (payload) => {
 		const email = String(payload.email ?? '').trim().toLowerCase();
 		if (EMAIL_REGEX.test(email) && await hasDeliverableEmailDomain(email)) {
-			await gotrue('/auth/v1/recover', { email });
+			await recoverAccount({ email });
 			await audit('password_recovery_requested', request, { email });
 		}
 		json(response, 200, { message: 'If an account exists for that email, a reset link has been sent.' });
@@ -598,7 +616,7 @@ async function handleRefresh(request, response) {
 		json(response, 401, { message: 'No refresh session.' });
 		return;
 	}
-	const result = await gotrue('/auth/v1/token?grant_type=refresh_token', { refresh_token: refreshToken });
+	const result = await refreshAuthSession(refreshToken);
 	await audit(result.response.ok ? 'refresh_success' : 'refresh_failed', request, { status: result.response.status });
 	if (!result.response.ok) {
 		json(response, 401, { message: 'Refresh session expired.' }, { 'set-cookie': clearRefreshCookie() });
