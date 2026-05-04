@@ -32,8 +32,8 @@ const developmentCsp = [
 	"form-action 'self'",
 	"img-src 'self' data: blob:",
 	"font-src 'self' https://fonts.gstatic.com",
-	"style-src 'self' https://fonts.googleapis.com",
-	"script-src 'self' 'unsafe-eval' https://challenges.cloudflare.com",
+	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+	"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
 	"connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*",
 ].join('; ');
 const cspMode = import.meta.env.DEV ? 'development' : 'production';
