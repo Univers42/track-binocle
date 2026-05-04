@@ -237,7 +237,9 @@ async function restRpc(name, body, authorization = config.anonKey) {
 
 async function audit(eventType, _request, details = {}) {
 	if (!serviceBaas || !config.serviceKey) return;
-	await serviceBaas.rpc('auth_record_audit_event', { event_type: eventType, email: details.email ?? null, details: { ...details, request_id: randomUUID() } }, { apiKey: config.serviceKey, bearerToken: config.serviceKey }).catch(() => undefined);
+	await serviceBaas.rpc('auth_record_audit_event', { event_type: eventType, email: details.email ?? null, details: { ...details, request_id: randomUUID() } }, { apiKey: config.serviceKey, bearerToken: config.serviceKey }).catch((error) => {
+		console.warn(`[auth-gateway] audit event "${eventType}" was not recorded: ${error instanceof Error ? error.message : 'unknown error'}`);
+	});
 }
 
 function sanitizeAuthPayload(payload) {
@@ -305,6 +307,7 @@ function loginAlertContext(request, email) {
 
 async function sendLoginSecurityNotification(request, email) {
 	if (!hasSmtpConfig()) {
+		console.warn(`[auth-gateway] login security alert skipped for ${email}: SMTP is not fully configured.`);
 		await audit('login_alert_skipped', request, { email, reason: 'smtp_not_configured' });
 		return;
 	}
@@ -314,6 +317,7 @@ async function sendLoginSecurityNotification(request, email) {
 		subject: 'Security alert: new Prismatica sign-in',
 		html: renderEmailTemplate('login-alert.html', context),
 	});
+	console.info(`[auth-gateway] login security alert accepted by SMTP for ${email} from ${context.ipAddress}.`);
 	await audit('login_alert_sent', request, { email, ip_address: context.ipAddress, location: context.location });
 }
 
@@ -324,6 +328,10 @@ function smtpBody({ to, subject, html }) {
 		`From: ${fromName} <${fromAddress}>`,
 		`To: ${to}`,
 		`Subject: ${subject}`,
+		`Date: ${new Date().toUTCString()}`,
+		`Message-ID: <${randomUUID()}@prismatica.local>`,
+		'Auto-Submitted: auto-generated',
+		'X-Auto-Response-Suppress: All',
 		'MIME-Version: 1.0',
 		'Content-Type: text/html; charset=UTF-8',
 		'',
@@ -332,7 +340,7 @@ function smtpBody({ to, subject, html }) {
 }
 
 function hasSmtpConfig() {
-	return Boolean(config.smtpHost && config.smtpFromAddress);
+	return Boolean(config.smtpHost && config.smtpUsername && config.smtpPassword && config.smtpFromAddress);
 }
 
 function createSmtpClient() {
@@ -623,6 +631,7 @@ async function handleLogin(request, response) {
 			return;
 		}
 		await sendLoginSecurityNotification(request, email).catch(async (error) => {
+			console.error(`[auth-gateway] login security alert failed for ${email}: ${error instanceof Error ? error.message : 'unknown error'}`);
 			await audit('login_alert_failed', request, { email, error: error instanceof Error ? error.message : 'unknown_error' });
 		});
 		const refreshToken = typeof result.payload.refresh_token === 'string' ? result.payload.refresh_token : '';
