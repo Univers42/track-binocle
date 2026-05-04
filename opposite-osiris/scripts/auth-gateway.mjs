@@ -48,6 +48,7 @@ const USERNAME_REGEX = /^\w[\w.-]{2,31}$/;
 const MAIL_DOMAIN_CACHE_MS = 10 * 60 * 1000;
 const DNS_LOOKUP_TIMEOUT_MS = 3500;
 const GOTRUE_MANAGED_PROFILE_MARKER = 'managed-by-gotrue';
+const emailTemplateDir = resolve(process.cwd(), 'src/email-templates');
 const publicBaas = createClient({ url: config.baasUrl, anonKey: config.anonKey, persistSession: false });
 const serviceBaas = config.serviceKey
 	? createClient({ url: config.baasUrl, anonKey: config.anonKey || config.serviceKey, serviceRoleKey: config.serviceKey, accessToken: config.serviceKey, persistSession: false })
@@ -253,6 +254,67 @@ function humanAuthMessage(payload, fallback) {
 
 function escapeHtml(value) {
 	return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
+
+function headerValue(request, name, fallback = 'unknown', maxLength = 240) {
+	const value = request.headers[name];
+	const raw = Array.isArray(value) ? value.join(', ') : value;
+	return cleanText(raw || fallback, maxLength) || fallback;
+}
+
+function isLocalIp(ip) {
+	return ip === '::1' || ip === '127.0.0.1' || ip === 'localhost' || ip.startsWith('::ffff:127.') || ip.startsWith('10.') || ip.startsWith('192.168.') || /^172\.(1[6-9]|2\d|3[01])\./.test(ip);
+}
+
+function loginLocation(request, ipAddress) {
+	const city = headerValue(request, 'cf-ipcity', '', 80) || headerValue(request, 'x-vercel-ip-city', '', 80);
+	const region = headerValue(request, 'cf-region', '', 80) || headerValue(request, 'x-vercel-ip-country-region', '', 80);
+	const country = headerValue(request, 'cf-ipcountry', '', 80) || headerValue(request, 'x-vercel-ip-country', '', 80);
+	const timeZone = headerValue(request, 'cf-timezone', '', 80);
+	const location = [city, region, country].filter(Boolean).join(', ');
+	if (location && timeZone) return `${location} (${timeZone})`;
+	if (location) return location;
+	return isLocalIp(ipAddress) ? 'Local development or private network' : 'Unknown location (no trusted proxy geolocation headers)';
+}
+
+function renderEmailTemplate(fileName, variables) {
+	const html = readFileSync(resolve(emailTemplateDir, fileName), 'utf8');
+	return html.replaceAll(/{{\s*([\w.-]+)\s*}}/g, (_match, key) => escapeHtml(variables[key] ?? 'unknown'));
+}
+
+function loginAlertContext(request, email) {
+	const ipAddress = clientIp(request) || 'unknown';
+	const occurredAt = new Intl.DateTimeFormat('en-GB', {
+		dateStyle: 'full',
+		timeStyle: 'long',
+		timeZone: 'UTC',
+	}).format(new Date());
+	return {
+		email,
+		ipAddress,
+		location: loginLocation(request, ipAddress),
+		method: 'Password sign-in through the Prismatica auth gateway',
+		occurredAt: `${occurredAt} (UTC)`,
+		siteUrl: config.siteUrl.replace(/\/$/, ''),
+		userAgent: headerValue(request, 'user-agent', 'unknown device', 500),
+		origin: headerValue(request, 'origin', 'not sent', 240),
+		referer: headerValue(request, 'referer', 'not sent', 240),
+		forwardedFor: headerValue(request, 'x-forwarded-for', 'not sent', 240),
+	};
+}
+
+async function sendLoginSecurityNotification(request, email) {
+	if (!hasSmtpConfig()) {
+		await audit('login_alert_skipped', request, { email, reason: 'smtp_not_configured' });
+		return;
+	}
+	const context = loginAlertContext(request, email);
+	await sendSmtpMail({
+		to: email,
+		subject: 'Security alert: new Prismatica sign-in',
+		html: renderEmailTemplate('login-alert.html', context),
+	});
+	await audit('login_alert_sent', request, { email, ip_address: context.ipAddress, location: context.location });
 }
 
 function smtpBody({ to, subject, html }) {
@@ -560,6 +622,9 @@ async function handleLogin(request, response) {
 			json(response, result.response.status, { message: humanAuthMessage(result.payload, 'Invalid credentials.') });
 			return;
 		}
+		await sendLoginSecurityNotification(request, email).catch(async (error) => {
+			await audit('login_alert_failed', request, { email, error: error instanceof Error ? error.message : 'unknown_error' });
+		});
 		const refreshToken = typeof result.payload.refresh_token === 'string' ? result.payload.refresh_token : '';
 		const headers = refreshToken ? { 'set-cookie': refreshCookie(refreshToken) } : {};
 		json(response, 200, sanitizeAuthPayload(result.payload), headers);

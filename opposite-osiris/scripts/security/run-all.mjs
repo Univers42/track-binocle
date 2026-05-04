@@ -8,6 +8,7 @@ import * as sensitiveData from './06-sensitive-data.mjs';
 import * as uploadPath from './07-upload-path.mjs';
 import * as rateLimit from './08-rate-limit.mjs';
 import * as gdpr from './09-gdpr.mjs';
+import * as ctf from './ctf/run-all.mjs';
 
 const colors = {
 	green: '\u001b[32m',
@@ -27,6 +28,7 @@ const categories = [
 	{ key: 'upload-path', name: 'File path and upload manipulation', module: uploadPath },
 	{ key: 'rate-limit', name: 'Rate limiting and denial-of-service surface', module: rateLimit },
 	{ key: 'gdpr', name: 'GDPR data protection controls', module: gdpr },
+	{ key: 'ctf', name: 'Frontend CTF security laboratory', module: ctf },
 	{ key: 'auth', name: 'Authentication and brute-force resistance', module: auth },
 ];
 

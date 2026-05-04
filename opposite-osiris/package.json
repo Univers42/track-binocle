@@ -17,6 +17,7 @@
     "cert:trust": "sh ../infrastructure/baas/scripts/trust-localhost-cert.sh",
     "auth:gateway": "node scripts/auth-gateway.mjs",
     "test:security": "node scripts/security/run-all.mjs",
+    "test:security:ctf": "node scripts/security/ctf/run-all.mjs",
     "test:smtp": "node --env-file=.env.local scripts/verify-smtp.mjs",
     "test:email": "node --env-file=.env.local scripts/verify-email-delivery.mjs",
     "test:templates": "node scripts/verify-templates.mjs",
@@ -39,10 +40,12 @@
   "dependencies": {
     "@astrojs/check": "^0.9.4",
     "@mini-baas/js": "file:../infrastructure/baas/sdk",
-    "sass": "^1.94.2",
-    "astro": "^6.2.1"
+    "astro": "^6.2.1",
+    "sanitize-html": "^2.17.3",
+    "sass": "^1.94.2"
   },
   "devDependencies": {
+    "@types/sanitize-html": "^2.16.1",
     "typescript": "^5.9.3"
   }
 }

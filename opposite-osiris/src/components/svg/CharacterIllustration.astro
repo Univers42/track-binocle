@@ -2,6 +2,7 @@
 import chatterSvg from '../../assets/draw/character-chatter.svg?raw';
 import readerSvg from '../../assets/draw/character-reader.svg?raw';
 import studentSvg from '../../assets/draw/character-student.svg?raw';
+import { sanitizeSvgMarkup } from '../../lib/svg-security.mjs';
 import type { CharacterGuide } from '../../types/content';
 
 type Props = {
@@ -11,9 +12,9 @@ type Props = {
 const { kind } = Astro.props;
 
 const characterSvgs: Record<CharacterGuide['kind'], string> = {
-	reader: readerSvg,
-	student: studentSvg,
-	chatter: chatterSvg,
+	reader: sanitizeSvgMarkup(readerSvg),
+	student: sanitizeSvgMarkup(studentSvg),
+	chatter: sanitizeSvgMarkup(chatterSvg),
 };
 ---
 
