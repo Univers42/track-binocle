@@ -1,3 +1,4 @@
+import { createClient } from '@mini-baas/js';
 import { baasConfig } from './baas-config';
 
 export type BaaSUser = {
@@ -6,33 +7,19 @@ export type BaaSUser = {
 	email: string;
 };
 
-const restUrl = (path: string): string => {
-	const baseUrl = baasConfig.url.replace(/\/$/, '');
-	const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-	return `${baseUrl}/rest/v1${normalizedPath}`;
-};
-
-const baasHeaders = (): HeadersInit => {
+export const createPublicBaasClient = (accessToken?: string) => {
 	if (!baasConfig.anonKey) {
-		throw new Error('Missing PUBLIC_BAAS_ANON_KEY. Copy opposite-osiris/.env.example to .env.local and set it from mini-baas-infra/.env.');
+		throw new Error('Missing PUBLIC_BAAS_ANON_KEY. Copy opposite-osiris/.env.example to .env.local and set it from the project-owned BaaS env.');
 	}
 
-	return {
-		apikey: baasConfig.anonKey,
-		Authorization: `Bearer ${baasConfig.anonKey}`,
-		Accept: 'application/json',
-		'Content-Type': 'application/json',
-	};
+	return createClient({
+		url: baasConfig.url,
+		anonKey: baasConfig.anonKey,
+		accessToken,
+		persistSession: false,
+	});
 };
 
 export async function fetchSeededUsers(limit = 3): Promise<BaaSUser[]> {
-	const response = await fetch(restUrl(`/users?select=id,username,email&limit=${limit}`), {
-		headers: baasHeaders(),
-	});
-
-	if (!response.ok) {
-		throw new Error(`BaaS users query failed: ${response.status} ${response.statusText}`);
-	}
-
-	return response.json() as Promise<BaaSUser[]>;
+	return createPublicBaasClient().from<BaaSUser>('users').select({ columns: 'id,username,email', limit });
 }

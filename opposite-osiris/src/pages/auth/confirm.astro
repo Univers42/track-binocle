@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 
 const configuredBaasUrl = import.meta.env.PUBLIC_BAAS_URL ?? '/api';
-const baasUrl = configuredBaasUrl === 'http://localhost:8000' || configuredBaasUrl === 'http://127.0.0.1:8000' ? '/api' : configuredBaasUrl;
+const baasUrl = configuredBaasUrl.replace(/\/$/, '');
 const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 ---
 
@@ -20,6 +20,7 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 		</section>
 	</main>
 	<script>
+		import { createClient } from '@mini-baas/js';
 		import { notify } from '../../scripts/notifications';
 
 		const root = document.querySelector('[data-auth-confirm]') as HTMLElement | null;
@@ -50,12 +51,6 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 			if (request instanceof HTMLElement) request.hidden = false;
 			notify({ kind: 'error', title: 'Link expired', message: 'This confirmation link has expired. Request a new one from the login page.', duration: 0 });
 		};
-		const headers = {
-			apikey: anonKey,
-			Authorization: `Bearer ${anonKey}`,
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-		};
 		async function confirmEmail() {
 			if (!token) {
 				showExpired();
@@ -67,16 +62,17 @@ const anonKey = import.meta.env.PUBLIC_BAAS_ANON_KEY ?? '';
 				notify({ kind: 'error', title: 'Confirmation unavailable', message: 'Email verification is not configured for this environment.', duration: 0 });
 				return;
 			}
-			const endpoint = `${baasUrl}/auth/v1/verify`;
+			const client = createClient({ url: baasUrl, anonKey, persistSession: false });
 			const attempts = [{ type: 'signup', token }, { type: 'signup', token_hash: token }];
 			let lastMessage = '';
 			for (const body of attempts) {
-				const response = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
-				if (response.ok) {
+				try {
+					await client.auth.verify(body as { type: 'signup'; token?: string; token_hash?: string });
 					showSuccess();
 					return;
+				} catch (error) {
+					lastMessage = error instanceof Error ? error.message : '';
 				}
-				lastMessage = await response.text().catch(() => '');
 			}
 			void lastMessage;
 			showExpired();

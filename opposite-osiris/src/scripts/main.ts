@@ -1,5 +1,5 @@
-import { fetchSeededUsers } from '../lib/baas-client';
-import { baasConfig } from '../lib/baas-config';
+import { MiniBaasError } from '@mini-baas/js';
+import { createPublicBaasClient, fetchSeededUsers } from '../lib/baas-client';
 import { authConfig } from '../lib/auth-config';
 import { type AuthResult, type AvailabilityFieldResult, type RegisterProfile, useAuth, validateEmail, validatePassword } from '../hooks/useAuth';
 import { CONSENT_STORAGE_KEY, CSRF_STORAGE_KEY, NEWSLETTER_INTENT_KEY, POLICY_VERSION } from '../data/legal';
@@ -367,32 +367,25 @@ function announce(message: string): void {
 	}
 }
 
-/** Returns a PostgREST RPC endpoint URL. */
-function rpcUrl(name: string): string {
-	return `${baasConfig.url.replace(/\/$/, '')}/rest/v1/rpc/${name}`;
-}
-
 /** Reads the current demo auth token for authenticated RPC calls. */
 function readAuthToken(): string | null {
 	return readStorage(AUTH_TOKEN_KEY);
 }
 
-/** Calls a GDPR RPC with either the user's token or the anon key. */
-async function callGdprRpc(name: string, body: Record<string, unknown>, token = readAuthToken()): Promise<Response> {
-	if (!baasConfig.anonKey) {
-		throw new Error('Missing PUBLIC_BAAS_ANON_KEY.');
-	}
+type RpcStatus = {
+	ok: boolean;
+	status: number;
+};
 
-	return fetch(rpcUrl(name), {
-		method: 'POST',
-		headers: {
-			apikey: baasConfig.anonKey,
-			Authorization: `Bearer ${token ?? baasConfig.anonKey}`,
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify(body),
-	});
+/** Calls a GDPR RPC with either the user's token or the anon key. */
+async function callGdprRpc(name: string, body: Record<string, unknown>, token = readAuthToken()): Promise<RpcStatus> {
+	try {
+		await createPublicBaasClient(token ?? undefined).rpc(name, body);
+		return { ok: true, status: 200 };
+	} catch (error) {
+		if (error instanceof MiniBaasError) return { ok: false, status: error.status };
+		throw error;
+	}
 }
 
 /** Authenticates a portal login through the public BaaS gateway. */

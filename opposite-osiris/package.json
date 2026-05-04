@@ -6,14 +6,15 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "node scripts/dev-https.mjs",
+    "dev:astro": "astro dev",
     "dev:https": "node scripts/dev-https.mjs",
     "build": "astro build",
     "check": "astro check",
     "preview": "astro preview",
     "astro": "astro",
-    "cert:localhost": "sh ../infrastructure/baas/mini-baas-infra/scripts/generate-localhost-cert.sh",
-    "cert:trust": "sh ../infrastructure/baas/mini-baas-infra/scripts/trust-localhost-cert.sh",
+    "cert:localhost": "sh ../infrastructure/baas/scripts/generate-localhost-cert.sh",
+    "cert:trust": "sh ../infrastructure/baas/scripts/trust-localhost-cert.sh",
     "auth:gateway": "node scripts/auth-gateway.mjs",
     "test:security": "node scripts/security/run-all.mjs",
     "test:smtp": "node --env-file=.env.local scripts/verify-smtp.mjs",
@@ -22,7 +23,11 @@
     "test:newsletter": "node scripts/verify-newsletter-flow.mjs",
     "test:delivery": "node scripts/verify-smtp-delivery.mjs",
     "verify:csp": "node scripts/verify-csp.mjs",
+    "verify:sdk-boundaries": "node scripts/verify-sdk-boundaries.mjs",
     "test:ux": "node scripts/verify-notifications.mjs",
+    "reset:database": "node ../infrastructure/baas/scripts/reset-database.mjs",
+    "db:reset": "node ../infrastructure/baas/scripts/reset-database.mjs",
+    "db:reset:yes": "node ../infrastructure/baas/scripts/reset-database.mjs --yes",
     "baas:verify": "npm run baas:verify:connection && npm run baas:verify:schema && npm run baas:verify:seeds && npm run baas:verify:auth && npm run baas:verify:register",
     "baas:verify:cors": "node scripts/verify-cors.mjs",
     "baas:verify:connection": "node scripts/verify-connection.mjs",
@@ -33,6 +38,7 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
+    "@mini-baas/js": "file:../infrastructure/baas/sdk",
     "sass": "^1.94.2",
     "astro": "^6.2.1"
   },

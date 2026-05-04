@@ -5,7 +5,7 @@ import { defineConfig } from 'astro/config';
 import { loadEnv } from 'vite';
 
 const env = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '');
-const defaultCertDir = resolve(process.cwd(), '../infrastructure/baas/mini-baas-infra/certs');
+const defaultCertDir = resolve(process.cwd(), '../infrastructure/baas/certs');
 const devHttpsEnabled = env.ASTRO_DEV_HTTPS === 'true' || env.PUBLIC_SITE_URL?.startsWith('https://localhost');
 const devHttpsKey = resolve(process.cwd(), env.ASTRO_DEV_HTTPS_KEY ?? `${defaultCertDir}/localhost-key.pem`);
 const devHttpsCert = resolve(process.cwd(), env.ASTRO_DEV_HTTPS_CERT ?? `${defaultCertDir}/localhost.pem`);

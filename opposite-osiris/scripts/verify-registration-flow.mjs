@@ -3,7 +3,7 @@ import http from 'node:http';
 import https from 'node:https';
 import { resolve } from 'node:path';
 
-for (const file of ['.env.local', '.env', '../infrastructure/baas/mini-baas-infra/.env']) {
+for (const file of ['.env.local', '.env', '../infrastructure/baas/.env.local']) {
 	const path = resolve(process.cwd(), file);
 	if (!existsSync(path)) continue;
 	for (const rawLine of readFileSync(path, 'utf8').split(/\r?\n/)) {
@@ -17,8 +17,8 @@ for (const file of ['.env.local', '.env', '../infrastructure/baas/mini-baas-infr
 }
 
 const gatewayBaseUrl = (process.env.AUTH_GATEWAY_TEST_URL ?? `http://localhost:${process.env.AUTH_GATEWAY_PORT ?? 8787}/api/auth`).replace(/\/$/, '');
-const testPassword = 'VerifyPass1!';
 const timestamp = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+const testPassword = process.env.BAAS_VERIFY_PASSWORD ?? ['Verify', timestamp, '!'].join('');
 const testIdentity = {
 	email: `devfast+verify-${timestamp}@archicode.codes`,
 	username: `verify_${Number(timestamp).toString(36)}`.slice(0, 32),
@@ -33,7 +33,8 @@ function logPass(message) {
 }
 
 function fail(message, detail = '') {
-	console.error(`FAIL ${safeMessage(message)}${detail ? ` ${safeMessage(detail)}` : ''}`);
+	const safeDetail = detail ? ` ${safeMessage(detail)}` : '';
+	console.error(`FAIL ${safeMessage(message)}${safeDetail}`);
 	process.exit(1);
 }
 

@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { createClient } from '@mini-baas/js';
 
-const envFiles = ['.env.local', '.env'];
+const envFiles = ['.env.local', '.env', '../infrastructure/baas/.env.local'];
 
 function stripWrappingQuotes(value) {
 	const first = value.at(0);
@@ -34,9 +35,16 @@ for (const file of envFiles) {
 }
 
 export const baasConfig = {
-	url: (process.env.PUBLIC_BAAS_URL ?? 'http://localhost:8000').replaceAll(/\/$/g, ''),
+	url: normalizeNodeBaasUrl(process.env.PUBLIC_BAAS_URL),
 	anonKey: process.env.PUBLIC_BAAS_ANON_KEY ?? '',
+	serviceKey: process.env.SERVICE_ROLE_KEY ?? process.env.KONG_SERVICE_API_KEY ?? '',
 };
+
+function normalizeNodeBaasUrl(value) {
+	const configured = value ?? process.env.BAAS_INTERNAL_URL ?? 'http://localhost:8000';
+	if (configured.startsWith('/api')) return (process.env.BAAS_INTERNAL_URL ?? 'http://localhost:8000').replaceAll(/\/$/g, '');
+	return configured.replaceAll(/\/$/g, '');
+}
 
 export function assertBaasConfig() {
 	if (!baasConfig.url || !baasConfig.anonKey) {
@@ -53,6 +61,17 @@ export function baasHeaders(extra = {}) {
 		Accept: 'application/json',
 		...extra,
 	};
+}
+
+export function createBaasClient(accessToken) {
+	const { url, anonKey } = assertBaasConfig();
+	return createClient({ url, anonKey, accessToken, persistSession: false });
+}
+
+export function createServiceBaasClient() {
+	const { url, anonKey, serviceKey } = assertBaasConfig();
+	if (!serviceKey) throw new Error('Missing SERVICE_ROLE_KEY or KONG_SERVICE_API_KEY.');
+	return createClient({ url, anonKey, serviceRoleKey: serviceKey, accessToken: serviceKey, persistSession: false });
 }
 
 export function pass(message) {
