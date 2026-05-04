@@ -14,13 +14,14 @@
  * Make sure `docker compose up -d postgres` is running before calling this.
  */
 
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '../../..');
+const dockerEnv = { ...process.env, PGOPTIONS: process.env.PGOPTIONS || '-c search_path=public' };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ function psql(sql, opts = {}) {
       '-v', 'ON_ERROR_STOP=1',
       '-c', sql,
     ],
-    { cwd: repoRoot, encoding: 'utf8' },
+    { cwd: repoRoot, encoding: 'utf8', env: dockerEnv },
   );
 
   if (result.status !== 0) {
@@ -83,7 +84,7 @@ function psqlFile(filePath, opts = {}) {
       '-v', 'ON_ERROR_STOP=1',
       '-f', filePath,
     ],
-    { cwd: repoRoot, encoding: 'utf8' },
+    { cwd: repoRoot, encoding: 'utf8', env: dockerEnv },
   );
 
   if (result.status !== 0) {
@@ -105,7 +106,7 @@ function isPostgresRunning() {
       '--project-directory', repoRoot,
       'ps', '--status', 'running', '--quiet', 'postgres',
     ],
-    { cwd: repoRoot, encoding: 'utf8' },
+    { cwd: repoRoot, encoding: 'utf8', env: dockerEnv },
   );
   return result.status === 0 && result.stdout.trim().length > 0;
 }
@@ -131,14 +132,14 @@ console.log(`activities and GoTrue auth accounts, then re-seed with demo data.\n
 // ─── guard: non-interactive / --yes flag ─────────────────────────────────────
 const forceYes = process.argv.includes('--yes') || process.argv.includes('-y');
 
-if (!forceYes) {
+if (forceYes) {
+  log.warn('--yes flag detected, skipping confirmation prompt.');
+} else {
   const answer = await confirm(`${YELLOW}Type "yes" to continue, anything else to abort: ${RESET}`);
   if (answer !== 'yes') {
     log.warn('Aborted — nothing was changed.');
     process.exit(0);
   }
-} else {
-  log.warn('--yes flag detected, skipping confirmation prompt.');
 }
 
 // ─── guard: postgres must be up ──────────────────────────────────────────────
@@ -220,7 +221,7 @@ if (checkResult.status === 0) {
 
   const { readFileSync } = await import('node:fs');
   const seedsPath = resolve(repoRoot, 'models/seeds.sql');
-  const seedsSql = readFileSync(seedsPath, 'utf8');
+  const seedsSql = `SET search_path = public;\n${readFileSync(seedsPath, 'utf8')}`;
 
   const result = spawnSync(
     'docker',
@@ -236,6 +237,7 @@ if (checkResult.status === 0) {
     {
       cwd: repoRoot,
       encoding: 'utf8',
+      env: dockerEnv,
       input: seedsSql,
     },
   );

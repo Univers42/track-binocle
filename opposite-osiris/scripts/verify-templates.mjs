@@ -1,4 +1,15 @@
-#!/usr/bin/env node
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   verify-templates.mjs                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/05/04 18:29:46 by dlesieur          #+#    #+#             */
+/*   Updated: 2026/05/04 18:35:37 by dlesieur         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -20,6 +31,10 @@ const templates = [
 	{
 		file: 'newsletter-welcome.html',
 		required: ['{{.Token}}', '{{.SiteURL}}', '{{.Email}}', 'One-click unsubscribe', 'You can unsubscribe at any time'],
+	},
+	{
+		file: 'login-alert.html',
+		required: ['{{email}}', '{{ipAddress}}', '{{location}}', '{{occurredAt}}', '{{userAgent}}', 'Security alert', 'New sign-in to Prismatica'],
 	},
 ];
 

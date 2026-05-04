@@ -141,7 +141,7 @@ function trustedHTML(markup: string): unknown {
 	if (trustedHtmlPolicy === undefined) {
 		const trustedTypes = (globalThis as typeof globalThis & { trustedTypes?: TrustedTypesFactory }).trustedTypes;
 		try {
-			trustedHtmlPolicy = trustedTypes?.createPolicy('default', { createHTML: (value) => value }) ?? null;
+			trustedHtmlPolicy = trustedTypes?.createPolicy('prismatica-static-markup', { createHTML: (value) => value }) ?? null;
 		} catch {
 			trustedHtmlPolicy = null;
 		}

@@ -5,8 +5,9 @@ import workspaceConcept from '../../assets/ChatGPT Image May 1, 2026, 09_43_58 P
 import designSurface from '../../assets/design.png.png';
 import kanbanView from '../../assets/kanban.png.png';
 import designIcon from '../../assets/design-v2.png.png';
+import { safePublicAssetPath } from '../../lib/media-security.mjs';
 
-const assetPath = (fileName: string): string => `${import.meta.env.BASE_URL}assets/${fileName}`;
+const assetPath = (fileName: string): string => safePublicAssetPath(fileName, import.meta.env.BASE_URL);
 
 const mediaFeatures = [
 	{
